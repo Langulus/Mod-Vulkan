@@ -1,6 +1,6 @@
 ///                                                                           
-/// Langulus::Module::ImGui                                                   
-/// Copyright(C) 2022 Dimo Markov <langulusteam@gmail.com>                    
+/// Langulus::Module::Vulkan                                                  
+/// Copyright(C) 2020 Dimo Markov <langulusteam@gmail.com>                    
 ///                                                                           
 /// Distributed under GNU General Public License v3+                          
 /// See LICENSE file, or https://www.gnu.org/licenses                         
@@ -14,7 +14,7 @@ CATCH_TRANSLATE_EXCEPTION(::Langulus::Exception const& ex) {
    return ::std::string {Token {serialized}};
 }
 
-SCENARIO("GUI creation", "[gui]") {
+SCENARIO("Renderer creation", "[renderer]") {
    GIVEN("A root entity") {
       // Create root entity                                             
       Thing root;
@@ -23,13 +23,13 @@ SCENARIO("GUI creation", "[gui]") {
       // Create runtime at the root                                     
       root.CreateRuntime();
 
-      // Load ImGui module                                               
+      // Load ImGui module                                              
       root.LoadMod("GLFW");
-      root.LoadMod("ImGui");
+      root.LoadMod("Vulkan");
 
-      WHEN("The GUI system is created") {
+      WHEN("The renderer is created") {
          root.CreateUnitToken("Window");
-         root.CreateUnitToken("GUISystem");
+         root.CreateUnitToken("Renderer");
 
          // Update once                                                 
          root.Update(Time::zero());
