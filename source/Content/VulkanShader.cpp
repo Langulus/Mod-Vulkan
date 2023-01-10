@@ -6,7 +6,7 @@
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
 #include <shaderc/shaderc.hpp>
-#include "../CVulkanRenderer.hpp"
+#include "../VulkanRenderer.hpp"
 
 /// Shader passive construction                                               
 ///   @param producer - the producer of the shader                            

@@ -6,9 +6,10 @@
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
 #pragma once
-#include "Content/PCVRAMBuffer.hpp"
+#include "Content/VulkanBuffer.hpp"
 
 using PCCmdBuffer = VkCommandBuffer;
+
 
 ///                                                                           
 ///   VRAM INTERFACE                                                          

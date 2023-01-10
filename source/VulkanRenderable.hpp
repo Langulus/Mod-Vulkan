@@ -6,8 +6,8 @@
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
 #pragma once
-#include "IncludeVulkan.hpp"
-#include <unordered_map>
+#include "Common.hpp"
+
 
 ///                                                                           
 ///   THE VULKAN RENDERABLE                                                   

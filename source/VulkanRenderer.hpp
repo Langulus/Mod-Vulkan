@@ -7,11 +7,11 @@
 ///                                                                           
 #pragma once
 #include "VRAM.hpp"
-#include "CVulkanPipeline.hpp"
-#include "CVulkanLayer.hpp"
-#include "Content/CVulkanGeometry.hpp"
-#include "Content/CVulkanTexture.hpp"
-#include "Content/CVulkanShader.hpp"
+#include "VulkanPipeline.hpp"
+#include "VulkanLayer.hpp"
+#include "Content/VulkanGeometry.hpp"
+#include "Content/VulkanTexture.hpp"
+#include "Content/VulkanShader.hpp"
 
 class MVulkan;
 

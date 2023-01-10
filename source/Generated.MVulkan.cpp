@@ -5,12 +5,12 @@
 /// Distributed under GNU General Public License v3+                          
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
-#include "MVulkan.hpp"
+#include "Vulkan.hpp"
 
 //TODO automate this
 
 
-REFLECT_BEGIN(MVulkan)
+/*REFLECT_BEGIN(MVulkan)
    REFLECT_INFO("Vulkan graphics module")
    REFLECT_BEGIN_BASES
       REFLECT_BASE(AModuleGraphics)
@@ -86,13 +86,13 @@ REFLECT_BEGIN(CVulkanRenderable)
    REFLECT_PRODUCER(CVulkanLayer)
    REFLECT_BEGIN_BASES
       REFLECT_BASE(ARenderable)
-   REFLECT_END_BASES
+   REFLECT_END_BASES*/
    /*REFLECT_BEGIN_MEMBERS
       REFLECT_MEMBER_TRAIT(mGeometry, Model),
       REFLECT_MEMBER_TRAIT(mTexture, Texture),
       REFLECT_MEMBER_TRAIT(mMaterial, Material)
    REFLECT_END_MEMBERS*/
-REFLECT_END
+/*REFLECT_END
 
 REFLECT_BEGIN(CVulkanGeometry)
    REFLECT_INFO("Vulkan VRAM geometry content mirror")
@@ -156,4 +156,4 @@ void LANGULUS_MODULE_DESTROYER() {
    MetaData::UNREGISTER<CVulkanPipeline>();
    MetaData::UNREGISTER<CVulkanRenderer>();
    MetaData::UNREGISTER<MVulkan>();
-}
+}*/

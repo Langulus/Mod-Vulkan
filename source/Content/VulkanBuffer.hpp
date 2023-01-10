@@ -6,7 +6,8 @@
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
 #pragma once
-#include "../IncludeVulkan.hpp"
+#include "../Common.hpp"
+
 
 ///                                                                           
 /// VRAM buffer helper                                                        

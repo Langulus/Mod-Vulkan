@@ -6,33 +6,23 @@
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
 #pragma once
-#include <PCFW.hpp>
+#include <Langulus.hpp>
+
+using namespace Langulus;
+using namespace Langulus::Flow;
+using namespace Langulus::Anyness;
+using namespace Langulus::Entity;
+using namespace Langulus::Math;
 
 /// Toggle vulkan debug layers and default precision from here                
 #define LGLS_VKVERBOSE() LANGULUS_DISABLED()
 
-// Make sure that vulkan headers are included properly,                 
-// by defining the same symbols for each include of this file           
-#if LANGULUS_OS_IS(WINDOWS)
-   #define VK_USE_PLATFORM_WIN32_KHR
-#elif LANGULUS_OS_IS(LINUX)
-   #define VK_USE_PLATFORM_XLIB_KHR
-#else 
-   #error "Specify your OS extensions for Vulkan"
-#endif
-
-/// We MUST include owr OS header first, before vulkan.h fucks it up for us   
-#include <PCFW.OS.hpp>
-#include <vulkan/vulkan.h>
-#include <set>
-#include <vector>
+#include <vulkan/vulkan_core.h>
 
 // Undefine shitty windows macros >:(                                   
 #undef IsMinimized
 
-LANGULUS_DECLARE_TRAIT(Shader, "Shader trait");
-
-using namespace PCFW;
+LANGULUS_DEFINE_TRAIT(Shader, "Shader trait");
 
 class CVulkanRenderer;
 class CVulkanLayer;
@@ -70,7 +60,7 @@ struct LayerSubscriber {
 #define VK_INDEFINITELY std::numeric_limits<uint32_t>::max()
 
 /// This call must be implemented for each OS individually                    
-bool pcCreateNativeVulkanSurfaceKHR(const VkInstance&, const AWindow*, VkSurfaceKHR&);
+bool CreateNativeVulkanSurfaceKHR(const VkInstance&, const void*, VkSurfaceKHR&);
 
 
 /// Convert a PC format to a VK index format                                  

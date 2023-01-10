@@ -6,7 +6,8 @@
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
 #pragma once
-#include "PCVRAMBuffer.hpp"
+#include "VulkanBuffer.hpp"
+
 
 ///                                                                           
 ///   GLSL VULKAN SHADER                                                      

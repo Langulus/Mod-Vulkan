@@ -7,10 +7,9 @@
 ///                                                                           
 #pragma once
 #include "VRAM.hpp"
-#include "CVulkanCamera.hpp"
-#include "CVulkanRenderable.hpp"
-#include "CVulkanLight.hpp"
-#include <unordered_set>
+#include "VulkanCamera.hpp"
+#include "VulkanRenderable.hpp"
+#include "VulkanLight.hpp"
 
 class MVulkan;
 

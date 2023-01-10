@@ -6,7 +6,8 @@
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
 #pragma once 
-#include "Content/CVulkanShader.hpp"
+#include "Content/VulkanShader.hpp"
+
 
 /// A single uniform - maps a trait to a position inside shader binary        
 struct Uniform {

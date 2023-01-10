@@ -6,7 +6,8 @@
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
 #pragma once
-#include "CVulkanRenderer.hpp"
+#include "VulkanRenderer.hpp"
+
 
 ///                                                                           
 ///   THE VULKAN RENDERING MODULE                                             

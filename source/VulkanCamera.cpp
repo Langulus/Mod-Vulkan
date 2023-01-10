@@ -5,7 +5,7 @@
 /// Distributed under GNU General Public License v3+                          
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
-#include "CVulkanRenderer.hpp"
+#include "VulkanRenderer.hpp"
 
 /// Create camera                                                             
 ///   @param producer - the camera producer                                   

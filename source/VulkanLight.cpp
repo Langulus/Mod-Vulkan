@@ -5,16 +5,18 @@
 /// Distributed under GNU General Public License v3+                          
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
-#pragma once
-#include "IncludeVulkan.hpp"
+#include "VulkanRenderer.hpp"
 
 
-///                                                                           
-///   VULKAN LIGHT COMPONENT                                                  
-///                                                                           
-class CVulkanLight : public ALight, public TProducedFrom<CVulkanLayer> {
-   REFLECT(CVulkanLight);
-   CVulkanLight(CVulkanLayer*);
+/// Create light                                                              
+///   @param producer - the producer of the light                             
+CVulkanLight::CVulkanLight(CVulkanLayer* producer)
+   : ALight{ MetaData::Of<CVulkanLight>() }
+   , TProducedFrom{ producer } {
+   ClassValidate();
+}
 
-   void Draw();
-};
+/// Draw the light when using deferred rendering                              
+void CVulkanLight::Draw() {
+   TODO();
+}

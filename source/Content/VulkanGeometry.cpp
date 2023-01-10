@@ -5,8 +5,8 @@
 /// Distributed under GNU General Public License v3+                          
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
-#include "CVulkanGeometry.hpp"
-#include "../CVulkanRenderer.hpp"
+#include "VulkanGeometry.hpp"
+#include "../VulkanRenderer.hpp"
 
 #define VERBOSE_VKGEOMETRY(a) //pcLogSelfVerbose << a
 

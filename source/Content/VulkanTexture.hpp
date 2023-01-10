@@ -6,44 +6,40 @@
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
 #pragma once
-#include "PCVRAMBuffer.hpp"
+#include "VulkanBuffer.hpp"
 
 
 ///                                                                           
-///   VULKAN VRAM GEOMETRY BUFFER                                             
+///   VULKAN VRAM TEXTURE                                                     
 ///                                                                           
-/// Can convert RAM content to VRAM vertex/index buffers                      
+/// Handles hardware pixel/voxel buffers                                      
 ///                                                                           
-class CVulkanGeometry 
+class CVulkanTexture 
    : public IContentVRAM
    , public TProducedFrom<CVulkanRenderer> {
-   // Vertex info                                                       
-   VertexView mView;
-   DMeta mTopology = nullptr;
-
-   // The buffers                                                       
-   std::vector<VRAMBuffer> mVBuffers;
-   std::vector<VRAMBuffer> mIBuffers;
-
-   // The binding offsets                                               
-   std::vector<VkDeviceSize> mVOffsets;
-   std::vector<VkDeviceSize> mIOffsets;
+   // Original content texture view                                     
+   PixelView mView;
+   // Image                                                             
+   VRAMImage mImage;
+   // Image view                                                        
+   Own<VkImageView> mImageView;
+   // Image sampler                                                     
+   Own<VkSampler> mSampler;
 
 public:
-   REFLECT(CVulkanGeometry);
-   CVulkanGeometry(CVulkanRenderer*);
-   CVulkanGeometry(CVulkanGeometry&&) noexcept = default;
-   CVulkanGeometry& operator = (CVulkanGeometry&&) noexcept = default;
-   ~CVulkanGeometry();
+   REFLECT(CVulkanTexture);
+   CVulkanTexture(CVulkanRenderer*);
+   CVulkanTexture(CVulkanTexture&&) noexcept = default;
+   CVulkanTexture& operator = (CVulkanTexture&&) noexcept = default;
+   ~CVulkanTexture();
 
    void Initialize();
    void Uninitialize();
-   void Bind() const;
-   void Render() const;
 
    PC_VERB(Create);
-   PC_GET(View);
-   PC_GET(Topology);
+
+   PC_GET(ImageView);
+   PC_GET(Sampler);
 
    using IContentVRAM::operator ==;
    using IContentVRAM::operator !=;

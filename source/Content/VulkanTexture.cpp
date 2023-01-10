@@ -5,8 +5,8 @@
 /// Distributed under GNU General Public License v3+                          
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
-#include "CVulkanTexture.hpp"
-#include "../CVulkanRenderer.hpp"
+#include "VulkanTexture.hpp"
+#include "../VulkanRenderer.hpp"
 
 #define PC_VKTEXTURE_VERBOSE(a) //pcLogSelfVerbose << a
 
