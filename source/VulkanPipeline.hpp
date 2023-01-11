@@ -8,12 +8,21 @@
 #pragma once
 #include "UBO.hpp"
 
+
+struct PipeSubscriber {
+   uint32_t offsets[RRate::DynamicUniformCount] {};
+   uint32_t samplerSet {};
+   uint32_t geometrySet {};
+};
+
+
 ///                                                                           
-///   VULKAN PIPELINE                                                         
+///   Vulkan pipeline                                                         
 ///                                                                           
-class CVulkanPipeline 
-   : public AUnitGraphics
-   , public TProducedFrom<CVulkanRenderer> {
+class VulkanPipeline : public Unit {
+   LANGULUS(PRODUCER) VulkanRenderer;
+
+private:
    using Bindings = std::vector<VkDescriptorSetLayoutBinding>;
 
    void CreateDescriptorLayoutAndSet(const Bindings&, UBOLayout*, VkDescriptorSet*);
@@ -22,7 +31,7 @@ class CVulkanPipeline
    void CreateNewGeometrySet();
 
    // Shaders                                                           
-   TAny<CVulkanShader*> mStages;
+   TAny<VulkanShader*> mStages;
    // The graphics pipeline                                             
    Own<VkPipeline> mPipeline;
    // The rendering pipeline layout                                     
@@ -61,22 +70,21 @@ class CVulkanPipeline
 
    // Subscribers                                                       
    std::vector<PipeSubscriber> mSubscribers;
-   std::vector<const CVulkanGeometry*> mGeometries;
+   std::vector<const VulkanGeometry*> mGeometries;
 
    Hash mHash;
    bool mGenerated = false;
    Ref<const AMaterial> mOriginalContent;
 
 public:
-   REFLECT(CVulkanPipeline);
-   CVulkanPipeline(CVulkanRenderer*);
-   CVulkanPipeline(CVulkanPipeline&&) noexcept = default;
-   CVulkanPipeline& operator = (CVulkanPipeline&&) noexcept = default;
-   ~CVulkanPipeline();
+   VulkanPipeline(CVulkanRenderer*);
+   VulkanPipeline(VulkanPipeline&&) noexcept = default;
+   ~VulkanPipeline();
+
+   VulkanPipeline& operator = (VulkanPipeline&&) noexcept = default;
 
    NOD() const Hash& GetHash() const noexcept;
    bool operator == (const ME&) const noexcept;
-   bool operator != (const ME&) const noexcept;
 
    PC_VERB(Create);
 

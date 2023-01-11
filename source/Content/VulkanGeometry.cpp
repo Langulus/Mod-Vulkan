@@ -12,20 +12,20 @@
 
 /// VRAM geometry construction                                                
 ///   @param producer - the owner of the content                              
-CVulkanGeometry::CVulkanGeometry(CVulkanRenderer* producer)
+VulkanGeometry::VulkanGeometry(CVulkanRenderer* producer)
    : IContentVRAM {MetaData::Of<CVulkanGeometry>()}
    , TProducedFrom {producer} {
    ClassValidate();
 }
 
 /// VRAM destruction                                                          
-CVulkanGeometry::~CVulkanGeometry() {
+VulkanGeometry::~VulkanGeometry() {
    Uninitialize();
 }
 
 /// Create the VRAM texture from a verb                                       
 ///   @param verb - creation verb                                             
-void CVulkanGeometry::Create(Verb& verb) {
+void VulkanGeometry::Create(Verb& verb) {
    verb.GetArgument().ForEachDeep([&](const AGeometry* content) {
       mOriginalContent = content;
       verb.Done();
@@ -52,7 +52,7 @@ inline bool IsVertexData(const Trait& container, bool& index_data) {
 }
 
 /// Initialize the geometry from geometry generator                           
-void CVulkanGeometry::Initialize() {
+void VulkanGeometry::Initialize() {
    if (mContentMirrored)
       return;
 
@@ -121,7 +121,7 @@ void CVulkanGeometry::Initialize() {
 }
 
 /// Free up VRAM                                                              
-void CVulkanGeometry::Uninitialize() {
+void VulkanGeometry::Uninitialize() {
    // Destroy allocated buffers                                         
    auto& vram = mProducer->GetVRAM();
    for (auto& item : mVBuffers)
@@ -140,7 +140,7 @@ void CVulkanGeometry::Uninitialize() {
 }
 
 /// Bind the vertex & index buffers                                           
-void CVulkanGeometry::Bind() const {
+void VulkanGeometry::Bind() const {
    // Bind each vertex buffers                                          
    auto& cmdbuffer = mProducer->GetRenderCB();
    for (pcptr i = 0; i < mVBuffers.size(); ++i)
@@ -153,7 +153,7 @@ void CVulkanGeometry::Bind() const {
 }
 
 /// Render the vertex & index buffers                                         
-void CVulkanGeometry::Render() const {
+void VulkanGeometry::Render() const {
    auto& cmdbuffer = mProducer->GetRenderCB();
    if (mIBuffers.empty())
       vkCmdDraw(cmdbuffer, uint32_t(mView.mPCount), 1, uint32_t(mView.mPStart), 0);

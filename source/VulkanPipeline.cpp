@@ -9,43 +9,37 @@
 
 #define PC_VERBOSE_PIPE(a) pcLogSelfVerbose << a
 
+
 /// Pipeline construction                                                     
 ///   @param producer - the pipeline producer                                 
-CVulkanPipeline::CVulkanPipeline(CVulkanRenderer* producer)
-   : AUnitGraphics {MetaData::Of<CVulkanPipeline>()}
+VulkanPipeline::VulkanPipeline(VulkanRenderer* producer)
+   : AUnitGraphics {MetaData::Of<VulkanPipeline>()}
    , TProducedFrom {producer} {
    mSubscribers.emplace_back();
    mGeometries.emplace_back();
 }
 
 /// Pipeline destruction                                                      
-CVulkanPipeline::~CVulkanPipeline() {
+VulkanPipeline::~VulkanPipeline() {
    Uninitialize();
 }
 
 /// Get hash                                                                  
 ///   @return the hash of the pipeline                                        
-const Hash& CVulkanPipeline::GetHash() const noexcept {
+const Hash& VulkanPipeline::GetHash() const noexcept {
    return mHash;
 }
 
 /// Compare pipelines for equality                                            
 ///   @param rhs - the pipeline to compare with                               
 ///   @return true if pipelines are functioanlly the same                     
-bool CVulkanPipeline::operator == (const ME& rhs) const noexcept {
+bool VulkanPipeline::operator == (const ME& rhs) const noexcept {
    return GetHash() == rhs.GetHash() && mStages == rhs.mStages;
-}
-
-/// Compare pipelines for inequality                                          
-///   @param rhs - the pipeline to compare with                               
-///   @return true if pipelines are functioanlly the same                     
-bool CVulkanPipeline::operator != (const ME& rhs) const noexcept {
-   return !(*this == rhs);
 }
 
 /// Create/destroy stuff inside this pipeline context                         
 ///   @param verb - creation/destruction verb                                 
-void CVulkanPipeline::Create(Verb& verb) {
+void VulkanPipeline::Create(Verb& verb) {
    if (verb.GetArgument().IsEmpty())
       return;
 
@@ -93,7 +87,7 @@ void CVulkanPipeline::Create(Verb& verb) {
 
 /// Initialize the pipeline from the accumulated construct                    
 ///   @return true on success                                                 
-void CVulkanPipeline::Initialize() {
+void VulkanPipeline::Initialize() {
    if (mGenerated)
       return;
 
@@ -278,7 +272,7 @@ void CVulkanPipeline::Initialize() {
 /// Initialize the pipeline from geometry content                             
 ///   @param stuff - the content to use for material generation               
 ///   @return true on success                                                 
-bool CVulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
+bool VulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
    // Let's build a material construct                                  
    PC_VERBOSE_PIPE("Generating material from: " << stuff);
    Any material;
@@ -440,7 +434,7 @@ bool CVulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
 /// Initialize the pipeline from any GLSL code                                
 ///   @param code - the shader code                                           
 ///   @return true on success                                                 
-bool CVulkanPipeline::PrepareFromCode(const GLSL& code) {
+bool VulkanPipeline::PrepareFromCode(const GLSL& code) {
    // Let's build a material generator from available code              
    PC_VERBOSE_PIPE("Generating material from code snippet: ");
    PC_VERBOSE_PIPE(code.Pretty());
@@ -452,7 +446,7 @@ bool CVulkanPipeline::PrepareFromCode(const GLSL& code) {
 /// Initialize the pipeline from material content                             
 ///   @param contentRAM - the content to use                                  
 ///   @return true on success                                                 
-bool CVulkanPipeline::PrepareFromMaterial(const AMaterial* contentRAM) {
+bool VulkanPipeline::PrepareFromMaterial(const AMaterial* contentRAM) {
    // Generate the shader stages via the material content               
    // No way around this, unfortunately (it's cached, though)           
    contentRAM->Generate();
@@ -481,7 +475,7 @@ bool CVulkanPipeline::PrepareFromMaterial(const AMaterial* contentRAM) {
 }
 
 /// Uninitialize the pipeline                                                 
-void CVulkanPipeline::Uninitialize() {
+void VulkanPipeline::Uninitialize() {
    ClassInvalidate();
 
    // Dereference valid shaders                                         
@@ -536,7 +530,7 @@ void CVulkanPipeline::Uninitialize() {
 ///   @param bindings - the bindings to combine in a single layout            
 ///   @param layout - [out] the resulting layout                              
 ///   @param set - [out] the resulting set                                    
-void CVulkanPipeline::CreateDescriptorLayoutAndSet(
+void VulkanPipeline::CreateDescriptorLayoutAndSet(
    const Bindings& bindings, UBOLayout* layout, VkDescriptorSet* set
 ) {
    auto device = mProducer->GetDevice().Get();
@@ -562,7 +556,7 @@ void CVulkanPipeline::CreateDescriptorLayoutAndSet(
 }
 
 /// Create a new sampler set                                                  
-void CVulkanPipeline::CreateNewSamplerSet() {
+void VulkanPipeline::CreateNewSamplerSet() {
    if (!mSamplersUBOLayout)
       return;
 
@@ -593,7 +587,7 @@ void CVulkanPipeline::CreateNewSamplerSet() {
 }
 
 /// Create a new geometry set                                                 
-void CVulkanPipeline::CreateNewGeometrySet() {
+void VulkanPipeline::CreateNewGeometrySet() {
    // If last two geometries match, there is not need to create new one 
    // Just reuse the last one                                           
    if (mGeometries.size() > 1 && mGeometries[mGeometries.size() - 1] == mGeometries[mGeometries.size() - 2])
@@ -607,7 +601,7 @@ void CVulkanPipeline::CreateNewGeometrySet() {
 }
 
 /// Create uniform buffers                                                    
-void CVulkanPipeline::CreateUniformBuffers() {
+void VulkanPipeline::CreateUniformBuffers() {
    auto device = mProducer->GetDevice();
    const auto uniforms = mOriginalContent->GetData<Traits::Trait>();
    if (!uniforms || uniforms->IsEmpty()) {
@@ -773,7 +767,7 @@ void CVulkanPipeline::CreateUniformBuffers() {
 }
 
 /// Upload uniform buffers to VRAM                                            
-void CVulkanPipeline::UpdateUniformBuffers() const {
+void VulkanPipeline::UpdateUniformBuffers() const {
    BufferUpdates writes;
 
    // Gather required static updates                                    
@@ -805,7 +799,7 @@ void CVulkanPipeline::UpdateUniformBuffers() const {
 
 /// Draw all subscribers of a given level (used in batched rendering)         
 ///   @param offset - the subscriber to start from                            
-pcptr CVulkanPipeline::RenderLevel(const pcptr& offset) const {
+pcptr VulkanPipeline::RenderLevel(const pcptr& offset) const {
    // Bind the pipeline                                                 
    vkCmdBindPipeline(mProducer->GetRenderCB(), 
       VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeline);
@@ -876,7 +870,7 @@ pcptr CVulkanPipeline::RenderLevel(const pcptr& offset) const {
 /// Draw a single subscriber (used in hierarchical drawing)                   
 ///   @param sub - the subscriber to render                                   
 ///   @attention sub should contain byte offsets for this pipeline's UBOs     
-void CVulkanPipeline::RenderSubscriber(const PipeSubscriber& sub) const {
+void VulkanPipeline::RenderSubscriber(const PipeSubscriber& sub) const {
    // Bind the pipeline                                                 
    vkCmdBindPipeline(mProducer->GetRenderCB(), 
       VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeline);
@@ -927,7 +921,7 @@ void CVulkanPipeline::RenderSubscriber(const PipeSubscriber& sub) const {
 }
 
 /// Reset the used dynamic uniform buffers and the subscribers                
-void CVulkanPipeline::ResetUniforms() {
+void VulkanPipeline::ResetUniforms() {
    // Always keep one sampler set in use, free the rest back to pool    
    if (!mSamplerUBO.IsEmpty())
       mSamplerUBO.Allocate(1);

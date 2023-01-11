@@ -13,20 +13,20 @@
 
 /// VRAM texture construction                                                 
 ///   @param producer - the texture producer                                  
-CVulkanTexture::CVulkanTexture(CVulkanRenderer* producer)
-   : IContentVRAM {MetaData::Of<CVulkanTexture>()}
+VulkanTexture::VulkanTexture(CVulkanRenderer* producer)
+   : IContentVRAM {MetaData::Of<VulkanTexture>()}
    , TProducedFrom {producer} {
    ClassValidate();
 }
 
 /// VRAM destruction                                                          
-CVulkanTexture::~CVulkanTexture() {
+VulkanTexture::~VulkanTexture() {
    Uninitialize();
 }
 
 /// Create the VRAM texture from a verb                                       
 ///   @param verb - creation verb                                             
-void CVulkanTexture::Create(Verb& verb) {
+void VulkanTexture::Create(Verb& verb) {
    verb.GetArgument().ForEachDeep([&](const ATexture* content) {
       mOriginalContent = content;
       verb.Done();
@@ -34,7 +34,7 @@ void CVulkanTexture::Create(Verb& verb) {
 }
 
 /// Initialize from the provided content                                      
-void CVulkanTexture::Initialize() {
+void VulkanTexture::Initialize() {
    if (mContentMirrored)
       return;
 
@@ -228,7 +228,7 @@ void CVulkanTexture::Initialize() {
 }
 
 /// Remove texture from VRAM                                                  
-void CVulkanTexture::Uninitialize() {
+void VulkanTexture::Uninitialize() {
    if (mSampler)
       vkDestroySampler(mProducer->GetDevice(), mSampler, nullptr);
 

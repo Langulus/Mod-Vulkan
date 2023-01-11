@@ -8,14 +8,41 @@
 #pragma once
 #include <Langulus.hpp>
 
+LANGULUS_EXCEPTION(Graphics);
+
+LANGULUS_DEFINE_TRAIT(Shader, "Shader unit");
+LANGULUS_DEFINE_TRAIT(MapMode, "Mapping mode");
+LANGULUS_DEFINE_TRAIT(Resolution, "Resolution, usually a vector");
+LANGULUS_DEFINE_TRAIT(Tesselation, "Tesselation, usually an integer");
+LANGULUS_DEFINE_TRAIT(Topology, "Topology type");
+LANGULUS_DEFINE_TRAIT(Interpolator, "Interpolation mode");
+LANGULUS_DEFINE_TRAIT(Color, "Color, usually a Vec4");
+LANGULUS_DEFINE_TRAIT(Material, "Material unit");
+LANGULUS_DEFINE_TRAIT(Texture, "Texture unit");
+LANGULUS_DEFINE_TRAIT(Geometry, "Geometry unit");
+LANGULUS_DEFINE_TRAIT(Perspective, "Perspective state (boolean)");
+LANGULUS_DEFINE_TRAIT(FOV, "Horizontal field of view angle, usually a real number");
+LANGULUS_DEFINE_TRAIT(AspectRatio, "Aspect ratio trait (width / height), usually a real number");
+LANGULUS_DEFINE_TRAIT(Viewport, "Viewport and depth clipping, usually a Range4");
+LANGULUS_DEFINE_TRAIT(Projection, "Camera projection matrix");
+LANGULUS_DEFINE_TRAIT(View, "Camera view matrix");
+LANGULUS_DEFINE_TRAIT(Model, "Instance model matrix");
+
 using namespace Langulus;
 using namespace Langulus::Flow;
 using namespace Langulus::Anyness;
 using namespace Langulus::Entity;
 using namespace Langulus::Math;
 
-/// Toggle vulkan debug layers and default precision from here                
-#define LGLS_VKVERBOSE() 0
+class Vulkan;
+class VulkanRenderer;
+class VulkanLayer;
+class VulkanCamera;
+class VulkanRenderable;
+class VulkanPipeline;
+class VulkanGeometry;
+class VulkanTexture;
+class VulkanShader;
 
 
 ///                                                                           
@@ -123,25 +150,25 @@ protected:
       {"Model",      Enum::Model,
          "Maps to non-transformed vertex positions"},
       {"Projector",  Enum::Projector,
-         "Maps to a 2D camera-like projection, calculated at realtime in shaders"},
+         "Maps to camera-like projection"},
       {"Screen",     Enum::Screen,
-         "Maps to 2D screen coordinates, calculated at realtime in shaders"},
+         "Maps to screen coordinates"},
       {"Plane",      Enum::Plane,
-         "Maps to a 2D planar projection"},
+         "Maps to a planar projection"},
       {"Cylinder",   Enum::Cylinder,
-         "Maps to a 2D cylindrical projection"},
+         "Maps to a cylindrical projection"},
       {"Sphere",     Enum::Sphere,
-         "Maps to a 2D spherical projection with sharp warping at the poles"},
+         "Maps to a spherical projection with sharp warping at the poles"},
       {"Cube",       Enum::Cube,
-         "Maps to a 2D cube projection (useful for skyboxes)"},
+         "Maps to a cube projection (useful for skyboxes)"},
       {"Face",       Enum::Face,
-         "Maps each face to the same 2D texture coordinates"},
+         "Maps each face to the same coordinates"},
       {"Inject",     Enum::Inject,
-         "Maps each 2D face individually at generation time, preserving the relative scale, but causing seams all over the place"},
+         "Packs all faces, preserving the relative scale, but ruining locality"},
       {"Contour",    Enum::Contour,
-         "Maps 2D along an edge, useful for texturing roads, etc."},
+         "Maps along an edge (useful for texturing roads)"},
       {"Unfold",     Enum::Unfold,
-         "Unwraps vertex positions along seams and stretches them like a 2D pelt"},
+         "Unwraps vertex positions along seams and stretches them like a pelt"},
       {"Custom",     Enum::Custom,
          "No mapping is done - you truly trust the raw data, even if it is invalid or non-existent"}
    };
@@ -230,7 +257,6 @@ struct RefreshRate {
 
    enum Enum : Type {
       Auto = 0,            // Use the default refresh rate of the trait 
-
       None,                // A constant, essentially                   
 
       Tick,                // Updated once per time step                
@@ -251,23 +277,37 @@ struct RefreshRate {
    };
 
 protected:
-   static constexpr Token Names[Enum::Counter] = {
-      "PerAuto",
+   Type mMode {Enum::Auto};
 
-      "PerNone",
+   LANGULUS_NAMED_VALUES(Enum) {
+      {"Auto",          Enum::Auto,
+         "Automatically determined refresh rate, based on traits and context"},
+      {"None",          Enum::None,
+         "No refresh rate (a constant, never refreshes)"},
 
-      "PerTick",
-      "PerPass",
-      "PerCamera",
-      "PerLevel",
-      "PerRenderable",
-      "PerInstance",
+      {"Tick",          Enum::Tick,
+         "Refresh once per tick (when flow moves forward in time)"},
+      {"Pass",          Enum::Pass,
+         "Refresh once per render pass"},
+      {"Camera",        Enum::Camera,
+         "Refresh once per camera"},
+      {"Level",         Enum::Level,
+         "Refresh once per level"},
+      {"Renderable",    Enum::Renderable,
+         "Refresh once per renderable"},
+      {"Instance",      Enum::Instance,
+         "Refresh once per instance"},
 
-      "PerVertex",
-      "PerPrimitive",
-      "PerTessCtrl",
-      "PerTessEval",
-      "PerPixel"
+      {"Vertex",        Enum::Vertex,
+         "Refresh once per vertex (inside vertex shader)"},
+      {"Primitive",     Enum::Primitive,
+         "Refresh once per geometric primitive (inside geometry shader)"},
+      {"TessCtrl",      Enum::TessCtrl,
+         "Refresh once per tesselation control unit (inside tesselation control shader)"},
+      {"TessEval",      Enum::TessEval,
+         "Refresh once per tesselation evaluation unit (inside tesselation evaluation shader)"},
+      {"Pixel",         Enum::Pixel,
+         "Refresh once per pixel (inside fragment shader)"},
    };
 
    // Rates that are considered shader stages, mapped to ShaderStage    
@@ -313,21 +353,12 @@ public:
 
 using RRate = RefreshRate;
 
+
+///                                                                           
+///   Vulkan begins its existence here                                        
+///                                                                           
 #include <vulkan/vulkan_core.h>
 
-LANGULUS_DEFINE_TRAIT(Shader, "Shader trait");
-LANGULUS_EXCEPTION(Graphics);
-
-class CVulkanRenderer;
-class CVulkanLayer;
-class CVulkanCamera;
-class CVulkanRenderable;
-class CVulkanPipeline;
-class CVulkanGeometry;
-class CVulkanTexture;
-class CVulkanShader;
-
-/// Shorter Vulkan types                                                      
 using Shader = VkPipelineShaderStageCreateInfo;
 using VertexInput = VkPipelineVertexInputStateCreateInfo;
 using VertexAssembly = VkPipelineInputAssemblyStateCreateInfo;
@@ -335,27 +366,16 @@ using VertexBinding = VkVertexInputBindingDescription;
 using VertexAttribute = VkVertexInputAttributeDescription;
 using Topology = VkPrimitiveTopology;
 using UBOLayout = VkDescriptorSetLayout;
-using TextureList = TAny<const CVulkanTexture*>;
-using Frames = std::vector<VkImageView>;
-using FrameBuffers = std::vector<VkFramebuffer>;
-using CmdBuffers = std::vector<VkCommandBuffer>;
-
-struct PipeSubscriber {
-   uint32_t offsets[RRate::DynamicUniformCount] {};
-   uint32_t samplerSet {};
-   uint32_t geometrySet {};
-};
-
-struct LayerSubscriber {
-   const CVulkanPipeline* pipeline {};
-   PipeSubscriber sub {};
-};
+using TextureList = TUnorderedMap<TMeta, const CVulkanTexture*>;
+using Frames = TAny<VkImageView>;
+using FrameBuffers = TAny<VkFramebuffer>;
+using CmdBuffers = TAny<VkCommandBuffer>;
 
 constexpr uint32_t VK_INDEFINITELY = ::std::numeric_limits<uint32_t>::max();
 
 /// This call must be implemented for each OS individually                    
+/// It is the only platform dependent call                                    
 bool CreateNativeVulkanSurfaceKHR(const VkInstance&, const void*, VkSurfaceKHR&);
-
 
 /// Convert a meta data to a VK index format                                  
 ///   @param meta - the type definition to convert                            
@@ -385,7 +405,7 @@ inline VkFormat AsVkFormat(DMeta type, bool reverse = false) {
          return VK_FORMAT_R8_SNORM;
       break;
    case 2:
-      if (type->CastsTo<depth16, true>(1))
+      if (type->CastsTo<Depth16, true>(1))
          return VK_FORMAT_D16_UNORM;
 
       if (type->CastsTo<uint8_t, true>(2))
@@ -405,7 +425,7 @@ inline VkFormat AsVkFormat(DMeta type, bool reverse = false) {
          return reverse ? VK_FORMAT_B8G8R8_SNORM : VK_FORMAT_R8G8B8_SNORM;
       break;
    case 4:
-      if (type->CastsTo<depth32, true>(1))
+      if (type->CastsTo<Depth32, true>(1))
          return VK_FORMAT_D32_SFLOAT;
 
       if (type->CastsTo<Float, true>(1))
@@ -510,11 +530,11 @@ constexpr DMeta VkFormatToDMeta(const VkFormat& type, bool& reverse) {
    reverse = false;
    switch (type) {
       case VK_FORMAT_D16_UNORM:
-         return MetaData::Of<depth16>();
+         return MetaData::Of<Depth16>();
       case VK_FORMAT_D32_SFLOAT:
-         return MetaData::Of<depth32>();
+         return MetaData::Of<Depth32>();
       case VK_FORMAT_R8_UNORM:
-         return MetaData::Of<red8>();
+         return MetaData::Of<Red8>();
       case VK_FORMAT_R16_UNORM: 
          return MetaData::Of<uint16_t>();
       case VK_FORMAT_R32_UINT: 
@@ -530,7 +550,7 @@ constexpr DMeta VkFormatToDMeta(const VkFormat& type, bool& reverse) {
       case VK_FORMAT_R64_SINT: 
          return MetaData::Of<int64_t>();
       case VK_FORMAT_R32_SFLOAT: 
-         return MetaData::Of<red32>();
+         return MetaData::Of<Red32>();
       case VK_FORMAT_R64_SFLOAT: 
          return MetaData::Of<Double>();
       case VK_FORMAT_R32G32_SFLOAT: 
@@ -539,16 +559,16 @@ constexpr DMeta VkFormatToDMeta(const VkFormat& type, bool& reverse) {
          return MetaData::Of<Vec2d>();
       case VK_FORMAT_R8G8B8_UNORM: case VK_FORMAT_B8G8R8_UNORM: 
          reverse = true;
-         return MetaData::Of<rgb>();
+         return MetaData::Of<RGB>();
       case VK_FORMAT_R32G32B32_SFLOAT:   
-         return MetaData::Of<rgb96>();
+         return MetaData::Of<RGB96>();
       case VK_FORMAT_R64G64B64_SFLOAT:   
          return MetaData::Of<Vec3d>();
       case VK_FORMAT_R8G8B8A8_UNORM: case VK_FORMAT_B8G8R8A8_UNORM:
          reverse = true;
-         return MetaData::Of<rgba>();
+         return MetaData::Of<RGBA>();
       case VK_FORMAT_R32G32B32A32_SFLOAT:   
-         return MetaData::Of<rgba128>();
+         return MetaData::Of<RGBA128>();
       case VK_FORMAT_R64G64B64A64_SFLOAT:   
          return MetaData::Of<Vec4d>();
       case VK_FORMAT_R8G8_UNORM:
@@ -686,8 +706,8 @@ struct PixelView {
    NOD() Count CountComponents() const noexcept;
 };
 
-using LodIndex = int;
-using AbsoluteLodIndex = pcptr;
+using LodIndex = int32_t;
+using AbsoluteLodIndex = uint32_t;
 
 
 ///                                                                           
@@ -695,9 +715,8 @@ using AbsoluteLodIndex = pcptr;
 ///                                                                           
 /// A helper structure that is used to fetch the correct LOD level LOD level  
 /// is simply a geometry, that is designed to represent a zoomed-in or a      
-/// zoomed-out region of another geometry                                     
-/// These regions can be generated on the fly, may reuse existing geometry    
-/// or may not exist at all                                                   
+/// zoomed-out region of another geometry. These regions can be generated on  
+/// the fly, may reuse existing geometry or may not exist at all              
 ///                                                                           
 struct LodState {
    Level mLevel;
@@ -738,13 +757,13 @@ struct LodState {
       mLODIndex = 0;
       if (mDistanceToSurface > 0 && mRadius > 0) {
          // View is outside the sphere                                  
-         const real near = std::log10(mRadius / mDistanceToSurface);
-         const real far = std::log10(mDistanceToSurface / mRadius);
-         mLODIndex = pcClamp(near - far, real(MinIndex), real(MaxIndex));
+         const Real near = ::std::log10(mRadius / mDistanceToSurface);
+         const Real far = ::std::log10(mDistanceToSurface / mRadius);
+         mLODIndex = Math::Clamp(near - far, Real(MinIndex), Real(MaxIndex));
       }
       else if (mDistanceToSurface < 0) {
          // Being inside the sphere always gives the most detail        
-         mLODIndex = real(MaxIndex);
+         mLODIndex = Real(MaxIndex);
       }
    }
 
@@ -775,124 +794,65 @@ struct LodState {
    }
 };
 
-
-/// Declare constants for use in GASM and RTTI                                
-LANGULUS_DECLARE_CONSTANT(PerAuto, RRate(RRate::PerAuto),
-   "Automatically determined refresh rate");
-LANGULUS_DECLARE_CONSTANT(PerNone, RRate(RRate::PerNone),
-   "Compile-time refresh rate (essentially a constant)");
-LANGULUS_DECLARE_CONSTANT(PerTick, RRate(RRate::PerTick),
-   "Refresh once per tick (when time moves)");
-LANGULUS_DECLARE_CONSTANT(PerPass, RRate(RRate::PerPass),
-   "Refresh once per draw pass");
-LANGULUS_DECLARE_CONSTANT(PerCamera, RRate(RRate::PerCamera),
-   "Refresh once per camera");
-LANGULUS_DECLARE_CONSTANT(PerLevel, RRate(RRate::PerLevel),
-   "Refresh once per octave scale");
-LANGULUS_DECLARE_CONSTANT(PerRenderable, RRate(RRate::PerRenderable),
-   "Refresh once per renderable object");
-LANGULUS_DECLARE_CONSTANT(PerInstance, RRate(RRate::PerInstance),
-   "Refresh once per instance");
-LANGULUS_DECLARE_CONSTANT(PerVertex, RRate(RRate::PerVertex),
-   "Refresh once per vertex (inside vertex shader)");
-LANGULUS_DECLARE_CONSTANT(PerPrimitive, RRate(RRate::PerPrimitive),
-   "Refresh once per geometric primitive (inside geometry shader)");
-LANGULUS_DECLARE_CONSTANT(PerPixel, RRate(RRate::PerPixel),
-   "Refresh once per pixel (inside fragment shader)");
-
-
-/// Declare traits for use in GASM and RTTI                                    
-LANGULUS_DECLARE_TRAIT_FILTERED(TextureMapper, "Texture mapper trait", DataID::Of<Mapper>);
-LANGULUS_DECLARE_TRAIT(Resolution, "Resolution trait");
-LANGULUS_DECLARE_TRAIT(Tesselation, "Tesselation trait");
-LANGULUS_DECLARE_TRAIT(Topology, "Topology trait");
-LANGULUS_DECLARE_TRAIT(Interpolator, "Interpolator trait");
-
-
-LANGULUS_DECLARE_TRAIT(Color, "A general color trait");
-LANGULUS_DECLARE_TRAIT(Material, "Material trait");
-LANGULUS_DECLARE_TRAIT(Texture, "Texture trait");
-LANGULUS_DECLARE_TRAIT(Model, "Geometry model trait");
-
-LANGULUS_DECLARE_TRAIT_FILTERED(Perspective,
-   "Perspective state", DataID::Of<bool>);
-LANGULUS_DECLARE_TRAIT_FILTERED(FOV,
-   "Horizontal field of view trait (in radians)", DataID::Of<real>);
-LANGULUS_DECLARE_TRAIT_FILTERED(AspectRatio,
-   "Aspect ratio trait (width / height)", DataID::Of<real>);
-LANGULUS_DECLARE_TRAIT_FILTERED(Viewport,
-   "Viewport and depth clipping range trait", DataID::Of<range4>);
-
-LANGULUS_DECLARE_TRAIT_FILTERED(ProjectTransform,
-   "Camera projection transformation", AMatrix::ID);
-LANGULUS_DECLARE_TRAIT_FILTERED(ViewTransform,
-   "Camera view transformation", AMatrix::ID);
-LANGULUS_DECLARE_TRAIT_FILTERED(ViewProjectTransform,
-   "Camera View * Projection transformation", AMatrix::ID);
-LANGULUS_DECLARE_TRAIT_FILTERED(ModelViewProjectTransform,
-   "Model * Camera View * Camera Projection transformation", AMatrix::ID);
-
-LANGULUS_DECLARE_TRAIT_FILTERED(ProjectTransformInverted,
-   "Camera projection transformation (inverted)", AMatrix::ID);
-LANGULUS_DECLARE_TRAIT_FILTERED(ViewTransformInverted,
-   "Camera view transformation (inverted)", AMatrix::ID);
-LANGULUS_DECLARE_TRAIT_FILTERED(ViewProjectTransformInverted,
-   "Camera View * Projection transformation (inverted)", AMatrix::ID);
-LANGULUS_DECLARE_TRAIT_FILTERED(ModelViewProjectTransformInverted,
-   "Model * Camera View * Camera Projection transformation (inverted)", AMatrix::ID);
-
-
 ///                                                                           
 ///   VRAM content mirror                                                     
 ///                                                                           
 class ContentVRAM : public Unit {
 protected:
-   Ref<const AContent> mOriginalContent;
+   Ptr<Unit> mOriginalContent;
    bool mContentMirrored = false;
 
 public:
    /// VRAM content hash is the same as the original content                  
-   NOD() inline Hash GetHash() const {
-      return mOriginalContent->GetHash();
+   NOD() LANGULUS(ALWAYSINLINE)
+   Hash GetHash() const {
+      return mOriginalContent.GetHash();
    }
 
    /// Compare VRAM by comparing original contents                            
-   inline bool operator == (const ME & other) const noexcept {
+   LANGULUS(ALWAYSINLINE)
+   bool operator == (const ContentVRAM& other) const noexcept {
       return mOriginalContent == other.mOriginalContent;
    }
 };
 
 /// Helper function for converting colors to floats                           
-///   @param color - the color to convert to GLSL color                       
-///   @return GLSL color type                                                 
-inline Vec4 AnyColorToVector(const Any& color) {
-   switch (color.GetDataSwitch()) {
-   case DataID::Switch<red8>():
-      return rgba(color.As<red8>(), 0, 0, 255).Real();
-   case DataID::Switch<green8>():
-      return rgba(0, color.As<green8>(), 0, 255).Real();
-   case DataID::Switch<blue8>():
-      return rgba(0, 0, color.As<blue8>(), 255).Real();
-   case DataID::Switch<alpha8>():
-      return rgba(0, 0, 0, color.As<alpha8>()).Real();
-   case DataID::Switch<rgba32>():
-      return color.As<rgba>().Real();
-   case DataID::Switch<rgb24>():
-      return rgba(color.As<rgb>(), 255).Real();
-   case DataID::Switch<rgb96>():
-      return rgba128(color.As<rgb96>(), 1);
-   case DataID::Switch<rgba128>():
-      return color.As<rgba128>();
-   case DataID::Switch<red32>():
-      return rgba128(color.As<red32>(), 0, 0, 1);
-   case DataID::Switch<green32>():
-      return rgba128(0, color.As<green32>(), 0, 1);
-   case DataID::Switch<blue32>():
-      return rgba128(0, 0, color.As<blue32>(), 1);
-   case DataID::Switch<alpha32>():
-      return rgba128(0, 0, 0, color.As<alpha32>());
-   default:
-      throw Except::Graphics(pcLogFuncError
-         << "Unsupported color type: " << color.GetToken());
+/// If data is made of integers, colors will be normalized in the 255 range   
+///   @param color - the color to convert to RGBAf                            
+///   @return a floating point RGBA vector                                    
+LANGULUS(ALWAYSINLINE)
+RGBAf AnyColorToVector(const Any& color) {
+   // Inspect the data pack, what color components does it contain?     
+   const auto redChannel = color.GetMember(MetaTrait::Of<Traits::R>());
+   const auto greenChannel = color.GetMember(MetaTrait::Of<Traits::G>());
+   const auto blueChannel = color.GetMember(MetaTrait::Of<Traits::B>());
+   const auto alphaChannel = color.GetMember(MetaTrait::Of<Traits::A>());
+
+   // Get the values (and normalize them if we have to)                 
+   RGBAf result;
+   if (!redChannel.IsEmpty()) {
+      result[0] = redChannel.AsCast<Real>();
+      if (redChannel.CastsTo<A::Integer>())
+         result[0] /= 255.0f;
    }
+   
+   if (!greenChannel.IsEmpty()) {
+      result[1] = greenChannel.AsCast<Real>();
+      if (greenChannel.CastsTo<A::Integer>())
+         result[1] /= 255.0f;
+   }
+
+   if (!blueChannel.IsEmpty()) {
+      result[2] = blueChannel.AsCast<Real>();
+      if (blueChannel.CastsTo<A::Integer>())
+         result[2] /= 255.0f;
+   }
+
+   if (!alphaChannel.IsEmpty()) {
+      result[3] = alphaChannel.AsCast<Real>();
+      if (alphaChannel.CastsTo<A::Integer>())
+         result[3] /= 255.0f;
+   }
+
+   return result;
 }

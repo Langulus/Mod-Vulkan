@@ -10,12 +10,12 @@
 
 
 ///                                                                           
-///   THE VULKAN RENDERING MODULE                                             
+///   Vulkan graphics module                                                  
 ///                                                                           
 /// Manages and produces renderers. By default, the module itself can convey  
-/// GPU computations, if hardware allows it.                                  
+/// GPU computations, if hardware allows it                                   
 ///                                                                           
-class MVulkan : public AModuleGraphics {
+class Vulkan : public Module {
 protected:
    // The vulkan instance                                               
    Own<VkInstance> mInstance;
@@ -42,10 +42,8 @@ protected:
    TFactory<CVulkanRenderer> mRenderers;
 
 public:
-   REFLECT(MVulkan);
-
-   MVulkan(CRuntime*, PCLIB);
-   ~MVulkan();
+   Vulkan(CRuntime*, PCLIB);
+   ~Vulkan();
 
    void Update(PCTime) final;
    PC_VERB(Create);

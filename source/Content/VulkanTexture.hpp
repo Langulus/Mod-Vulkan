@@ -14,30 +14,30 @@
 ///                                                                           
 /// Handles hardware pixel/voxel buffers                                      
 ///                                                                           
-class CVulkanTexture : public IContentVRAM {
-   LANGULUS(PRODUCER) CVulkanRenderer;
+class VulkanTexture : public ContentVRAM {
+   LANGULUS(PRODUCER) VulkanRenderer;
    LANGULUS_VERBS(Verbs::Create);
 
 private:
    // Original content texture view                                     
    PixelView mView;
    // Image                                                             
-   VRAMImage mImage;
+   VulkanImage mImage;
    // Image view                                                        
    Own<VkImageView> mImageView;
    // Image sampler                                                     
    Own<VkSampler> mSampler;
 
 public:
-   CVulkanTexture(CVulkanRenderer*);
-   CVulkanTexture(CVulkanTexture&&) noexcept = default;
-   CVulkanTexture& operator = (CVulkanTexture&&) noexcept = default;
-   ~CVulkanTexture();
+   VulkanTexture(VulkanRenderer*);
+   VulkanTexture(VulkanTexture&&) noexcept = default;
+   VulkanTexture& operator = (VulkanTexture&&) noexcept = default;
+   ~VulkanTexture();
 
    void Initialize();
    void Uninitialize();
 
    void Create(Verb&);
 
-   using IContentVRAM::operator ==;
+   using ContentVRAM::operator ==;
 };

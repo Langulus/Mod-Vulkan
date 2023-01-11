@@ -77,7 +77,7 @@ GLSL GLSL::From(ShaderStage::Enum stage) {
 /// Select shader token                                                       
 ///   @param token - the token to select                                      
 ///   @return the text selection                                              
-Text::Selection GLSL::Select(ShaderToken::Enum token) {
+/*Text::Selection GLSL::Select(ShaderToken::Enum token) {
    return Text::Select(ShaderToken::Names[token]);
 }
 
@@ -86,7 +86,7 @@ Text::Selection GLSL::Select(ShaderToken::Enum token) {
 ///   @return the text selection                                              
 Text::Selection GLSL::Select(const Text& token) {
    return Text::Select(token);
-}
+}*/
 
 /// Check if a #define exists for a symbol                                    
 ///   @param symbol - the definition to search for                            

@@ -7,6 +7,9 @@
 ///                                                                           
 #include "Vulkan.hpp"
 
+/// Toggle vulkan debug layers and default precision from here                
+#define LGLS_VKVERBOSE() 0
+
 #if LANGULUS_DEBUG()
 /// Debug relay                                                               
 static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanLogRelay(
@@ -29,7 +32,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanLogRelay(
 
 /// Check validation layer support                                            
 ///   @param validationLayers - the requested layers                          
-bool MVulkan::CheckValidationLayerSupport(const std::vector<const char*>& validationLayers) const {
+bool Vulkan::CheckValidationLayerSupport(const std::vector<const char*>& validationLayers) const {
    // Get all validation layers supported                               
    pcu32 layerCount;
    vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
@@ -56,7 +59,7 @@ bool MVulkan::CheckValidationLayerSupport(const std::vector<const char*>& valida
 }
 
 /// Get validation layers                                                     
-const std::vector<const char*>& MVulkan::GetValidationLayers() const noexcept {
+const std::vector<const char*>& Vulkan::GetValidationLayers() const noexcept {
    return mDebugLayers;
 }
 #endif
@@ -65,8 +68,8 @@ const std::vector<const char*>& MVulkan::GetValidationLayers() const noexcept {
 /// Vulkan module construction                                                
 ///   @param system - the system that owns the module instance                
 ///   @param handle - the library handle                                      
-MVulkan::MVulkan(CRuntime* system, PCLIB handle)
-   : AModuleGraphics {MetaData::Of<MVulkan>(), system, handle}
+Vulkan::Vulkan(CRuntime* system, PCLIB handle)
+   : Module {MetaData::Of<Vulkan>(), system, handle}
    , mRenderers {this} {
    pcLogSelfVerbose << "Initializing...";
 
@@ -257,7 +260,7 @@ MVulkan::MVulkan(CRuntime* system, PCLIB handle)
 }
 
 /// Vulkan module destruction                                                 
-MVulkan::~MVulkan() {
+Vulkan::~Vulkan() {
    if (mDevice) {
       vkDestroyDevice(mDevice, nullptr);
       mDevice = nullptr;
@@ -279,7 +282,7 @@ MVulkan::~MVulkan() {
 /// Rate a graphical adapter                                                  
 ///   @param device - the physical adapter to rate                            
 ///   @return the rating                                                      
-pcptr MVulkan::RateDevice(const VkPhysicalDevice& device) const {
+pcptr Vulkan::RateDevice(const VkPhysicalDevice& device) const {
    // Get device properties                                             
    VkPhysicalDeviceProperties deviceProperties;
    vkGetPhysicalDeviceProperties(device, &deviceProperties);
@@ -314,7 +317,7 @@ pcptr MVulkan::RateDevice(const VkPhysicalDevice& device) const {
 
 /// Pick the best rated adapter                                               
 ///   @return the physical device with the best rating                        
-VkPhysicalDevice MVulkan::PickAdapter() const {
+VkPhysicalDevice Vulkan::PickAdapter() const {
    pcu32 deviceCount = 0;
    vkEnumeratePhysicalDevices(mInstance, &deviceCount, nullptr);
 
@@ -344,7 +347,7 @@ VkPhysicalDevice MVulkan::PickAdapter() const {
 }
 
 /// Get required extension layers                                             
-std::vector<const char*> MVulkan::GetRequiredExtensions() const {
+std::vector<const char*> Vulkan::GetRequiredExtensions() const {
    std::vector<const char*> extensions;
    #if LANGULUS_DEBUG()
       extensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
@@ -359,13 +362,13 @@ std::vector<const char*> MVulkan::GetRequiredExtensions() const {
 
 /// Module update routine                                                     
 ///   @param dt - time from last update                                       
-void MVulkan::Update(PCTime) {
+void Vulkan::Update(PCTime) {
    for (auto& renderer : mRenderers)
       renderer.Update();
 }
 
 /// Create/destroy renderers                                                  
 ///   @param verb - the creation/destruction verb                             
-void MVulkan::Create(Verb& verb) {
+void Vulkan::Create(Verb& verb) {
    mRenderers.Create(verb);
 }

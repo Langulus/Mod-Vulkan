@@ -12,8 +12,8 @@
 
 /// Vulkan renderer construction                                              
 ///   @param producer - producer of the renderer                              
-CVulkanLayer::CVulkanLayer(CVulkanRenderer* producer)
-   : AVisualLayer {MetaData::Of<CVulkanLayer>()}
+VulkanLayer::VulkanLayer(CVulkanRenderer* producer)
+   : AVisualLayer {MetaData::Of<VulkanLayer>()}
    , TProducedFrom {producer}
    , mCameras {this}
    , mRenderables {this}
@@ -23,7 +23,7 @@ CVulkanLayer::CVulkanLayer(CVulkanRenderer* producer)
 
 /// Create/destroy renderables, cameras, lights                               
 ///   @param verb - creation verb                                             
-void CVulkanLayer::Create(Verb& verb) {
+void VulkanLayer::Create(Verb& verb) {
    mCameras.Create(verb);
    mRenderables.Create(verb);
    mLights.Create(verb);
@@ -32,7 +32,7 @@ void CVulkanLayer::Create(Verb& verb) {
 /// Generate the draw list for the layer                                      
 ///   @param relevantPipelines - [out] a set of all used pipelines            
 ///   @return true if something needs to be rendered                          
-bool CVulkanLayer::Generate(PipelineSet& relevantPipelines) {
+bool VulkanLayer::Generate(PipelineSet& relevantPipelines) {
    CompileCameras();
    auto n = CompileLevels();
    for (auto p : mRelevantPipelines)
@@ -42,12 +42,12 @@ bool CVulkanLayer::Generate(PipelineSet& relevantPipelines) {
 
 /// Get the window of the renderer                                            
 ///   @return the window pointers                                             
-const AWindow* CVulkanLayer::GetWindow() const {
+const AWindow* VulkanLayer::GetWindow() const {
    return GetProducer()->GetWindow();
 }
 
 /// Compile the camera transformations                                        
-void CVulkanLayer::CompileCameras() {
+void VulkanLayer::CompileCameras() {
    for (auto& camera : mCameras) {
       if (camera.IsClassIrrelevant())
          continue;
@@ -60,7 +60,7 @@ void CVulkanLayer::CompileCameras() {
 ///   @param instance - the instance to compile                               
 ///   @param lod - the lod state to use                                       
 ///   @return the pipeline if instance is relevant                            
-CVulkanPipeline* CVulkanLayer::CompileInstance(CVulkanRenderable* renderable, const AInstance* instance, LodState& lod) {
+CVulkanPipeline* VulkanLayer::CompileInstance(CVulkanRenderable* renderable, const AInstance* instance, LodState& lod) {
    if (!instance) {
       // No instances, so culling based only on default level           
       if (lod.mLevel != Level::Default)
@@ -101,7 +101,7 @@ CVulkanPipeline* CVulkanLayer::CompileInstance(CVulkanRenderable* renderable, co
 ///   @param lod - the lod state to use                                       
 ///   @param pipesPerCamera - [out] pipelines used by the hierarchy           
 ///   @return 1 if something from the hierarchy was rendered                  
-pcptr CVulkanLayer::CompileEntity(const Entity* entity, LodState& lod, PipelineSet& pipesPerCamera) {
+pcptr VulkanLayer::CompileEntity(const Entity* entity, LodState& lod, PipelineSet& pipesPerCamera) {
    // Iterate all renderables of the entity, which are part of this     
    // layer - disregard all others                                      
    std::vector<CVulkanRenderable*> relevantRenderables;
@@ -169,7 +169,7 @@ pcptr CVulkanLayer::CompileEntity(const Entity* entity, LodState& lod, PipelineS
 ///   @param level - the level to compile                                     
 ///   @param pipesPerCamera - [out] pipeline set for the current level only   
 ///   @return the number of compiled entities                                 
-pcptr CVulkanLayer::CompileLevelHierarchical(const mat4& view, const mat4& projection, Level level, PipelineSet& pipesPerCamera) {
+pcptr VulkanLayer::CompileLevelHierarchical(const mat4& view, const mat4& projection, Level level, PipelineSet& pipesPerCamera) {
    // Construct view and frustum   for culling                          
    LodState lod;
    lod.mLevel = level;
@@ -215,7 +215,7 @@ pcptr CVulkanLayer::CompileLevelHierarchical(const mat4& view, const mat4& proje
 ///   @param level - the level to compile                                     
 ///   @param pipesPerCamera - [out] pipeline set for the current level only   
 ///   @return 1 if anything was rendered, zero otherwise                      
-pcptr CVulkanLayer::CompileLevelBatched(const mat4& view, const mat4& projection, Level level, PipelineSet& pipesPerCamera) {
+pcptr VulkanLayer::CompileLevelBatched(const mat4& view, const mat4& projection, Level level, PipelineSet& pipesPerCamera) {
    // Construct view and frustum   for culling                          
    LodState lod;
    lod.mLevel = level;
@@ -277,7 +277,7 @@ pcptr CVulkanLayer::CompileLevelBatched(const mat4& view, const mat4& projection
 
 /// Compile all levels and their instances                                    
 ///   @return the number of relevant cameras                                  
-pcptr CVulkanLayer::CompileLevels() {
+pcptr VulkanLayer::CompileLevels() {
    pcptr renderedCameras = 0;
    mRelevantLevels.clear();
    mRelevantPipelines.clear();
@@ -370,7 +370,7 @@ pcptr CVulkanLayer::CompileLevels() {
 ///   @param cb - command buffer to render to                                 
 ///   @param pass - render pass handle                                        
 ///   @param fb - framebuffer to render to                                    
-void CVulkanLayer::Render(VkCommandBuffer cb, const VkRenderPass& pass, const VkFramebuffer& fb) const {
+void VulkanLayer::Render(VkCommandBuffer cb, const VkRenderPass& pass, const VkFramebuffer& fb) const {
    if (mStyle & Style::Hierarchical)
       RenderHierarchical(cb, pass, fb);
    else
@@ -383,7 +383,7 @@ void CVulkanLayer::Render(VkCommandBuffer cb, const VkRenderPass& pass, const Vk
 ///   @param cb - command buffer to render to                                 
 ///   @param pass - render pass handle                                        
 ///   @param fb - framebuffer to render to                                    
-void CVulkanLayer::RenderBatched(VkCommandBuffer cb, const VkRenderPass& pass, const VkFramebuffer& fb) const {
+void VulkanLayer::RenderBatched(VkCommandBuffer cb, const VkRenderPass& pass, const VkFramebuffer& fb) const {
    VkClearValue clearValues[2];
    clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
    clearValues[1].depthStencil = {1.0f, 0};
@@ -469,7 +469,7 @@ void CVulkanLayer::RenderBatched(VkCommandBuffer cb, const VkRenderPass& pass, c
 ///   @param cb - command buffer to render to                                 
 ///   @param pass - render pass handle                                        
 ///   @param fb - framebuffer to render to                                    
-void CVulkanLayer::RenderHierarchical(VkCommandBuffer cb, const VkRenderPass& pass, const VkFramebuffer& fb) const {
+void VulkanLayer::RenderHierarchical(VkCommandBuffer cb, const VkRenderPass& pass, const VkFramebuffer& fb) const {
    VkClearValue clearValues[2];
    clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
    clearValues[1].depthStencil = {1.0f, 0};

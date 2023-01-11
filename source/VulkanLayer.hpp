@@ -6,29 +6,37 @@
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
 #pragma once
-#include "VRAM.hpp"
+#include "VulkanMemory.hpp"
 #include "VulkanCamera.hpp"
 #include "VulkanRenderable.hpp"
 #include "VulkanLight.hpp"
 
-class MVulkan;
+struct LayerSubscriber {
+   const VulkanPipeline* pipeline {};
+   PipeSubscriber sub {};
+};
 
 using LevelSet = std::set<Level>;
-using CameraSet = std::unordered_set<const CVulkanCamera*>;
-using PipelineSet = std::unordered_set<CVulkanPipeline*>;
+using CameraSet = std::unordered_set<const VulkanCamera*>;
+using PipelineSet = std::unordered_set<VulkanPipeline*>;
+
 
 ///                                                                           
-///   LAYER COMPONENT                                                         
+///   Graphics layer unit                                                     
 ///                                                                           
-/// Manages cameras, renderables and lights in a specific way                 
+/// A logical group of cameras, renderables, and lights, isolated from other  
+/// layer. Useful for capsulating a GUI layer, for example.                   
 ///                                                                           
-class CVulkanLayer : public TProducedFrom<CVulkanRenderer> {
+class VulkanLayer : public Unit {
+   LANGULUS(PRODUCER) CVulkanRenderer;
+
+private:
    // List of cameras                                                   
-   TFactory<CVulkanCamera> mCameras;
+   TFactory<VulkanCamera> mCameras;
    // List of rendererables                                             
-   TFactory<CVulkanRenderable> mRenderables;
+   TFactory<VulkanRenderable> mRenderables;
    // List of lights                                                    
-   TFactory<CVulkanLight> mLights;
+   TFactory<VulkanLight> mLights;
    // A cache of relevant pipelines                                     
    PipelineSet mRelevantPipelines;
    // A cache of relevant levels                                        
@@ -85,8 +93,7 @@ protected:
    Style mStyle = Style::Default;
 
 public:
-   REFLECT(CVulkanLayer);
-   CVulkanLayer(CVulkanRenderer*);
+   VulkanLayer(CVulkanRenderer*);
 
    PC_VERB(Create);
 

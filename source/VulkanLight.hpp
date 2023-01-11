@@ -10,11 +10,13 @@
 
 
 ///                                                                           
-///   VULKAN LIGHT COMPONENT                                                  
+///   Light source unit                                                       
 ///                                                                           
-class CVulkanLight : public ALight, public TProducedFrom<CVulkanLayer> {
-   REFLECT(CVulkanLight);
-   CVulkanLight(CVulkanLayer*);
+class VulkanLight : public Unit {
+   LANGULUS(PRODUCER) CVulkanRenderer;
+
+private:
+   VulkanLight(VulkanLayer*);
 
    void Draw();
 };

@@ -10,31 +10,24 @@
 
 /// Shader passive construction                                               
 ///   @param producer - the producer of the shader                            
-CVulkanShader::CVulkanShader(CVulkanRenderer* producer)
-   : AUnitGraphics {MetaData::Of<CVulkanShader>()}
+VulkanShader::VulkanShader(CVulkanRenderer* producer)
+   : AUnitGraphics {MetaData::Of<VulkanShader>()}
    , TProducedFrom {producer} { }
 
 /// Component destruction                                                     
-CVulkanShader::~CVulkanShader() {
+VulkanShader::~VulkanShader() {
    Uninitialize();
 }
 
 /// Compare two shaders for equality                                          
 ///   @param other - the shader to compare against                            
 ///   @return true if shaders are functionally the same                       
-bool CVulkanShader::operator == (const ME& other) const {
+bool VulkanShader::operator == (const ME& other) const {
    return CompareHash(other) && mCode == other.mCode && mStage == other.mStage;
 }
 
-/// Compare two shaders for inequality                                        
-///   @param other - the shader to compare against                            
-///   @return true if shaders are functionally different                      
-bool CVulkanShader::operator != (const ME& other) const {
-   return !(*this == other);
-}
-
 /// From Hashable                                                             
-Hash CVulkanShader::GetHash() const {
+Hash VulkanShader::GetHash() const {
    if (mHashed)
       return mHash;
    return Hashed::SetHash(mCode.GetHash() | pcHash(mStage));
@@ -45,7 +38,7 @@ Hash CVulkanShader::GetHash() const {
 ///   @param stage - the kind of shader                                       
 ///   @param material - the material generator                                
 ///   @return true if shader was generated successfully                       
-bool CVulkanShader::InitializeFromMaterial(ShaderStage::Enum stage, const AMaterial* material) {
+bool VulkanShader::InitializeFromMaterial(ShaderStage::Enum stage, const AMaterial* material) {
    if (!mCode.IsEmpty()) {
       pcLogSelfWarning << "Overwriting shader stage";
       Uninitialize();
@@ -75,7 +68,7 @@ bool CVulkanShader::InitializeFromMaterial(ShaderStage::Enum stage, const AMater
 }
 
 /// Reset the shader                                                          
-void CVulkanShader::Uninitialize() {
+void VulkanShader::Uninitialize() {
    if (!mProducer)
       return;
 
@@ -92,7 +85,7 @@ void CVulkanShader::Uninitialize() {
 
 /// Compile the shader code                                                   
 ///   @return true on success                                                 
-bool CVulkanShader::Compile() {
+bool VulkanShader::Compile() {
    if (mCompiled)
       return true;
 
@@ -162,7 +155,7 @@ bool CVulkanShader::Compile() {
 
 /// Bind vertex input                                                         
 ///   @param input - input type to bind                                       
-void CVulkanShader::AddInput(const Trait& input) {
+void VulkanShader::AddInput(const Trait& input) {
    // On non-vertex shaders - only populate the inputs without          
    // generating code                                                   
    switch (mStage) {
@@ -227,7 +220,7 @@ void CVulkanShader::AddInput(const Trait& input) {
 
 /// Get a VkShaderStageFlagBits corresponding the the this shader's stage     
 ///   @return the flag                                                        
-VkShaderStageFlagBits CVulkanShader::GetStageFlagBit() const noexcept {
+VkShaderStageFlagBits VulkanShader::GetStageFlagBit() const noexcept {
    static constexpr VkShaderStageFlagBits StageMap[ShaderStage::Counter] = {
       VK_SHADER_STAGE_VERTEX_BIT,
       VK_SHADER_STAGE_GEOMETRY_BIT,

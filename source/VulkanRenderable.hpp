@@ -17,7 +17,10 @@
 /// owners, and generates pipelines on Refresh(), that are able to visualize  
 /// it                                                                        
 ///                                                                           
-class CVulkanRenderable : public ARenderable, public TProducedFrom<CVulkanLayer> {
+class VulkanRenderable : public Unit {
+   LANGULUS(PRODUCER) VulkanLayer;
+
+private:
    // Precompiled instances and levels, updated on Refresh()            
    TAny<const AInstance*> mInstances;
    TRange<Level> mLevelRange;
@@ -25,27 +28,28 @@ class CVulkanRenderable : public ARenderable, public TProducedFrom<CVulkanLayer>
    Ref<AGeometry> mGeometryContent;
    Ref<ATexture> mTextureContent;
 
-   Ref<CVulkanPipeline> mPredefinedPipeline;
+   Ref<VulkanPipeline> mPredefinedPipeline;
 
    // Precompiled content, updated on Refresh()                         
    struct {
-      Ref<CVulkanGeometry> mGeometry;
-      Ref<CVulkanTexture> mTexture;
-      Ref<CVulkanPipeline> mPipeline;
+      Ref<VulkanGeometry> mGeometry;
+      Ref<VulkanTexture> mTexture;
+      Ref<VulkanPipeline> mPipeline;
    } mLOD[LodState::IndexCount];
 
    void ResetRenderable();
 
 public:
-   CVulkanRenderable(CVulkanLayer*);
-   CVulkanRenderable(CVulkanRenderable&&) noexcept = default;
-   CVulkanRenderable& operator = (CVulkanRenderable&&) noexcept = default;
-   ~CVulkanRenderable();
+   VulkanRenderable(VulkanLayer*);
+   VulkanRenderable(VulkanRenderable&&) noexcept = default;
+   ~VulkanRenderable();
+
+   VulkanRenderable& operator = (VulkanRenderable&&) noexcept = default;
 
    NOD() auto GetRenderer() noexcept;
-   NOD() CVulkanGeometry* GetGeometry(const LodState&);
-   NOD() CVulkanTexture* GetTextures(const LodState&);
-   NOD() CVulkanPipeline* GetOrCreatePipeline(const LodState&, const CVulkanLayer*);
+   NOD() VulkanGeometry* GetGeometry(const LodState&);
+   NOD() VulkanTexture*  GetTextures(const LodState&);
+   NOD() VulkanPipeline* GetOrCreatePipeline(const LodState&, const VulkanLayer*);
 
    void Refresh() override;
 

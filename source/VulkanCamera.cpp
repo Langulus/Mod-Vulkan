@@ -9,14 +9,14 @@
 
 /// Create camera                                                             
 ///   @param producer - the camera producer                                   
-CVulkanCamera::CVulkanCamera(CVulkanLayer* producer)
-   : ACamera {MetaData::Of<CVulkanCamera>()}
+VulkanCamera::VulkanCamera(VulkanLayer* producer)
+   : ACamera {MetaData::Of<VulkanCamera>()}
    , TProducedFrom {producer} {
    ClassValidate();
 }
 
 /// Compile the camera                                                        
-void CVulkanCamera::Compile() {
+void VulkanCamera::Compile() {
    mResolution = mProducer->GetWindow()->GetSize();
    if (mResolution[0] <= 1)
       mResolution[0] = 1;
@@ -82,7 +82,7 @@ void CVulkanCamera::Compile() {
 }
 
 /// Recompile the camera                                                      
-void CVulkanCamera::Refresh() {
+void VulkanCamera::Refresh() {
    // Gather all instances for this camera                              
    mInstances.Clear();
    for (auto owner : GetOwners()) {
@@ -98,7 +98,7 @@ void CVulkanCamera::Refresh() {
 /// Get view transformation for a given level                                 
 ///   @param level - the level                                                
 ///   @return the view transformation for the camera                          
-mat4 CVulkanCamera::GetViewTransform(Level level) const {
+mat4 VulkanCamera::GetViewTransform(Level level) const {
    if (mInstances.IsEmpty())
       return mat4::Identity();
 

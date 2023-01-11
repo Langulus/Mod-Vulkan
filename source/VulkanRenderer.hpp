@@ -6,14 +6,13 @@
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
 #pragma once
-#include "VRAM.hpp"
+#include "VulkanMemory.hpp"
 #include "VulkanPipeline.hpp"
 #include "VulkanLayer.hpp"
 #include "Content/VulkanGeometry.hpp"
 #include "Content/VulkanTexture.hpp"
 #include "Content/VulkanShader.hpp"
 
-class MVulkan;
 
 ///                                                                           
 ///   THE VULKAN RENDERER COMPONENT                                           
@@ -21,7 +20,9 @@ class MVulkan;
 /// Binds with a window and renders to it                                     
 /// Manages framebuffers, VRAM contents, and layers                           
 ///                                                                           
-class CVulkanRenderer : public ARenderer, public TProducedFrom<MVulkan> {
+class CVulkanRenderer : public Unit {
+   LANGULUS(PRODUCER) Vulkan;
+
 private:
    Ptr<const AWindow> mWindow;
 

@@ -16,7 +16,7 @@ using PCCmdBuffer = VkCommandBuffer;
 ///                                                                           
 /// Has tools to manage the VRAM, produce VRAM buffers, move memory, etc.     
 ///                                                                           
-class VRAM {
+class VulkanMemory {
 public:
    bool Initialize(VkPhysicalDevice, VkDevice, uint32_t transferIndex);
    void Destroy();

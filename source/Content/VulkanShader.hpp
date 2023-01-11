@@ -7,6 +7,7 @@
 ///                                                                           
 #pragma once
 #include "VulkanBuffer.hpp"
+#include "../GLSL.hpp"
 
 
 ///                                                                           
@@ -14,8 +15,8 @@
 ///                                                                           
 /// Handles shader compilation using shaderc                                  
 ///                                                                           
-class CVulkanShader {
-   LANGULUS(PRODUCER) CVulkanRenderer;
+class VulkanShader {
+   LANGULUS(PRODUCER) VulkanRenderer;
 
 private:
    std::vector<VertexBinding> mBindings;
@@ -38,10 +39,10 @@ private:
    bool mCompleted = false;
 
 public:
-   CVulkanShader(CVulkanRenderer*);
-   CVulkanShader(CVulkanShader&&) noexcept = default;
-   CVulkanShader& operator = (CVulkanShader&&) noexcept = default;
-   ~CVulkanShader();
+   VulkanShader(VulkanRenderer*);
+   VulkanShader(VulkanShader&&) noexcept = default;
+   VulkanShader& operator = (VulkanShader&&) noexcept = default;
+   ~VulkanShader();
 
    bool operator == (const ME&) const;
 

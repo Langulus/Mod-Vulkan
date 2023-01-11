@@ -5,13 +5,13 @@
 /// Distributed under GNU General Public License v3+                          
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
-#include "VRAM.hpp"
+#include "VulkanMemory.hpp"
 
 /// Initialize the VRAM interface                                             
 ///   @param adapter - the physical device                                    
 ///   @param logicalDevice - the logical device                               
 ///   @param transferIndex - the transfer index                               
-bool VRAM::Initialize(VkPhysicalDevice adapter, VkDevice logicalDevice, uint32_t transferIndex) {
+bool VulkanMemory::Initialize(VkPhysicalDevice adapter, VkDevice logicalDevice, uint32_t transferIndex) {
    mAdapter = adapter;
    mDevice = logicalDevice;
 
@@ -46,7 +46,7 @@ bool VRAM::Initialize(VkPhysicalDevice adapter, VkDevice logicalDevice, uint32_t
 }
 
 /// Destroy the VRAM interface                                                
-void VRAM::Destroy() {
+void VulkanMemory::Destroy() {
    // Destroy transfer buffer                                           
    vkFreeCommandBuffers(mDevice, mTransferPool, 1, &mTransferBuffer);
    mTransferBuffer = nullptr;
@@ -58,7 +58,7 @@ void VRAM::Destroy() {
 
 /// Destroy an allocated buffer                                               
 ///   @param buffer - buffer to destroy                                       
-void VRAM::DestroyBuffer(VRAMBuffer& buffer) const {
+void VulkanMemory::DestroyBuffer(VRAMBuffer& buffer) const {
    if (buffer.mDevice) {
       if (buffer.mBuffer)
          vkDestroyBuffer(buffer.mDevice, buffer.mBuffer, nullptr);
@@ -74,7 +74,7 @@ void VRAM::DestroyBuffer(VRAMBuffer& buffer) const {
 ///   @param tiling - the requested tiling to check for support               
 ///   @param features - features to check for                                 
 ///   @returns true if features are supported for the given tiling & format   
-bool VRAM::CheckFormatSupport(VkFormat format, VkImageTiling tiling, VkFormatFeatureFlags features) const {
+bool VulkanMemory::CheckFormatSupport(VkFormat format, VkImageTiling tiling, VkFormatFeatureFlags features) const {
    VkFormatProperties props;
    vkGetPhysicalDeviceFormatProperties(mAdapter, format, &props);
    if (tiling == VK_IMAGE_TILING_LINEAR)
@@ -88,7 +88,7 @@ bool VRAM::CheckFormatSupport(VkFormat format, VkImageTiling tiling, VkFormatFea
 ///   @param view - image view                                                
 ///   @param flags - image usage flags                                        
 ///   @return an image instance                                               
-VRAMImage VRAM::CreateImage(const PixelView& view, VkImageUsageFlags flags) const {
+VRAMImage VulkanMemory::CreateImage(const PixelView& view, VkImageUsageFlags flags) const {
    // Precheck some simple constraints                                  
    if (view.mFormat == nullptr || (view.mWidth * view.mHeight * view.mDepth * view.mFrames == 0))
       throw Except::Graphics(pcLogFuncError << "Wrong texture descriptor");
@@ -221,7 +221,7 @@ VRAMImage VRAM::CreateImage(const PixelView& view, VkImageUsageFlags flags) cons
 
 /// Destroy an allocated image                                                
 ///   @param buffer - buffer to destroy                                       
-void VRAM::DestroyImage(VRAMImage& buffer) const {
+void VulkanMemory::DestroyImage(VRAMImage& buffer) const {
    if (buffer.mDevice) {
       if (buffer.mBuffer)
          vkDestroyImage(buffer.mDevice, buffer.mBuffer, nullptr);
@@ -237,7 +237,7 @@ void VRAM::DestroyImage(VRAMImage& buffer) const {
 ///   @param view - pc image view                                             
 ///   @param aspectFlags - image aspect                                       
 ///   @return the image view                                                  
-VkImageView VRAM::CreateImageView(const VkImage& image, const PixelView& view, VkImageAspectFlags aspectFlags) {
+VkImageView VulkanMemory::CreateImageView(const VkImage& image, const PixelView& view, VkImageAspectFlags aspectFlags) {
    VkImageViewCreateInfo viewInfo = {};
    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
    viewInfo.image = image;
@@ -272,7 +272,7 @@ VkImageView VRAM::CreateImageView(const VkImage& image, const PixelView& view, V
 ///   @param image - image to create view for                                 
 ///   @param view - pc image view                                             
 ///   @return the image view                                                  
-VkImageView VRAM::CreateImageView(const VkImage& image, const PixelView& view) {
+VkImageView VulkanMemory::CreateImageView(const VkImage& image, const PixelView& view) {
    const VkFormat fmt = pcTypeToVkFormat(view.mFormat);
    const bool depthusage =   fmt == VK_FORMAT_D32_SFLOAT || fmt == VK_FORMAT_D32_SFLOAT_S8_UINT
       || fmt == VK_FORMAT_D16_UNORM   || fmt == VK_FORMAT_D16_UNORM_S8_UINT
@@ -287,7 +287,7 @@ VkImageView VRAM::CreateImageView(const VkImage& image, const PixelView& view) {
 ///   @param type - type of memory to seek                                    
 ///   @param properties - memory usage to choose                              
 ///   @return heap index for allocation                                       
-uint32_t VRAM::ChooseMemory(uint32_t type, VkMemoryPropertyFlags properties) const {
+uint32_t VulkanMemory::ChooseMemory(uint32_t type, VkMemoryPropertyFlags properties) const {
    // Pick adequate memory                                              
    for (uint32_t i = 0; i < mVRAM.memoryTypeCount; i++) {
       if (type & (1 << i) && (mVRAM.memoryTypes[i].propertyFlags & properties) == properties)
@@ -304,7 +304,7 @@ uint32_t VRAM::ChooseMemory(uint32_t type, VkMemoryPropertyFlags properties) con
 ///   @param usage - type of buffer to allocate                               
 ///   @param properties - type of memory for buffer                           
 ///   @return a buffer instance                                               
-VRAMBuffer VRAM::CreateBuffer(DMeta meta, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties) const {
+VRAMBuffer VulkanMemory::CreateBuffer(DMeta meta, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties) const {
    // Create buffer                                                     
    VRAMBuffer result;
    result.mDevice = mDevice;
@@ -341,7 +341,7 @@ VRAMBuffer VRAM::CreateBuffer(DMeta meta, VkDeviceSize size, VkBufferUsageFlags 
 ///   @param img - VRAM image                                                 
 ///   @param from - starting layout                                           
 ///   @param to - ending layout                                               
-void VRAM::ImageTransfer(VRAMImage& img, VkImageLayout from, VkImageLayout to) {
+void VulkanMemory::ImageTransfer(VRAMImage& img, VkImageLayout from, VkImageLayout to) {
    ImageTransfer(img.mBuffer, from, to);
 }
 
@@ -349,7 +349,7 @@ void VRAM::ImageTransfer(VRAMImage& img, VkImageLayout from, VkImageLayout to) {
 ///   @param img - VRAM image                                                 
 ///   @param from - starting layout                                           
 ///   @param to - ending layout                                               
-void VRAM::ImageTransfer(VkImage& img, VkImageLayout from, VkImageLayout to) {
+void VulkanMemory::ImageTransfer(VkImage& img, VkImageLayout from, VkImageLayout to) {
    // Copy data to VRAM                                                 
    VkCommandBufferBeginInfo beginInfo = {};
    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -446,7 +446,7 @@ void VRAM::ImageTransfer(VkImage& img, VkImageLayout from, VkImageLayout to) {
 ///   @param memory - the memory block to upload                              
 ///   @param usage - the intended use for the memory                          
 ///   @return a VRAM buffer wrapper                                           
-VRAMBuffer VRAM::Upload(const Block& memory, VkBufferUsageFlags usage) {
+VRAMBuffer VulkanMemory::Upload(const Block& memory, VkBufferUsageFlags usage) {
    const auto bytesize = memory.GetCount() * memory.GetStride();
    if (bytesize == 0) {
       pcLogFuncError << "Can't upload data of size zero.";
