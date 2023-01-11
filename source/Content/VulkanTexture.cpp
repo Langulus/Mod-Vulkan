@@ -10,6 +10,7 @@
 
 #define PC_VKTEXTURE_VERBOSE(a) //pcLogSelfVerbose << a
 
+
 /// VRAM texture construction                                                 
 ///   @param producer - the texture producer                                  
 CVulkanTexture::CVulkanTexture(CVulkanRenderer* producer)

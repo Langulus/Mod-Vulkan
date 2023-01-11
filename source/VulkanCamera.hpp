@@ -14,7 +14,24 @@
 ///                                                                           
 /// Represents a camera's view of the world                                   
 ///                                                                           
-class CVulkanCamera : public ACamera, public TProducedFrom<CVulkanLayer> {
+class CVulkanCamera : public TProducedFrom<CVulkanLayer> {
+
+   // Whether or not a perspective projection is used						
+   bool mPerspective = true;
+   // The projection matrix														
+   mat4 mProjection;
+   // Clipping range in all directions, including depth					
+   range4 mViewport = {{0, 0, 0.1, 0}, {720, 480, 1000, 0}};
+   // Horizontal field of view, in radians									
+   real mFOV = pcD2R(90.0f);
+   // Aspect ratio (width / height)												
+   real mAspectRatio = 720.0f / 480.0f;
+   // Human retina is 32 milimeters (10^-3) across, which means that	
+   // we can observe stuff slightly smaller than human octave			
+   LevelRange mObservableRange {Level::Default, Level::Max};
+   // Eye separation. Stereo if more/less than zero						
+   real mEyeSeparation = 0;
+
    TAny<const AInstance*> mInstances;
    mat4 mProjectionInverted;
    VkViewport mVulkanViewport {0, 0, 640, 480, 0, 1};

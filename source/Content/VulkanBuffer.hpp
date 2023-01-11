@@ -10,7 +10,7 @@
 
 
 ///                                                                           
-/// VRAM buffer helper                                                        
+///   VRAM buffer helper                                                      
 ///                                                                           
 class VRAMBuffer {
 public:
@@ -66,7 +66,7 @@ public:
 };
 
 ///                                                                           
-/// VRAM image helper                                                         
+///   VRAM image helper                                                       
 ///                                                                           
 class VRAMImage {
 public:

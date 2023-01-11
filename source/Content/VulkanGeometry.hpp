@@ -14,9 +14,11 @@
 ///                                                                           
 /// Can convert RAM content to VRAM vertex/index buffers                      
 ///                                                                           
-class CVulkanGeometry 
-   : public IContentVRAM
-   , public TProducedFrom<CVulkanRenderer> {
+class CVulkanGeometry : public IContentVRAM {
+   LANGULUS(PRODUCER) CVulkanRenderer;
+   LANGULUS_VERBS(Verbs::Create);
+
+private:
    // Vertex info                                                       
    VertexView mView;
    DMeta mTopology = nullptr;
@@ -30,7 +32,6 @@ class CVulkanGeometry
    std::vector<VkDeviceSize> mIOffsets;
 
 public:
-   REFLECT(CVulkanGeometry);
    CVulkanGeometry(CVulkanRenderer*);
    CVulkanGeometry(CVulkanGeometry&&) noexcept = default;
    CVulkanGeometry& operator = (CVulkanGeometry&&) noexcept = default;
@@ -41,10 +42,7 @@ public:
    void Bind() const;
    void Render() const;
 
-   PC_VERB(Create);
-   PC_GET(View);
-   PC_GET(Topology);
+   void Create(Verb&);
 
    using IContentVRAM::operator ==;
-   using IContentVRAM::operator !=;
 };

@@ -14,11 +14,10 @@
 ///                                                                           
 /// Handles shader compilation using shaderc                                  
 ///                                                                           
-class CVulkanShader 
-   : public AUnitGraphics
-   , public TProducedFrom<CVulkanRenderer>
-   , public Hashed {
-   MaterialView mView;
+class CVulkanShader {
+   LANGULUS(PRODUCER) CVulkanRenderer;
+
+private:
    std::vector<VertexBinding> mBindings;
    std::vector<VertexAttribute> mAttributes;
 
@@ -39,14 +38,12 @@ class CVulkanShader
    bool mCompleted = false;
 
 public:
-   REFLECT(CVulkanShader);
    CVulkanShader(CVulkanRenderer*);
    CVulkanShader(CVulkanShader&&) noexcept = default;
    CVulkanShader& operator = (CVulkanShader&&) noexcept = default;
    ~CVulkanShader();
 
    bool operator == (const ME&) const;
-   bool operator != (const ME&) const;
 
    NOD() Hash GetHash() const override;
 

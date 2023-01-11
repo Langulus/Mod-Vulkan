@@ -37,7 +37,6 @@ class CVulkanRenderable : public ARenderable, public TProducedFrom<CVulkanLayer>
    void ResetRenderable();
 
 public:
-   REFLECT(CVulkanRenderable);
    CVulkanRenderable(CVulkanLayer*);
    CVulkanRenderable(CVulkanRenderable&&) noexcept = default;
    CVulkanRenderable& operator = (CVulkanRenderable&&) noexcept = default;

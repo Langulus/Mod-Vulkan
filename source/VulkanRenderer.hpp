@@ -23,6 +23,8 @@ class MVulkan;
 ///                                                                           
 class CVulkanRenderer : public ARenderer, public TProducedFrom<MVulkan> {
 private:
+   Ptr<const AWindow> mWindow;
+
    // The logical device                                                
    Own<VkDevice> mDevice;
    // VRAM memory properties                                            

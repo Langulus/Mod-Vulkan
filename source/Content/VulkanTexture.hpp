@@ -14,9 +14,11 @@
 ///                                                                           
 /// Handles hardware pixel/voxel buffers                                      
 ///                                                                           
-class CVulkanTexture 
-   : public IContentVRAM
-   , public TProducedFrom<CVulkanRenderer> {
+class CVulkanTexture : public IContentVRAM {
+   LANGULUS(PRODUCER) CVulkanRenderer;
+   LANGULUS_VERBS(Verbs::Create);
+
+private:
    // Original content texture view                                     
    PixelView mView;
    // Image                                                             
@@ -27,7 +29,6 @@ class CVulkanTexture
    Own<VkSampler> mSampler;
 
 public:
-   REFLECT(CVulkanTexture);
    CVulkanTexture(CVulkanRenderer*);
    CVulkanTexture(CVulkanTexture&&) noexcept = default;
    CVulkanTexture& operator = (CVulkanTexture&&) noexcept = default;
@@ -36,11 +37,7 @@ public:
    void Initialize();
    void Uninitialize();
 
-   PC_VERB(Create);
-
-   PC_GET(ImageView);
-   PC_GET(Sampler);
+   void Create(Verb&);
 
    using IContentVRAM::operator ==;
-   using IContentVRAM::operator !=;
 };
