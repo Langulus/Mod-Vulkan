@@ -2,65 +2,6 @@
 
 #define GLSL_VERBOSE(a)
 
-
-/// Convert a block to GLSL code                                              
-///   @param block - the block to convert to GLSL                             
-GLSL::GLSL(const Block& block) : Text{} {
-   if (block.IsOr())
-      throw Except::GLSL(pcLogError << "GLSL doesn't support OR blocks");
-
-   if (block.IsDeep()) {
-      // Nest                                                           
-      for (pcptr index = 0; index < block.GetCount(); ++index) {
-         *this += GLSL{ block.As<Block>(index) };
-         if (index < block.GetCount() - 1)
-            *this += ", ";
-      }
-      return;
-   }
-
-   if (block.InterpretsAs<Text>()) {
-      // Contained type is code - just concatenate everything           
-      for (pcptr index = 0; index < block.GetCount(); ++index) {
-         *this += block.As<Text>(index);
-         if (index < block.GetCount() - 1)
-            *this += ", ";
-      }
-      return;
-   }
-
-   // Finally, attempt to interpret each element as GLSL and concat     
-   for (pcptr index = 0; index < block.GetCount(); ++index) {
-      auto interpreter = Verb::From<Verbs::Interpret>({}, DataID::Of<GLSL>);
-      auto element = block.GetElementResolved(index);
-      if (Verb::DispatchFlat(element, interpreter, false)) {
-         if (!interpreter.GetOutput().Is<GLSL>()) {
-            throw Except::BadSerialization(
-               GLSL_VERBOSE(
-                  pcLogError << "Can't serialize " << element.GetToken()
-                  << " to GLSL (produced " << interpreter.GetOutput().GetToken()
-                  << " instead"
-               )
-            );
-         }
-
-         // Interpretation was a success                                
-         *this += interpreter.GetOutput().Get<GLSL>();
-      }
-      else {
-         // Failed, but try doing GASM interpretation                   
-         // It works most of the time :)                                
-         auto gasm = pcSerialize<GASM>(element);
-         GLSL_VERBOSE(pcLogFuncWarning 
-            << "Inserting GASM code as GLSL: " << gasm);
-         *this += gasm;
-      }
-
-      if (index < block.GetCount() - 1)
-         *this += ", ";
-   }
-}
-
 /// Clone the GLSL container, retaining type                                  
 ///   @return the cloned GLSL container                                       
 GLSL GLSL::Clone() const {
@@ -81,9 +22,9 @@ GLSL GLSL::From(ShaderStage::Enum stage) {
    return Text::Select(ShaderToken::Names[token]);
 }
 
-/// Standard select, relayed                                                  
-///   @param token - pattern to select                                        
-///   @return the text selection                                              
+/// Standard select, relayed
+///   @param token - pattern to select
+///   @return the text selection
 Text::Selection GLSL::Select(const Text& token) {
    return Text::Select(token);
 }*/
@@ -142,7 +83,7 @@ Text GLSL::Pretty() const {
 ///   @param definition - the definition to add                               
 ///   @return a reference to this code                                        
 GLSL& GLSL::Define(const Text& definition) {
-   const Text defined { "#define " + definition };
+   const Text defined {"#define " + definition};
    if (Text::Find(defined))
       return *this;
 

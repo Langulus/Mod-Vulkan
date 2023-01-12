@@ -59,7 +59,7 @@ inline bool VulkanImage::IsValid() const noexcept {
 }
 
 /// Reset the buffer. This does not deallocate the memory                     
-inline void VulkanImage::Reset() {
+inline void VulkanImage::Reset() noexcept {
    mView = {};
    mInfo = {};
    mBuffer.Reset();

@@ -11,7 +11,7 @@
 
 /// A single uniform - maps a trait to a position inside shader binary        
 struct Uniform {
-   pcptr mPosition;
+   Offset mPosition;
    Trait mTrait;
 };
 
@@ -20,7 +20,7 @@ using BufferUpdates = std::vector<VkWriteDescriptorSet>;
 /// Base for DataUBO                                                          
 struct UBO {
    CVulkanRenderer* mRenderer = nullptr;
-   pcptr mAllocated = 0;
+   Size mAllocated = 0;
    pcptr mStride = 0;
    Bytes mRAM;
    VRAMBuffer mBuffer;
