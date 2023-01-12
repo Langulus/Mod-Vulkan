@@ -7,89 +7,97 @@
 ///                                                                           
 #include "Vulkan.hpp"
 
-/// Toggle vulkan debug layers and default precision from here                
-#define LGLS_VKVERBOSE() 0
+LANGULUS_DEFINE_MODULE(
+   Vulkan, 11, "Vulkan",
+   "Vulkan graphics module and GPU computation", "",
+   Vulkan, VulkanRenderer, VulkanLayer, VulkanCamera, VulkanRenderable, VulkanLight
+)
 
-#if LANGULUS_DEBUG()
-/// Debug relay                                                               
-static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanLogRelay(
-   VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT,
-   uint64_t, size_t, int32_t, const char*, const char* msg, void*)
-{
-   // Different messages will be colored in a different way             
-   if (flags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
-      pcLogError << "MVulkan: " << msg;
-   else if ((flags & VK_DEBUG_REPORT_WARNING_BIT_EXT) || (flags & VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT))
-      pcLogWarning << "MVulkan: " << msg;
-   #if LGLS_VKVERBOSE()
-      else if (flags & VK_DEBUG_REPORT_INFORMATION_BIT_EXT)
-         pcLogInfo << "MVulkan: " << msg;
-      else if (flags & VK_DEBUG_REPORT_DEBUG_BIT_EXT)
-         pcLogVerbose << "MVulkan: " << msg;
-   #endif
-   return VK_FALSE;
-}
+/// Whether or not to enable verbose and info logging of vulkan messages      
+#define VERBOSE_VULKAN(a) //a
 
-/// Check validation layer support                                            
-///   @param validationLayers - the requested layers                          
-bool Vulkan::CheckValidationLayerSupport(const std::vector<const char*>& validationLayers) const {
-   // Get all validation layers supported                               
-   pcu32 layerCount;
-   vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-   std::vector<VkLayerProperties> availableLayers(layerCount);
-   vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+#if LANGULUS(DEBUG)
+   /// Debug relay for vulkan messages                                        
+   static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanLogRelay(
+      VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT,
+      uint64_t, size_t, int32_t, const char*, const char* msg, void*)
+   {
+      // Different message types will be colored in a different way     
+      if (flags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
+         Logger::Error() << "Vulkan: " << msg;
+      else if ((flags & VK_DEBUG_REPORT_WARNING_BIT_EXT) || (flags & VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT))
+         Logger::Warning() << "Vulkan: " << msg;
+      VERBOSE_VULKAN(
+         else if (flags & VK_DEBUG_REPORT_INFORMATION_BIT_EXT)
+            Logger::Info() << "Vulkan: " << msg;
+         else if (flags & VK_DEBUG_REPORT_DEBUG_BIT_EXT)
+            Logger::Verbose() << "Vulkan: " << msg;
+      )
+      return VK_FALSE;
+   }
 
-   // Check if requested layers are supported                           
-   for (const char* layerName : validationLayers) {
-      bool supported = false;
-      for (const auto& layerProperties : availableLayers) {
-         if (strcmp(layerName, layerProperties.layerName) == 0) {
-            supported = true;
-            break;
+   /// Check validation layer support                                         
+   ///   @param layers - the requested layers                                 
+   ///   @return true if all required layers are supported                    
+   void Vulkan::CheckValidationLayerSupport(const TokenSet& layers) const {
+      // Get all validation layers supported                            
+      uint32_t layerCount;
+      vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+      TAny<VkLayerProperties> availableLayers;
+      availableLayers.New(layerCount);
+      vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.GetRaw());
+
+      // Check if requested layers are supported                        
+      for (auto layerName : layers) {
+         bool found = false;
+         for (auto& available : availableLayers) {
+            if (0 == strcmp(available.layerName, layerName)) {
+               found = true;
+               break;
+            }
          }
-      }
 
-      if (!supported) {
-         pcLogSelfError << "Missing validation layer for debugging: " << layerName;
-         return false;
+         if (!found) {
+            Logger::Error("Missing validation layer for debugging: ", layerName);
+            LANGULUS_THROW(Graphics, "Vulkan module failed to initialize");
+         }
       }
    }
 
-   return true;
-}
-
-/// Get validation layers                                                     
-const std::vector<const char*>& Vulkan::GetValidationLayers() const noexcept {
-   return mDebugLayers;
-}
+   /// Get validation layers                                                  
+   ///   @return a reference to the available validation layers               
+   auto& Vulkan::GetValidationLayers() const noexcept {
+      return mValidationLayers;
+   }
 #endif
 
 
 /// Vulkan module construction                                                
 ///   @param system - the system that owns the module instance                
 ///   @param handle - the library handle                                      
-Vulkan::Vulkan(CRuntime* system, PCLIB handle)
-   : Module {MetaData::Of<Vulkan>(), system, handle}
+Vulkan::Vulkan(Runtime* runtime, const Any&)
+   : Module {MetaOf<Vulkan>(), runtime}
    , mRenderers {this} {
-   pcLogSelfVerbose << "Initializing...";
+   Logger::Verbose(Self(), "Initializing...");
 
-   VkApplicationInfo appInfo = {};
+   VkApplicationInfo appInfo {};
    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-   appInfo.pApplicationName = "Piception";
+   appInfo.pApplicationName = "Langulus";
    appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-   appInfo.pEngineName = "Piception";
+   appInfo.pEngineName = "Langulus";
    appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
    appInfo.apiVersion = VK_API_VERSION_1_0;
 
    // Get required extensions                                           
-   std::vector<const char*> extensions = GetRequiredExtensions();
+   auto extensions = GetRequiredExtensions();
 
    // Setup the required validation layers                              
    #if LANGULUS_DEBUG()
-      pcLogSelfWarning << "Vulkan will work in debug mode - performance warning due to validation layers";
-      mDebugLayers.push_back("VK_LAYER_KHRONOS_validation");
-      if (CheckValidationLayerSupport(mDebugLayers) == false)
-         throw Except::Graphics("Vulkan module failed to initialize");
+      Logger::Warning(Self(), "Vulkan will work in debug mode "
+         "- performance warning due to validation layers");
+
+      mValidationLayers.emplace_back("VK_LAYER_KHRONOS_validation");
+      CheckValidationLayerSupport(mValidationLayers);
    #endif
 
    // Instance creation info                                            
@@ -99,70 +107,76 @@ Vulkan::Vulkan(CRuntime* system, PCLIB handle)
    createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
    createInfo.ppEnabledExtensionNames = extensions.data();
    #if LANGULUS_DEBUG()
-      createInfo.enabledLayerCount = static_cast<uint32_t>(mDebugLayers.size());
-      createInfo.ppEnabledLayerNames = mDebugLayers.data();
+      createInfo.enabledLayerCount = static_cast<uint32_t>(mValidationLayers.size());
+      createInfo.ppEnabledLayerNames = mValidationLayers.data();
    #else
       createInfo.enabledLayerCount = 0;
    #endif
 
    // Create instance                                                   
-   auto result = vkCreateInstance(&createInfo, nullptr, &mInstance.mValue);
+   auto result = vkCreateInstance(&createInfo, nullptr, &mInstance.Get());
    if (result != VK_SUCCESS) {
-      pcLogSelfError << "Error creating Vulkan instance";
+      Logger::Error(Self(), "Error creating Vulkan instance");
+
       if (result == VK_ERROR_EXTENSION_NOT_PRESENT) {
-         pcLogSelfError << "There was at least one unsupported extension, analyzing...";
+         Logger::Error(Self(), "There was at least one unsupported extension, analyzing...");
 
          // Get all supported extensions                                
-         pcu32 extensionCount = 0;
+         uint32_t extensionCount = 0;
          vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
          std::vector<VkExtensionProperties> available(extensionCount);
          vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, available.data());
 
          // Test each GLFW requirement against them                     
          for (const auto& test : extensions) {
-            bool check = false;
+            bool found = false;
             for (const auto& ext : available) {
                if (0 == strcmp(test, ext.extensionName)) {
-                  check = true;
+                  found = true;
                   break;
                }
             }
 
-            if (!check)
-               pcLogSelfError << " - Missing extension: " << test;
+            if (!found)
+               Logger::Error(Self(), " - Missing extension: ", test);
          }
       }
       else if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
-         pcLogSelfError << "You're either out of HOST memory, or your CPU/GPU doesn't support vulkan";
-         pcLogSelfError << "Beware, that only 4th+ generation CPUs with integrated video adapters are supported, when specific drivers are provided";
+         Logger::Error(Self(), 
+            "You're either out of HOST memory, or your CPU/GPU doesn't support vulkan");
+         Logger::Error(Self(), 
+            "Beware, that only 4th+ generation CPUs with integrated video adapters "
+            "are supported, when specific drivers are provided");
       }
       else if (result == VK_ERROR_INCOMPATIBLE_DRIVER) {
-         pcLogSelfError << "Your driver is incompatible";
+         Logger::Error(Self(), "Your driver is incompatible");
       }
 
-      throw Except::Graphics("Vulkan couldn't setup");
+      LANGULUS_THROW(Graphics, "Vulkan couldn't setup");
    }
 
-   pcLogSelfVerbose << "Vulkan instance created";
+   VERBOSE_VULKAN(Logger::Verbose(Self(),
+      "Vulkan instance created"));
 
    #if LANGULUS_DEBUG()
       // Setup the debug relay                                          
       VkDebugReportCallbackCreateInfoEXT relayInfo = {};
       relayInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
 
-      #if PC_LOG_ERROR == PC_ENABLED
+      #ifdef LANGULUS_LOGGER_ENABLE_ERRORS
          relayInfo.flags |= VK_DEBUG_REPORT_ERROR_BIT_EXT;
       #endif
 
-      #if PC_LOG_WARNING == PC_ENABLED
-         relayInfo.flags |= VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
+      #ifdef LANGULUS_LOGGER_ENABLE_WARNINGS
+         relayInfo.flags |= VK_DEBUG_REPORT_WARNING_BIT_EXT
+                         |  VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
       #endif
 
-      #if PC_LOG_VERBOSE == PC_ENABLED
+      #ifdef LANGULUS_LOGGER_ENABLE_VERBOSE
          relayInfo.flags |= VK_DEBUG_REPORT_DEBUG_BIT_EXT;
       #endif
 
-      #if PC_LOG_INFO == PC_ENABLED
+      #ifdef LANGULUS_LOGGER_ENABLE_INFOS
          relayInfo.flags |= VK_DEBUG_REPORT_INFORMATION_BIT_EXT;
       #endif
 
@@ -187,7 +201,8 @@ Vulkan::Vulkan(CRuntime* system, PCLIB handle)
    // Show some info                                                    
    VkPhysicalDeviceProperties adapter_info;
    vkGetPhysicalDeviceProperties(mAdapter, &adapter_info);
-   pcLogSelfVerbose << "Best rated adapter: " << adapter_info.deviceName;
+   VERBOSE_VULKAN(Logger::Verbose(Self(),
+      "Best rated adapter: ", adapter_info.deviceName));
 
    // Check adapter functionality                                       
    uint32_t queueCount;
@@ -282,7 +297,7 @@ Vulkan::~Vulkan() {
 /// Rate a graphical adapter                                                  
 ///   @param device - the physical adapter to rate                            
 ///   @return the rating                                                      
-pcptr Vulkan::RateDevice(const VkPhysicalDevice& device) const {
+unsigned Vulkan::RateDevice(const VkPhysicalDevice& device) const {
    // Get device properties                                             
    VkPhysicalDeviceProperties deviceProperties;
    vkGetPhysicalDeviceProperties(device, &deviceProperties);
@@ -291,7 +306,7 @@ pcptr Vulkan::RateDevice(const VkPhysicalDevice& device) const {
    VkPhysicalDeviceFeatures deviceFeatures;
    vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
-   pcptr score = 0;
+   unsigned score = 0;
 
    // Discrete GPUs have a significant performance advantage            
    if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)

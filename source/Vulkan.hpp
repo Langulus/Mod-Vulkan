@@ -16,50 +16,49 @@
 /// GPU computations, if hardware allows it                                   
 ///                                                                           
 class Vulkan : public Module {
-protected:
+   LANGULUS(ABSTRACT) false;
+   LANGULUS_BASES(Module);
+   LANGULUS_VERBS(Verbs::Create);
+
+private:
    // The vulkan instance                                               
    Own<VkInstance> mInstance;
    // The physical device                                               
    Own<VkPhysicalDevice> mAdapter;
    // The logical device                                                
    Own<VkDevice> mDevice;
-   // The computation queue                                             
+   // The computation queue, should work without renderers              
    Own<VkQueue> mComputer;
-
-   #if LANGULUS_DEBUG()
-      std::vector<const char*> mDebugLayers;
-      VkDebugReportCallbackEXT mLogRelay;   // Relays debug messages    
-   #endif
-
    // True if hardware has GPU compute                                  
    bool mSupportsComputation = false;
    // True if hardware has dedicated transfer queue                     
    bool mSupportsTransfer = false;
    // True if hardware has sparse binding support                       
    bool mSupportsSparseBinding = false;
-
    // List of renderer components                                       
    TFactory<CVulkanRenderer> mRenderers;
 
+   using TokenSet = ::std::vector<const char*>;
+
+   #if LANGULUS_DEBUG()
+      TokenSet mValidationLayers;
+      VkDebugReportCallbackEXT mLogRelay;   // Relays debug messages    
+   #endif
+
 public:
-   Vulkan(CRuntime*, PCLIB);
+   Vulkan(Runtime*, const Any&);
    ~Vulkan();
 
-   void Update(PCTime) final;
-   PC_VERB(Create);
-
-   PC_GET(Instance);
-   PC_GET(Adapter);
+   void Update(Time) final;
+   void Create(Verb&);
 
    // Helpers                                                           
-   std::vector<const char*> GetRequiredExtensions() const;
-   pcptr RateDevice(const VkPhysicalDevice& device) const;
+   TokenSet GetRequiredExtensions() const;
+   unsigned RateDevice(const VkPhysicalDevice&) const;
    VkPhysicalDevice PickAdapter() const;
+
    #if LANGULUS_DEBUG()
-      const std::vector<const char*>& GetValidationLayers() const noexcept;
-      bool CheckValidationLayerSupport(const std::vector<const char*>& validationLayers) const;
+      auto& GetValidationLayers() const noexcept;
+      void CheckValidationLayerSupport(const TokenSet&) const;
    #endif
 };
-
-/// Module entry & exit                                                         
-LANGULUS_DECLARE_MODULE(11, "MVulkan", "The vulkan module is used to draw 3D graphics in real time, and/or do GPU computation.", "Vulkan/", AModuleGraphics);
