@@ -12,7 +12,7 @@
 
 /// VRAM geometry construction                                                
 ///   @param producer - the owner of the content                              
-VulkanGeometry::VulkanGeometry(CVulkanRenderer* producer)
+VulkanGeometry::VulkanGeometry(VulkanRenderer* producer)
    : IContentVRAM {MetaData::Of<CVulkanGeometry>()}
    , TProducedFrom {producer} {
    ClassValidate();

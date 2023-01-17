@@ -14,8 +14,9 @@
 ///                                                                           
 class VulkanCamera : public Unit {
    LANGULUS(PRODUCER) VulkanLayer;
+protected:
+   friend class VulkanLayer;
 
-private:
    // Whether or not a perspective projection is used                   
    bool mPerspective {true};
    // The projection matrix                                             
@@ -32,11 +33,11 @@ private:
    // Eye separation. Stereo if more/less than zero                     
    Real mEyeSeparation {};
 
-   TAny<const AInstance*> mInstances;
+   TAny<const Unit*> mInstances;
    Matrix4 mProjectionInverted;
    VkViewport mVulkanViewport {0, 0, 640, 480, 0, 1};
    VkRect2D mVulkanScissor {{0, 0}, {640, 480}};
-   Vec2 mResolution {640, 480};
+   Vec2u32 mResolution {640, 480};
 
 public:
    VulkanCamera(VulkanLayer*);

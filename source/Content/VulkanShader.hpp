@@ -11,9 +11,7 @@
 
 
 ///                                                                           
-///   GLSL VULKAN SHADER                                                      
-///                                                                           
-/// Handles shader compilation using shaderc                                  
+///   Vulkan shader                                                           
 ///                                                                           
 class VulkanShader {
    LANGULUS(PRODUCER) VulkanRenderer;
@@ -26,17 +24,17 @@ private:
    GLSL mCode;
 
    // Shader stage                                                      
-   Shader mStageDescription = {};
-   ShaderStage::Enum mStage = ShaderStage::Pixel;
+   Shader mStageDescription {};
+   ShaderStage::Enum mStage {ShaderStage::Pixel};
 
    // Uniform/input bindings in piception format                        
    TAny<TAny<Trait>> mInputs;
 
    // True if shader is compiled                                        
-   bool mCompiled = false;
+   bool mCompiled {};
 
    // True if shader is auto-completed                                  
-   bool mCompleted = false;
+   bool mCompleted {};
 
 public:
    VulkanShader(VulkanRenderer*);
@@ -44,18 +42,18 @@ public:
    VulkanShader& operator = (VulkanShader&&) noexcept = default;
    ~VulkanShader();
 
-   bool operator == (const ME&) const;
+   bool operator == (const VulkanShader&) const;
 
-   NOD() Hash GetHash() const override;
+   NOD() Hash GetHash() const;
 
-   NOD() inline bool IsCompiled() const noexcept { return mCompiled; }
-   NOD() inline auto& GetShader() const noexcept { return mStageDescription; }
-   NOD() inline auto& GetBindings() const noexcept { return mBindings; }
-   NOD() inline auto& GetAttributes() const noexcept { return mAttributes; }
-   NOD() inline auto& GetCode() const noexcept { return mCode; }
-   NOD() inline RRate GetRate() const noexcept { return mStage + RRate::StagesBegin; }
+   NOD() bool IsCompiled() const noexcept { return mCompiled; }
+   NOD() auto& GetShader() const noexcept { return mStageDescription; }
+   NOD() auto& GetBindings() const noexcept { return mBindings; }
+   NOD() auto& GetAttributes() const noexcept { return mAttributes; }
+   NOD() auto& GetCode() const noexcept { return mCode; }
+   NOD() RRate GetRate() const noexcept { return mStage + RRate::StagesBegin; }
 
-   bool InitializeFromMaterial(ShaderStage::Enum, const AMaterial*);
+   bool InitializeFromMaterial(ShaderStage::Enum, const Unit*);
    void Uninitialize();
    bool Compile();
 

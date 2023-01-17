@@ -10,7 +10,7 @@
 
 /// Shader passive construction                                               
 ///   @param producer - the producer of the shader                            
-VulkanShader::VulkanShader(CVulkanRenderer* producer)
+VulkanShader::VulkanShader(VulkanRenderer* producer)
    : AUnitGraphics {MetaData::Of<VulkanShader>()}
    , TProducedFrom {producer} { }
 

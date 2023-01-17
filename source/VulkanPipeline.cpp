@@ -7,7 +7,7 @@
 ///                                                                           
 #include "VulkanRenderer.hpp"
 
-#define PC_VERBOSE_PIPE(a) pcLogSelfVerbose << a
+#define VERBOSE_PIPELINE(a) Logger::Verbose(Self(), a)
 
 
 /// Pipeline construction                                                     
@@ -33,26 +33,27 @@ const Hash& VulkanPipeline::GetHash() const noexcept {
 /// Compare pipelines for equality                                            
 ///   @param rhs - the pipeline to compare with                               
 ///   @return true if pipelines are functioanlly the same                     
-bool VulkanPipeline::operator == (const ME& rhs) const noexcept {
+bool VulkanPipeline::operator == (const VulkanPipeline& rhs) const noexcept {
    return GetHash() == rhs.GetHash() && mStages == rhs.mStages;
 }
 
 /// Create/destroy stuff inside this pipeline context                         
 ///   @param verb - creation/destruction verb                                 
 void VulkanPipeline::Create(Verb& verb) {
-   if (verb.GetArgument().IsEmpty())
+   if (verb.IsEmpty())
       return;
 
-   pcLogSelfVerbose << "Initializing graphics pipeline from " << verb.GetArgument();
-   verb.GetArgument().ForEachDeep([&](Block& group) {
-      EitherDoThis
-         group.ForEach([&](AFile& file) {
+   Logger::Verbose(Self(), 
+      "Initializing graphics pipeline from ", verb.GetArgument());
+
+   verb.ForEachDeep([&](Block& group) {
+      group.ForEach(
+         [this](AFile& file) {
             // Create from shader file interface                        
             auto glslCode = file.ReadAs<GLSL>();
             return glslCode.IsEmpty() || !PrepareFromCode(glslCode);
-         })
-      OrThis
-         group.ForEach([&](const Path& path) {
+         },
+         [this](const Path& path) {
             // Create from shader file path                             
             auto file = GetProducer()->GetRuntime()->GetFile(path);
             if (file) {
@@ -60,28 +61,27 @@ void VulkanPipeline::Create(Verb& verb) {
                return glslCode.IsEmpty() || !PrepareFromCode(glslCode);
             }
             return true;
-         })
-      OrThis
-         group.ForEach([&](const AMaterial* material) {
+         },
+         [this](const AMaterial* material) {
             // Create from predefined material generator                
             return !PrepareFromMaterial(material);
-         })
-      OrThis
-         group.ForEach([&](const Construct& construct) {
+         },
+         [this](const Construct& construct) {
             // Create from any construct                                
             return !PrepareFromConstruct(construct);
-         });
+         }
+      );
 
-      return mHash == 0;
+      return !mHash;
    });
 
-   if (mHash == 0) {
+   if (!mHash) {
       // Still not initialized, try wrapping the entire argument        
       // inside a construct                                             
-      PrepareFromConstruct(Construct::From<CVulkanPipeline>(verb.GetArgument()));
+      PrepareFromConstruct(Construct::From<VulkanPipeline>(verb.GetArgument()));
    }
 
-   if (mHash != 0)
+   if (mHash)
       verb.Done();
 }
 
@@ -107,8 +107,6 @@ void VulkanPipeline::Initialize() {
    // Tweak the rasterizer                                              
    VkPipelineRasterizationStateCreateInfo rasterizer {};
    rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-   rasterizer.depthClampEnable = VK_FALSE;
-   rasterizer.rasterizerDiscardEnable = VK_FALSE;
    rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
    if (mStages[ShaderStage::Vertex]) {
       // Override polygon mode if a vertex shader stage is available    
@@ -126,7 +124,7 @@ void VulkanPipeline::Initialize() {
          rasterizer.polygonMode = VK_POLYGON_MODE_LINE;
          break;
       default:
-         throw Except::Graphics(pcLogSelfError << "Unsupported primitive");
+         LANGULUS_THROW(Graphics, "Unsupported primitive");
       }
    }
    //rasterizer.polygonMode = VK_POLYGON_MODE_LINE; //for debuggery
@@ -135,15 +133,10 @@ void VulkanPipeline::Initialize() {
 
    // These are relevant if polygonMode is VK_POLYGON_MODE_LINE         
    rasterizer.lineWidth = 1.0f;
-   rasterizer.depthBiasEnable = VK_FALSE;
-   rasterizer.depthBiasConstantFactor = 0;
-   rasterizer.depthBiasClamp = 0;
-   rasterizer.depthBiasSlopeFactor = 0;
 
    // Setup the antialiasing/supersampling mode                         
    VkPipelineMultisampleStateCreateInfo multisampling {};
    multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-   multisampling.sampleShadingEnable = VK_FALSE;
    multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
    // Define the color blending state                                   
@@ -152,19 +145,19 @@ void VulkanPipeline::Initialize() {
       VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | 
       VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
    colorBlendAttachment.blendEnable = VK_TRUE;
-   colorBlendAttachment.srcColorBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_SRC_ALPHA;
-   colorBlendAttachment.dstColorBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-   colorBlendAttachment.colorBlendOp = VkBlendOp::VK_BLEND_OP_ADD;
-   colorBlendAttachment.srcAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ONE;
-   colorBlendAttachment.dstAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ZERO;
+   colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+   colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+   colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+   colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+   colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
    /*colorBlendAttachment.srcAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_SRC_ALPHA;
    colorBlendAttachment.dstAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;*/
    //colorBlendAttachment.alphaBlendOp = VkBlendOp::VK_BLEND_OP_SUBTRACT;
-   colorBlendAttachment.alphaBlendOp = VkBlendOp::VK_BLEND_OP_ADD;
+   colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
 
    VkPipelineColorBlendStateCreateInfo colorBlending {};
    colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-   colorBlending.logicOpEnable = VK_FALSE;
+   colorBlending.logicOpEnable = VK_FALSE;//TODO
    colorBlending.logicOp = VK_LOGIC_OP_COPY;
    colorBlending.attachmentCount = 1;
    colorBlending.pAttachments = &colorBlendAttachment;
@@ -173,14 +166,14 @@ void VulkanPipeline::Initialize() {
    try { CreateUniformBuffers(); }
    catch (...) {
       Uninitialize();
-      throw Except::Graphics(pcLogSelfError
-         << "Can't create uniform buffers...");
+      LANGULUS_THROW(Graphics, "Can't create uniform buffers");
    }
 
    // Create the pipeline layouts                                       
-   std::vector<UBOLayout> relevantLayouts;
-   relevantLayouts.push_back(mStaticUBOLayout);
-   relevantLayouts.push_back(mDynamicUBOLayout);
+   std::vector<UBOLayout> relevantLayouts {
+      mStaticUBOLayout, mDynamicUBOLayout
+   };
+
    if (mSamplersUBOLayout)
       relevantLayouts.push_back(mSamplersUBOLayout);
 
@@ -188,14 +181,14 @@ void VulkanPipeline::Initialize() {
    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
    pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(relevantLayouts.size());
    pipelineLayoutInfo.pSetLayouts = relevantLayouts.data();
-   if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &mPipeLayout.mValue)) {
+
+   if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &mPipeLayout.Get())) {
       Uninitialize();
-      throw Except::Graphics(pcLogSelfError
-         << "Can't create pipeline layout...");
+      LANGULUS_THROW(Graphics, "Can't create pipeline layout");
    }
 
    // Allow viewport to be dynamically set                              
-   const VkDynamicState dynamicStates[] = {
+   const VkDynamicState dynamicStates[] {
       VK_DYNAMIC_STATE_VIEWPORT,
       VK_DYNAMIC_STATE_SCISSOR
    };
@@ -210,10 +203,8 @@ void VulkanPipeline::Initialize() {
    depthStencil.depthTestEnable = mDepth ? VK_TRUE : VK_FALSE;
    depthStencil.depthWriteEnable = mDepth ? VK_TRUE : VK_FALSE;
    depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
-   depthStencil.depthBoundsTestEnable = VK_FALSE;
    depthStencil.minDepthBounds = 0.0f;
    depthStencil.maxDepthBounds = 1.0f;
-   depthStencil.stencilTestEnable = VK_FALSE;
 
    // By default empty input and assembly states are used               
    mInput = {};
@@ -236,12 +227,12 @@ void VulkanPipeline::Initialize() {
    mAssembly.primitiveRestartEnable = VK_FALSE;
 
    // Create the pipeline                                               
-   std::vector<Shader> stages;
+   TAny<Shader> stages;
    for (int i = 0; i < ShaderStage::Counter; ++i) {
       if (!mStages[i])
          continue;
       mStages[i]->Compile();
-      stages.push_back(mStages[i]->GetShader());
+      stages << mStages[i]->GetShader();
    }
 
    VkGraphicsPipelineCreateInfo pipelineInfo {};
@@ -251,8 +242,8 @@ void VulkanPipeline::Initialize() {
    pipelineInfo.pMultisampleState = &multisampling;
    pipelineInfo.pColorBlendState = &colorBlending;
    pipelineInfo.pDepthStencilState = &depthStencil;
-   pipelineInfo.stageCount = uint32_t(stages.size());
-   pipelineInfo.pStages = stages.data();
+   pipelineInfo.stageCount = uint32_t(stages.GetCount());
+   pipelineInfo.pStages = stages.GetRaw();
    pipelineInfo.pVertexInputState = &mInput;
    pipelineInfo.pInputAssemblyState = &mAssembly;
    pipelineInfo.pTessellationState = nullptr;
@@ -260,13 +251,11 @@ void VulkanPipeline::Initialize() {
    pipelineInfo.renderPass = mProducer->GetPass();
    pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
    pipelineInfo.pDynamicState = &dynamicState;
-   if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &mPipeline.mValue)) {
-      Uninitialize();
-      throw Except::Graphics(pcLogSelfError
-         << "Can't create graphical pipeline. Aborting...");
-   }
 
-   ClassValidate();
+   if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &mPipeline.Get())) {
+      Uninitialize();
+      LANGULUS_THROW(Graphics, "Can't create graphical pipeline");
+   }
 }
 
 /// Initialize the pipeline from geometry content                             
@@ -274,18 +263,18 @@ void VulkanPipeline::Initialize() {
 ///   @return true on success                                                 
 bool VulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
    // Let's build a material construct                                  
-   PC_VERBOSE_PIPE("Generating material from: " << stuff);
+   VERBOSE_PIPELINE("Generating material from: ", stuff);
+
    Any material;
-   pcptr textureId = 0;
-   stuff.GetAll().ForEachDeep([&](const Block& group) {
-      EitherDoThis
+   Offset textureId {};
+   stuff.ForEachDeep([&](const Block& group) {
       group.ForEach([&](const AGeometry& geometry) {
          // Create from geometry                                        
          // Make sure the geometry is generated, so that we have the    
          // input bindings                                              
          geometry.Generate();
 
-         mPrimitive = pcPrimitiveToVkPrimitive(geometry.GetTopology());
+         mPrimitive = AsVkPrimitive(geometry.GetTopology());
          
          // Scan the input attributes (inside geometry data)            
          for (auto& trait : geometry.GetDataList()) {
@@ -293,35 +282,34 @@ bool VulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
                // Skip indices                                          
                continue;
 
-            if (trait.TraitIs<Traits::Position>()) {
+            if (trait.TraitIs<Traits::Place>()) {
                // Create a position input and project it in vertex      
                // shader                                                
-               GASM code = 
-                  "Create^PerVertex(ut"_gasm + Traits::Input::ID + "(ut"_gasm + trait.GetTraitID() + "(ud" + trait.GetToken() + ")))"
+               Code code =
+                  "Create^PerVertex(Input("_code + trait.GetTraitID() + '(' + trait.GetToken() + ")))"
                   ".Project^PerVertex(ViewProjectTransform, ModelTransform)";
-               PC_VERBOSE_PIPE("Incorporating: " << code);
-               material << pcMove(code);
+               VERBOSE_PIPELINE("Incorporating: ", code);
+               material << Abandon(code);
             }
             else if (trait.TraitIs<Traits::Aim>()) {
                // Create a normal/tangent/bitangent input and           
                // project it in vertex   shader                         
-               GASM code = 
-                  "Create^PerVertex(ut"_gasm + Traits::Input::ID + "(ut"_gasm + trait.GetTraitID() + "(ud" + trait.GetToken() + ")))"
+               Code code =
+                  "Create^PerVertex(Input("_code + trait.GetTraitID() + '(' + trait.GetToken() + ")))"
                   ".Project^PerVertex(ModelTransform)";
-               PC_VERBOSE_PIPE("Incorporating: " << code);
-               material << pcMove(code);
+               VERBOSE_PIPELINE("Incorporating: ", code);
+               material << Abandon(code);
             }
             else if (trait.TraitIs<Traits::Sampler>()) {
                // Create a texture coord input and project it in        
                // vertex shader if required                             
-               GASM code = 
-                  "Create^PerVertex(ut"_gasm + Traits::Input::ID + "(ut"_gasm + trait.GetTraitID() + "(ud" + trait.GetToken() + ")))";
-               if (geometry.GetTextureMapper() == Mapper::World)
+               Code code = "Create^PerVertex(Input("_code + trait.GetTraitID() + '(' + trait.GetToken() + ")))";
+               if (geometry.GetTextureMapper() == MapMode::World)
                   code += ".Project^PerVertex(ModelTransform)";
-               else if (geometry.GetTextureMapper() == Mapper::Screen)
+               else if (geometry.GetTextureMapper() == MapMode::Screen)
                   code += ".Project^PerVertex(ModelTransform)";
-               PC_VERBOSE_PIPE("Incorporating: " << code);
-               material << pcMove(code);
+               VERBOSE_PIPELINE("Incorporating: ", code);
+               material << Abandon(code);
             }
             else if (trait.TraitIs<Traits::ModelTransform>()) {
                // Create hardware instancing inside geometry shader     
@@ -329,76 +317,71 @@ bool VulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
             }
             else {
                // Just declare input and forward it                     
-               GASM code = 
-                  "Create^PerVertex(ut"_gasm + Traits::Input::ID + "(ut"_gasm + trait.GetTraitID() + "(ud" + trait.GetToken() + ")))";
-               PC_VERBOSE_PIPE("Incorporating: " << code);
-               material << pcMove(code);
+               Code code = "Create^PerVertex(Input("_code + trait.GetTraitID() + '(' + trait.GetToken() + ")))";
+               VERBOSE_PIPELINE("Incorporating: ", code);
+               material << Abandon(code);
             }
          }
 
          // Geometry can contain textures (inside geometry descriptor)  
-         geometry.GetConstruct().GetAll().ForEachDeep([&](const Trait& t) {
+         geometry.GetConstruct().ForEachDeep([&](const Trait& t) {
             if (t.TraitIs<Traits::Texture>()) {
                // Add a texture uniform                                 
                //TODO check texture format
-               GASM code = "Texturize^PerPixel("_gasm + textureId + ")";
-               PC_VERBOSE_PIPE("Incorporating: " << code);
-               material << pcMove(code);
+               Code code = "Texturize^PerPixel("_code + textureId + ')';
+               VERBOSE_PIPELINE("Incorporating: ", code);
+               material << Abandon(code);
                ++textureId;
             }
             else if (t.TraitIs<Traits::Color>()) {
                // Add constant colorization                             
-               GASM code = "Texturize^PerPixel("_gasm + t.AsCast<rgba>() + ")";
-               PC_VERBOSE_PIPE("Incorporating: " << code);
-               material << pcMove(code);
+               Code code = "Texturize^PerPixel("_code + t.AsCast<RGBA>() + ')';
+               VERBOSE_PIPELINE("Incorporating: ", code);
+               material << Abandon(code);
             }
          });
 
          // Rasterize the geometry, using the standard rasterizer       
-         material << "Rasterize^PerVertex()"_gasm;
+         material << "Rasterize^PerVertex()"_code;
 
          // Only one geometry definition allowed                        
          return false;
-      })
-      OrThis
-      group.ForEach([&](const ATexture& texture) {
+      },
+      [&](const ATexture& texture) {
          // Add texturization, if construct contains any textures       
-         GASM code1 = "Create^PerPixel(ut"_gasm + Traits::Input::ID + "(ut"_gasm + Traits::Texture::ID + "(ud" + texture.GetFormat() + ")))";
-         GASM code2 = "Texturize^PerPixel("_gasm + textureId + ")";
-         PC_VERBOSE_PIPE("Incorporating: " << code1);
-         PC_VERBOSE_PIPE("Incorporating: " << code2);
-         material << pcMove(code1) << pcMove(code2);
+         Code code1 = "Create^PerPixel(Input(Texture(" + texture.GetFormat() + ")))";
+         Code code2 = "Texturize^PerPixel("_code + Code {textureId} + ')';
+         VERBOSE_PIPELINE("Incorporating: ", code1);
+         VERBOSE_PIPELINE("Incorporating: ", code2);
+         material << Abandon(code1) << Abandon(code2);
          ++textureId;
-      })
-      OrThis
-      group.ForEach([&](const Trait& t) {
+      },
+      [&](const Trait& t) {
          // Add various global traits, such as texture/color            
          if (t.TraitIs<Traits::Texture>()) {
             // Add a texture uniform                                    
-            GASM code = "Texturize^PerPixel("_gasm + textureId + ")";
-            PC_VERBOSE_PIPE("Incorporating: " << code);
-            material << pcMove(code);
+            Code code = "Texturize^PerPixel("_code + textureId + ')';
+            VERBOSE_PIPELINE("Incorporating: ", code);
+            material << Abandon(code);
             ++textureId;
          }
          else if (t.TraitIs<Traits::Color>()) {
             // Add constant colorization                                
-            GASM code = "Texturize^PerPixel("_gasm + t.AsCast<rgba>() + ")";
-            PC_VERBOSE_PIPE("Incorporating: " << code);
-            material << pcMove(code);
+            Code code = "Texturize^PerPixel("_code + t.AsCast<RGBA>() + ')';
+            VERBOSE_PIPELINE("Incorporating: ", code);
+            material << Abandon(code);
          }
-      })
-      OrThis
-      group.ForEach([&](const rgba& color) {
+      },
+      [&](const RGBA& color) {
          // Add a constant color                                        
-         GASM code = "Texturize^PerPixel("_gasm + color + ")";
-         PC_VERBOSE_PIPE("Incorporating: " << code);
-         material << pcMove(code);
-      })
-      OrThis
-      group.ForEach([&](const CVulkanLayer& layer) {
+         Code code = "Texturize^PerPixel("_code + color + ')';
+         VERBOSE_PIPELINE("Incorporating: ", code);
+         material << Abandon(code);
+      },
+      [&](const VulkanLayer& layer) {
          // Add layer preferences                                       
-         PC_VERBOSE_PIPE("Incorporating layer preferences from " << layer);
-         if (layer.GetStyle() & AVisualLayer::Hierarchical)
+         VERBOSE_PIPELINE("Incorporating layer preferences from ", layer);
+         if (layer.GetStyle() & VisualLayer::Hierarchical)
             mDepth = false;
       });
    });
@@ -411,10 +394,9 @@ bool VulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
    for (const auto& attachment : mProducer->GetPassAttachments()) {
       switch (attachment.format) {
       case VK_FORMAT_B8G8R8A8_UNORM: {
-         GASM outputCode =
-            "Create^PerPixel(ut"_gasm + Traits::Output::ID + "(ut" + Traits::Color::ID + "(udrgba)))";
-         PC_VERBOSE_PIPE("Incorporating: " << outputCode);
-         material << pcMove(outputCode);
+         Code outputCode = "Create^PerPixel(Output(Color(RGBA)))";
+         VERBOSE_PIPELINE("Incorporating: ", outputCode);
+         material << Abandon(outputCode);
          break;
       }
       case VK_FORMAT_D32_SFLOAT:
@@ -436,8 +418,8 @@ bool VulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
 ///   @return true on success                                                 
 bool VulkanPipeline::PrepareFromCode(const GLSL& code) {
    // Let's build a material generator from available code              
-   PC_VERBOSE_PIPE("Generating material from code snippet: ");
-   PC_VERBOSE_PIPE(code.Pretty());
+   VERBOSE_PIPELINE("Generating material from code snippet: ");
+   VERBOSE_PIPELINE(code.Pretty());
    auto owner = mProducer->GetOwners()[0];
    auto generator = owner->CreateUnit<AMaterial>(code);
    return PrepareFromMaterial(generator);
@@ -446,38 +428,36 @@ bool VulkanPipeline::PrepareFromCode(const GLSL& code) {
 /// Initialize the pipeline from material content                             
 ///   @param contentRAM - the content to use                                  
 ///   @return true on success                                                 
-bool VulkanPipeline::PrepareFromMaterial(const AMaterial* contentRAM) {
+bool VulkanPipeline::PrepareFromMaterial(const Unit* material) {
    // Generate the shader stages via the material content               
    // No way around this, unfortunately (it's cached, though)           
-   contentRAM->Generate();
+   material->Generate();
 
    if (!mStages.IsAllocated())
       mStages.Allocate(ShaderStage::Counter, true);
 
    // Iterate all stages and create vulkan shaders for them             
-   for (pcptr i = 0; i < ShaderStage::Counter; ++i) {
-      if (contentRAM->GetDataAs<Traits::Code, GLSL>(i).IsEmpty())
+   for (Count i = 0; i < ShaderStage::Counter; ++i) {
+      if (material->GetDataAs<Traits::Code, GLSL>(i).IsEmpty())
          continue;
 
       // Add the stage                                                  
       const auto stage = ShaderStage::Enum(i);
-      CVulkanShader shader(mProducer);
-      if (!shader.InitializeFromMaterial(stage, contentRAM))
+      VulkanShader shader(mProducer);
+      if (!shader.InitializeFromMaterial(stage, material))
          return false;
 
       mStages[stage] = mProducer->Cache(pcMove(shader));
       mStages[stage]->Reference(1);
    }
 
-   mHash = contentRAM->GetHash() | pcHash(mBlendMode) | pcHash(mDepth);
-   mOriginalContent = contentRAM;
+   mHash = HashData(material->GetHash(), mBlendMode, mDepth);
+   mOriginalContent = material;
    return true;
 }
 
 /// Uninitialize the pipeline                                                 
 void VulkanPipeline::Uninitialize() {
-   ClassInvalidate();
-
    // Dereference valid shaders                                         
    for (auto& shader : mStages) {
       if (shader)
@@ -485,11 +465,13 @@ void VulkanPipeline::Uninitialize() {
    }
 
    // Destroy the uniform buffer objects                                
-   mRelevantDynamicDescriptors.clear();
+   mRelevantDynamicDescriptors.Clear();
+
    for (auto& ubo : mStaticUBO)
       ubo.Destroy();
    for (auto& ubo : mDynamicUBO)
       ubo.Destroy();
+
    mSamplerUBO.Reset();
 
    // Destroy uniform buffer object pool                                
@@ -531,28 +513,30 @@ void VulkanPipeline::Uninitialize() {
 ///   @param layout - [out] the resulting layout                              
 ///   @param set - [out] the resulting set                                    
 void VulkanPipeline::CreateDescriptorLayoutAndSet(
-   const Bindings& bindings, UBOLayout* layout, VkDescriptorSet* set
+   const Bindings& bindings, 
+   UBOLayout* layout, 
+   VkDescriptorSet* set
 ) {
    auto device = mProducer->GetDevice().Get();
 
    // Combine all bindings in a single layout                           
-   VkDescriptorSetLayoutCreateInfo layoutInfo = {};
+   VkDescriptorSetLayoutCreateInfo layoutInfo {};
    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-   layoutInfo.bindingCount = uint32_t(bindings.size());
-   layoutInfo.pBindings = bindings.data();
+   layoutInfo.bindingCount = uint32_t(bindings.GetCount());
+   layoutInfo.pBindings = bindings.GetRaw();
+
    if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, layout))
-      throw Except::Graphics(pcLogSelfError
-         << "vkCreateDescriptorSetLayout failed");
+      LANGULUS_THROW(Graphics, "vkCreateDescriptorSetLayout failed");
 
    // Create a descriptor set                                           
-   VkDescriptorSetAllocateInfo allocInfo = {};
+   VkDescriptorSetAllocateInfo allocInfo {};
    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
    allocInfo.descriptorPool = mUBOPool;
    allocInfo.descriptorSetCount = 1;
    allocInfo.pSetLayouts = layout;
+
    if (vkAllocateDescriptorSets(device, &allocInfo, set))
-      throw Except::Graphics(pcLogSelfError
-         << "vkAllocateDescriptorSets failed");
+      LANGULUS_THROW(Graphics, "vkAllocateDescriptorSets failed");
 }
 
 /// Create a new sampler set                                                  
@@ -562,7 +546,7 @@ void VulkanPipeline::CreateNewSamplerSet() {
 
    // If last two samplers match, there is not need to create new one   
    // Just reuse the last one                                           
-   if (mSamplerUBO.GetCount() > 1 && mSamplerUBO[Index(-1)] == mSamplerUBO[Index(-2)])
+   if (mSamplerUBO.GetCount() > 1 && mSamplerUBO[-1] == mSamplerUBO[-2])
       return;
 
    // Copy the previous sampler set                                     
@@ -572,45 +556,45 @@ void VulkanPipeline::CreateNewSamplerSet() {
    ubo.mSamplersUBOSet = 0;
 
    // Create a new descriptor set                                       
-   VkDescriptorSetAllocateInfo allocInfo = {};
+   VkDescriptorSetAllocateInfo allocInfo {};
    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
    allocInfo.descriptorPool = mUBOPool;
    allocInfo.descriptorSetCount = 1;
-   allocInfo.pSetLayouts = &mSamplersUBOLayout.mValue;
-   if (vkAllocateDescriptorSets(mProducer->GetDevice(), &allocInfo, &ubo.mSamplersUBOSet.mValue)) {
-      throw Except::Graphics(pcLogSelfError
-         << "TODO: vkAllocateDescriptorSets failed - either reserve more "
-         << "items in descriptor pool, or make more pools on demand");
+   allocInfo.pSetLayouts = &mSamplersUBOLayout.Get();
+
+   if (vkAllocateDescriptorSets(mProducer->GetDevice(), &allocInfo, &ubo.mSamplersUBOSet.Get())) {
+      LANGULUS_THROW(Graphics,
+         "vkAllocateDescriptorSets failed - either reserve more "
+         "items in descriptor pool, or make more pools on demand"
+      );
    }
 
-   mSubscribers.back().samplerSet = mSamplerUBO.GetCount() - 1;
+   mSubscribers.Last().samplerSet = mSamplerUBO.GetCount() - 1;
 }
 
 /// Create a new geometry set                                                 
 void VulkanPipeline::CreateNewGeometrySet() {
    // If last two geometries match, there is not need to create new one 
    // Just reuse the last one                                           
-   if (mGeometries.size() > 1 && mGeometries[mGeometries.size() - 1] == mGeometries[mGeometries.size() - 2])
+   if (mGeometries.GetCount() > 1 && mGeometries[-1] == mGeometries[-2])
       return;
 
    // For now, only cached geometry is kept, no real set of             
    // properties is required per geometry                               
-   mGeometries.emplace_back();
+   mGeometries << nullptr;
 
-   mSubscribers.back().geometrySet = mGeometries.size() - 1;
+   mSubscribers.Last().geometrySet = mGeometries.GetCount() - 1;
 }
 
 /// Create uniform buffers                                                    
 void VulkanPipeline::CreateUniformBuffers() {
    auto device = mProducer->GetDevice();
    const auto uniforms = mOriginalContent->GetData<Traits::Trait>();
-   if (!uniforms || uniforms->IsEmpty()) {
-      throw Except::Graphics(pcLogSelfError
-         << "No uniforms/inputs provided by generator: " << mOriginalContent);
-   }
+   if (!uniforms || uniforms->IsEmpty())
+      LANGULUS_THROW(Graphics, "No uniforms/inputs provided by generator");
 
    // Create descriptor pools                                           
-   static constinit VkDescriptorPoolSize poolSizes[] = {
+   static constinit VkDescriptorPoolSize poolSizes[] {
       { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, RRate::StaticUniformCount },
       { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, RRate::DynamicUniformCount },
       { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 8 },
@@ -619,23 +603,21 @@ void VulkanPipeline::CreateUniformBuffers() {
    };
 
    // All sets use the same pool                                        
-   VkDescriptorPoolCreateInfo pool = {};
+   VkDescriptorPoolCreateInfo pool {};
    pool.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
    pool.poolSizeCount = sizeof(poolSizes) / sizeof(VkDescriptorPoolSize);
    pool.pPoolSizes = poolSizes;
    pool.maxSets = 8;
    pool.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-   if (vkCreateDescriptorPool(device, &pool, nullptr, &mUBOPool.mValue)) {
-      throw Except::Graphics(pcLogSelfError
-         << "Can't create UBO pool, so creation of vulkan material fails");
-   }
+
+   if (vkCreateDescriptorPool(device, &pool, nullptr, &mUBOPool.Get()))
+      LANGULUS_THROW(Graphics, "Can't create UBO pool, so creation of vulkan material fails");
 
    // Create the static sets (0)                                        
    {
-      Bindings bindings;
-
       // For each static uniform rate (set = 0)...                      
-      for (pcptr rate = 0; rate < RRate::StaticUniformCount; ++rate) {
+      Bindings bindings;
+      for (Count rate = 0; rate < RRate::StaticUniformCount; ++rate) {
          auto& ubo = mStaticUBO[rate];
 
          // Add relevant inputs                                         
@@ -644,10 +626,10 @@ void VulkanPipeline::CreateUniformBuffers() {
          for (auto& trait : inputs) {
             if (trait.TraitIs<Traits::Texture>())
                continue;
-            ubo.mUniforms.push_back({ 0, trait });
+            ubo.mUniforms.Emplace(0, trait);
          }
 
-         if (ubo.mUniforms.empty())
+         if (ubo.mUniforms.IsEmpty())
             continue;
 
          // Find out where the UBO is used                              
@@ -655,7 +637,7 @@ void VulkanPipeline::CreateUniformBuffers() {
             for (const auto stage : mStages) {
                if (!stage)
                   continue;
-               if (stage->GetCode().Find(GLSL(TraitID::Prefix) + uniform.mTrait.GetTraitMeta()->GetToken()))
+               if (stage->GetCode().Find(GLSL {uniform.mTrait.GetTrait()}))
                   ubo.mStages |= stage->GetStageFlagBit();
             }
          }
@@ -664,22 +646,21 @@ void VulkanPipeline::CreateUniformBuffers() {
          ubo.Create(mProducer);
 
          // Create the binding for this rate                            
-         VkDescriptorSetLayoutBinding binding = {};
+         VkDescriptorSetLayoutBinding binding {};
          binding.binding = decltype(binding.binding) (rate);
          binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
          binding.descriptorCount = 1;
          binding.stageFlags = ubo.mStages;
-         bindings.push_back(binding);
+         bindings << binding;
       }
 
-      CreateDescriptorLayoutAndSet(bindings, &mStaticUBOLayout.mValue, &mStaticUBOSet.mValue);
+      CreateDescriptorLayoutAndSet(bindings, &mStaticUBOLayout.Get(), &mStaticUBOSet.Get());
    }
 
    // Create the dynamic sets (0)                                       
    {
       Bindings bindings;
-
-      for (pcptr rate = 0; rate < RRate::DynamicUniformCount; ++rate) {
+      for (Offset rate = 0; rate < RRate::DynamicUniformCount; ++rate) {
          auto& ubo = mDynamicUBO[rate];
 
          // Add relevant inputs                                         
@@ -688,10 +669,10 @@ void VulkanPipeline::CreateUniformBuffers() {
          for (auto& trait : inputs) {
             if (trait.TraitIs<Traits::Texture>())
                continue;
-            ubo.mUniforms.push_back({ 0, trait });
+            ubo.mUniforms.Emplace(0, trait);
          }
 
-         if (ubo.mUniforms.empty())
+         if (ubo.mUniforms.IsEmpty())
             continue;
 
          // Find out where the UBO is used                              
@@ -699,7 +680,7 @@ void VulkanPipeline::CreateUniformBuffers() {
             for (const auto stage : mStages) {
                if (!stage)
                   continue;
-               if (stage->GetCode().Find(GLSL(TraitID::Prefix) + uniform.mTrait.GetTraitMeta()->GetToken()))
+               if (stage->GetCode().Find(GLSL {uniform.mTrait.GetTrait()}))
                   ubo.mStages |= stage->GetStageFlagBit();
             }
          }
@@ -708,28 +689,28 @@ void VulkanPipeline::CreateUniformBuffers() {
          ubo.Create(mProducer);
 
          // Create the binding for this rate                            
-         VkDescriptorSetLayoutBinding binding = {};
+         VkDescriptorSetLayoutBinding binding {};
          binding.binding = decltype(binding.binding) (rate);
          binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
          binding.descriptorCount = 1;
          binding.stageFlags = ubo.mStages;
-         bindings.push_back(binding);
-         mRelevantDynamicDescriptors.push_back(&ubo);
+         bindings << binding;
+         mRelevantDynamicDescriptors << &ubo;
       }
 
-      CreateDescriptorLayoutAndSet(bindings, &mDynamicUBOLayout.mValue, &mDynamicUBOSet.mValue);
+      CreateDescriptorLayoutAndSet(bindings, &mDynamicUBOLayout.Get(), &mDynamicUBOSet.Get());
    }
 
    // Finally, set the samplers for RRate::PerRenderable only (set = 2) 
    {
       // Add relevant inputs                                            
       SamplerUBO ubo;
-      const auto index = RRate(RRate::PerRenderable).GetInputIndex();
+      const auto index = RRate(RRate::Renderable).GetInputIndex();
       auto& inputs = uniforms->As<TAny<Trait>>(index);
       for (auto& trait : inputs) {
          if (!trait.TraitIs<Traits::Texture>())
             continue;
-         ubo.mUniforms << Uniform { 0, trait };
+         ubo.mUniforms << Uniform {0, trait};
       }
 
       if (!ubo.mUniforms.IsEmpty()) {
@@ -744,22 +725,30 @@ void VulkanPipeline::CreateUniformBuffers() {
                if (!stage)
                   continue;
 
-               const auto token = GLSL(TraitID::Prefix) + uniform.mTrait.GetTraitMeta()->GetToken() + bindings.size();
+               const auto token = 
+                  GLSL {uniform.mTrait.GetTrait()}
+                + GLSL {bindings.GetCount()};
+
                if (stage->GetCode().Find(token))
                   mask |= stage->GetStageFlagBit();
             }
 
             // Create the bindings for each texture                     
             VkDescriptorSetLayoutBinding binding = {};
-            binding.binding = static_cast<uint32_t>(bindings.size());
+            binding.binding = static_cast<uint32_t>(bindings.GetCount());
             binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
             binding.descriptorCount = 1;
             binding.stageFlags = mask;
-            bindings.push_back(binding);
+            bindings << binding;
          }
 
-         mSamplerUBO << pcMove(ubo);
-         CreateDescriptorLayoutAndSet(bindings, &mSamplersUBOLayout.mValue, &mSamplerUBO.Last().mSamplersUBOSet.mValue);
+         mSamplerUBO << Abandon(ubo);
+
+         CreateDescriptorLayoutAndSet(
+            bindings, 
+            &mSamplersUBOLayout.Get(), 
+            &mSamplerUBO.Last().mSamplersUBOSet.Get()
+         );
       }
    }
 
@@ -771,7 +760,7 @@ void VulkanPipeline::UpdateUniformBuffers() const {
    BufferUpdates writes;
 
    // Gather required static updates                                    
-   pcptr binding = 0;
+   Offset binding {};
    for (auto& it : mStaticUBO) {
       it.Update(binding, mStaticUBOSet, writes);
       ++binding;
@@ -788,18 +777,19 @@ void VulkanPipeline::UpdateUniformBuffers() const {
    for (auto& samplerSet : mSamplerUBO)
       samplerSet.Update(writes);
 
-   if (!writes.empty()) {
+   if (!writes.IsEmpty()) {
       // Commit all gathered updates to VRAM                            
       vkUpdateDescriptorSets(
          mProducer->GetDevice(),
-         uint32_t(writes.size()), writes.data(), 0, nullptr
+         static_cast<uint32_t>(writes.GetCount()),
+         writes.GetRaw(), 0, nullptr
       );
    }
 }
 
 /// Draw all subscribers of a given level (used in batched rendering)         
 ///   @param offset - the subscriber to start from                            
-pcptr VulkanPipeline::RenderLevel(const pcptr& offset) const {
+Count VulkanPipeline::RenderLevel(const Offset& offset) const {
    // Bind the pipeline                                                 
    vkCmdBindPipeline(mProducer->GetRenderCB(), 
       VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeline);
@@ -808,20 +798,20 @@ pcptr VulkanPipeline::RenderLevel(const pcptr& offset) const {
    vkCmdBindDescriptorSets(
       mProducer->GetRenderCB(),
       VK_PIPELINE_BIND_POINT_GRAPHICS,
-      mPipeLayout, 0, 1, &mStaticUBOSet.mValue, 0, nullptr
+      mPipeLayout, 0, 1, &mStaticUBOSet.Get(), 0, nullptr
    );
 
    // Get the initial state to check for interrupts                     
    const auto& initial = mSubscribers[offset];
-   const auto r = GetRelevantDynamicUBOIndexOfRate<RRate::PerLevel>();
+   const auto r = GetRelevantDynamicUBOIndexOfRate<RRate::Level>();
 
    // And for each subscriber...                                        
-   pcptr i = offset;
-   for (; i < mSubscribers.size() - 1; ++i) {
+   Offset i = offset;
+   for (; i < mSubscribers.GetCount() - 1; ++i) {
       auto& sub = mSubscribers[i];
 
       // Abort immediately on lower than level rate change              
-      for (pcptr s = 0; s <= r; ++s) {
+      for (Offset s = 0; s <= r; ++s) {
          if (initial.offsets[s] != sub.offsets[s])
             return i;
       }
@@ -830,8 +820,9 @@ pcptr VulkanPipeline::RenderLevel(const pcptr& offset) const {
       vkCmdBindDescriptorSets(
          mProducer->GetRenderCB(),
          VK_PIPELINE_BIND_POINT_GRAPHICS,
-         mPipeLayout, 1, 1, &mDynamicUBOSet.mValue,
-         static_cast<uint32_t>(mRelevantDynamicDescriptors.size()), sub.offsets
+         mPipeLayout, 1, 1, &mDynamicUBOSet.Get(),
+         static_cast<uint32_t>(mRelevantDynamicDescriptors.GetCount()),
+         sub.offsets
       );
 
       // Bind the sampler states (set 2)                                
@@ -844,7 +835,7 @@ pcptr VulkanPipeline::RenderLevel(const pcptr& offset) const {
             mProducer->GetRenderCB(),
             VK_PIPELINE_BIND_POINT_GRAPHICS,
             mPipeLayout, 2, 1, 
-            &mSamplerUBO[sub.samplerSet].mSamplersUBOSet.mValue,
+            &mSamplerUBO[sub.samplerSet].mSamplersUBOSet.Get(),
             0, nullptr
          );
       }
@@ -879,15 +870,16 @@ void VulkanPipeline::RenderSubscriber(const PipeSubscriber& sub) const {
    vkCmdBindDescriptorSets(
       mProducer->GetRenderCB(),
       VK_PIPELINE_BIND_POINT_GRAPHICS,
-      mPipeLayout, 0, 1, &mStaticUBOSet.mValue, 0, nullptr
+      mPipeLayout, 0, 1, &mStaticUBOSet.Get(), 0, nullptr
    );
 
    // Bind dynamic uniform buffers (set 1)                              
    vkCmdBindDescriptorSets(
       mProducer->GetRenderCB(),
       VK_PIPELINE_BIND_POINT_GRAPHICS,
-      mPipeLayout, 1, 1, &mDynamicUBOSet.mValue,
-      static_cast<uint32_t>(mRelevantDynamicDescriptors.size()), sub.offsets
+      mPipeLayout, 1, 1, &mDynamicUBOSet.Get(),
+      static_cast<uint32_t>(mRelevantDynamicDescriptors.GetCount()),
+      sub.offsets
    );
 
    // Bind the sampler states (set 2)                                   
@@ -900,7 +892,7 @@ void VulkanPipeline::RenderSubscriber(const PipeSubscriber& sub) const {
          mProducer->GetRenderCB(),
          VK_PIPELINE_BIND_POINT_GRAPHICS,
          mPipeLayout, 2, 1, 
-         &mSamplerUBO[sub.samplerSet].mSamplersUBOSet.mValue,
+         &mSamplerUBO[sub.samplerSet].mSamplersUBOSet.Get(),
          0, nullptr
       );
    }
@@ -922,19 +914,21 @@ void VulkanPipeline::RenderSubscriber(const PipeSubscriber& sub) const {
 
 /// Reset the used dynamic uniform buffers and the subscribers                
 void VulkanPipeline::ResetUniforms() {
-   // Always keep one sampler set in use, free the rest back to pool    
-   if (!mSamplerUBO.IsEmpty())
-      mSamplerUBO.Allocate(1);
+   if (!mSamplerUBO.IsEmpty()) {
+      // Always keep one sampler set in use, free the rest back to pool 
+      mSamplerUBO.Clear();
+      mSamplerUBO.New(1);
+   }
 
    // Reset dynamic UBO's usage, keep the allocated space and values    
    for (auto ubo : mRelevantDynamicDescriptors)
       ubo->mUsedCount = 0;
 
    // Subscribers should be always at least one                         
-   mSubscribers.clear();
-   mSubscribers.emplace_back();
+   mSubscribers.Clear();
+   mSubscribers.New(1);
 
    // Same applies to geometry sets                                     
-   mGeometries.clear();
-   mGeometries.emplace_back();
+   mGeometries.Clear();
+   mGeometries << nullptr;
 }

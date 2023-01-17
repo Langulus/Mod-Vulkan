@@ -31,33 +31,11 @@ GLSL::GLSL(const CT::Deep auto& block) : Text {} {
 
    // Finally, attempt to interpret each element as GLSL and concat     
    for (Count index = 0; index < count; ++index) {
-      Verbs::Interpret interpreter {MetaData::Of<GLSL>()};
-      auto element = block.GetElementResolved(index);
-      if (Verb::DispatchFlat(element, interpreter, false)) {
-         if (!interpreter.GetOutput().template Is<GLSL>()) {
-            throw Except::BadSerialization(
-               GLSL_VERBOSE(
-                  pcLogError << "Can't serialize " << element.GetToken()
-                  << " to GLSL (produced " << interpreter.GetOutput().GetToken()
-                  << " instead"
-               )
-            );
-         }
+      *this = Verbs::Interpret::To<GLSL>(block);
 
-         // Interpretation was a success                                
-         *this += interpreter.GetOutput().Get<GLSL>();
-      }
-      else {
-         // Failed, but try doing GASM interpretation                   
-         // It works most of the time :)                                
-         auto gasm = pcSerialize<GASM>(element);
-         GLSL_VERBOSE(pcLogFuncWarning
-            << "Inserting GASM code as GLSL: " << gasm);
-         *this += gasm;
-      }
-
-      if (index < block.GetCount() - 1)
-         *this += ", ";
+      // Failed, but try doing GASM interpretation                      
+      // It works most of the time :)                                   
+      //TODO
    }
 }
 
@@ -89,15 +67,14 @@ GLSL::GLSL(const TVector<T, C>& vector) {
    if constexpr (C == 1)
       *this += vector[0];
    else {
-      *this += "vec";
-      *this += C;
-      *this += "(";
+      *this += GLSL::template Type<TVector<T, C>>();
+      *this += '(';
       for (Count i = 0; i < C; ++i) {
          *this += vector[i];
          if (i < C - 1)
             *this += ", ";
       }
-      *this += ")";
+      *this += ')';
    }
 }
 
@@ -109,21 +86,14 @@ GLSL::GLSL(const TVector<T, C>& vector) {
 template<CT::DenseNumber T, Count C, Count R>
 LANGULUS(ALWAYSINLINE)
 GLSL::GLSL(const TMatrix<T, C, R>& matrix) {
-   *this += "mat";
-   if constexpr (C == R)
-      *this += C;
-   else {
-      *this += C;
-      *this += "x";
-      *this += R;
-   }
-   *this += "(";
+   *this += GLSL::template Type<TMatrix<T, C, R>>();
+   *this += '(';
    for (Count i = 0; i < C * R; ++i) {
       *this += matrix[i];
       if (i < (C * R) - 1)
          *this += ", ";
    }
-   *this += ")";
+   *this += ')';
 }
 
 /// Quaternion -> GLSL serializer                                             
@@ -132,7 +102,8 @@ GLSL::GLSL(const TMatrix<T, C, R>& matrix) {
 template<CT::DenseNumber T>
 LANGULUS(ALWAYSINLINE)
 GLSL::GLSL(const TQuaternion<T>& quaternion) {
-   *this += "vec4(";
+   *this += GLSL::template Type<TQuaternion<T>>();
+   *this += '(';
    *this += quaternion[0];
    *this += ", ";
    *this += quaternion[1];
@@ -140,7 +111,7 @@ GLSL::GLSL(const TQuaternion<T>& quaternion) {
    *this += quaternion[2];
    *this += ", ";
    *this += quaternion[3];
-   *this += ")";
+   *this += ')';
 }
 
 /// GLSL static type string conversion                                        
@@ -149,6 +120,102 @@ template<CT::Data T>
 LANGULUS(ALWAYSINLINE)
 GLSL GLSL::Type() {
    return Type(MetaData::Of<Decay<T>>());
+}
+
+/// GLSL type string conversion                                               
+///   @param meta - the type                                                  
+///   @return the GLSL string                                                 
+inline GLSL GLSL::Type(DMeta meta) {
+   meta = meta->GetMostConcrete();
+
+   if (meta->CastsTo<A::Number>()) {
+      // Scalars, vectors, matrices, quaternions, all based on numbers  
+      Letter prefix {};
+      RTTI::Base base;
+      if (meta->GetBase<Float>(0, base)) {
+         if (base.mCount == 1)
+            return "float";   // Scalar                                 
+      }
+      else if (meta->GetBase<Double>(0, base)) {
+         if (base.mCount == 1)
+            return "double";  // Scalar                                 
+         prefix = 'd';
+      }
+      else if (meta->GetBase<uint32_t>(0, base)) {
+         if (base.mCount == 1)
+            return "uint";    // Scalar                                 
+         prefix = 'u';
+      }
+      else if (meta->GetBase<int32_t>(0, base)) {
+         if (base.mCount == 1)
+            return "int";     // Scalar                                 
+         prefix = 'i';
+      }
+      else if (meta->GetBase<bool>(0, base)) {
+         if (base.mCount == 1)
+            return "bool";    // Scalar                                 
+         prefix = 'b';
+      }
+      else LANGULUS_THROW(GLSL, "Unsupported type");
+
+      // If this is reached, then we have a vector/matrix/quaternion    
+      Text token {prefix};
+      if (meta->CastsTo<A::Matrix>()) {
+         // Find the number of columns in the matrix                    
+         RTTI::Base matbase;
+         Count columns {};
+         Count rows {};
+
+         if (meta->GetBase<A::Vector>(0, matbase)) {
+            if (matbase.mCount == 1) {
+               // Single column, so return as vector                    
+               token += "vec";
+               token += Text {base.mCount};
+               return token;
+            }
+
+            columns = matbase.mCount;
+            rows = base.mCount / columns;
+         }
+
+         // If reached, then we have a matrix                           
+         token += "mat";
+         if (columns == rows) {
+            // Square matrix, so only one suffix number                 
+            token += Text {columns};
+         }
+         else {
+            // Non-square matrix, so two suffix numbers                 
+            token += Text {columns};
+            token += 'x';
+            token += Text {rows};
+         }
+      }
+      else if (meta->CastsTo<A::Vector>()) {
+         token += "vec";
+         token += Text {base.mCount};
+      }
+      else LANGULUS_THROW(GLSL, "Unsupported type");
+
+      return token;
+   }
+   else if (meta->CastsTo<VulkanTexture>()) {
+      return "sampler2D";
+      //TODO distinguish these:
+      //gsampler1D   GL_TEXTURE_1D   1D texture
+      //gsampler2D   GL_TEXTURE_2D   2D texture
+      //gsampler3D   GL_TEXTURE_3D   3D texture
+      //gsamplerCube   GL_TEXTURE_CUBE_MAP   Cubemap Texture
+      //gsampler2DRect   GL_TEXTURE_RECTANGLE   Rectangle Texture
+      //gsampler1DArray   GL_TEXTURE_1D_ARRAY   1D Array Texture
+      //gsampler2DArray   GL_TEXTURE_2D_ARRAY   2D Array Texture
+      //gsamplerCubeArray   GL_TEXTURE_CUBE_MAP_ARRAY   Cubemap Array Texture (requires GL 4.0 or ARB_texture_cube_map_array)
+      //gsamplerBuffer   GL_TEXTURE_BUFFER   Buffer Texture
+      //gsampler2DMS   GL_TEXTURE_2D_MULTISAMPLE   Multisample Texture
+      //gsampler2DMSArray   GL_TEXTURE_2D_MULTISAMPLE_ARRAY   Multisample Array Texture
+   }
+
+   LANGULUS_THROW(GLSL, "Unsupported type");
 }
 
 /// Concatenate GLSL with GLSL                                                
@@ -211,7 +278,6 @@ GLSL& GLSL::operator += (const ANYTHING& rhs) {
 ///   @param lhs - left operand                                               
 ///   @param rhs - right operand                                              
 ///   @return a reference to lhs                                              
-template<class T>
 LANGULUS(ALWAYSINLINE)
 GLSL operator + (const CT::NotText auto& lhs, const GLSL& rhs) {
    GLSL converted;

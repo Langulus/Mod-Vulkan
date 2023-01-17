@@ -12,20 +12,18 @@
 
 /// Construct the renderable                                                  
 ///   @param producer - the renderable's producer                             
-CVulkanRenderable::CVulkanRenderable(CVulkanLayer* producer)
+VulkanRenderable::VulkanRenderable(VulkanLayer* producer)
    : ARenderable {MetaData::Of<CVulkanRenderable>()}
-   , TProducedFrom {producer} {
-   ClassValidate();
-}
+   , TProducedFrom {producer} { }
 
 /// Cleanup content and pipelines referenced by the renderable                
-CVulkanRenderable::~CVulkanRenderable() {
+VulkanRenderable::~VulkanRenderable() {
    ResetRenderable();
 }
 
 /// Get the renderer for the renderable                                       
 ///   @return a pointer to the renderer                                       
-auto CVulkanRenderable::GetRenderer() noexcept {
+auto VulkanRenderable::GetRenderer() noexcept {
    return GetProducer()->GetProducer();
 }
 
@@ -33,7 +31,7 @@ auto CVulkanRenderable::GetRenderer() noexcept {
 /// This is the point where content might be generated upon request           
 ///   @param lod - information used to extract the best LOD                   
 ///   @return the VRAM geometry or nullptr if content is not available        
-CVulkanGeometry* CVulkanRenderable::GetGeometry(const LodState& lod) {
+VulkanGeometry* VulkanRenderable::GetGeometry(const LodState& lod) {
    const auto i = lod.GetAbsoluteIndex();
    if (!mLOD[i].mGeometry && mGeometryContent)
       mLOD[i].mGeometry = GetRenderer()->Cache(mGeometryContent->GetLOD(lod));
@@ -44,7 +42,7 @@ CVulkanGeometry* CVulkanRenderable::GetGeometry(const LodState& lod) {
 /// This is the point where content might be generated upon request           
 ///   @param lod - information used to extract the best LOD                   
 ///   @return the VRAM texture or nullptr if content is not available         
-CVulkanTexture* CVulkanRenderable::GetTextures(const LodState& lod) {
+VulkanTexture* VulkanRenderable::GetTextures(const LodState& lod) {
    const auto i = lod.GetAbsoluteIndex();
    if (!mLOD[i].mTexture && mTextureContent)
       mLOD[i].mTexture = GetRenderer()->Cache(mTextureContent.Get()); //TODO texture lod?
@@ -55,7 +53,7 @@ CVulkanTexture* CVulkanRenderable::GetTextures(const LodState& lod) {
 ///   @param lod - information used to extract the best LOD                   
 ///   @param layer - additional settings might be provided by the used layer  
 ///   @return the pipeline                                                    
-CVulkanPipeline* CVulkanRenderable::GetOrCreatePipeline(const LodState& lod, const CVulkanLayer* layer) {
+VulkanPipeline* VulkanRenderable::GetOrCreatePipeline(const LodState& lod, const VulkanLayer* layer) {
    // Always return the predefined pipeline if available                
    if (mPredefinedPipeline)
       return mPredefinedPipeline;
@@ -67,7 +65,7 @@ CVulkanPipeline* CVulkanRenderable::GetOrCreatePipeline(const LodState& lod, con
 
    // Construct a pipeline                                              
    bool usingGlobalPipeline = false;
-   auto construct = Construct::From<CVulkanPipeline>();
+   auto construct = Construct::From<VulkanPipeline>();
    if (mMaterialContent) {
       construct << mMaterialContent;
       usingGlobalPipeline = true;
@@ -96,7 +94,7 @@ CVulkanPipeline* CVulkanRenderable::GetOrCreatePipeline(const LodState& lod, con
 
    // If at this point the construct is empty, then nothing to draw     
    if (construct.IsEmpty()) {
-      pcLogSelfWarning << "No contents available for generating pipeline";
+      Logger::Warning(Self(), "No contents available for generating pipeline");
       return nullptr;
    }
    
@@ -106,9 +104,9 @@ CVulkanPipeline* CVulkanRenderable::GetOrCreatePipeline(const LodState& lod, con
       construct << layer;
 
    // Get, or create the pipeline                                       
-   auto creator = Verb::From<Verbs::Create>({}, &construct);
+   Verbs::Create creator {&construct};
    GetRenderer()->Create(creator);
-   creator.GetOutput().ForEachDeep([&](CVulkanPipeline* p) {
+   creator.GetOutput().ForEachDeep([&](VulkanPipeline* p) {
       if (usingGlobalPipeline)
          mPredefinedPipeline = p;
       else
@@ -122,7 +120,7 @@ CVulkanPipeline* CVulkanRenderable::GetOrCreatePipeline(const LodState& lod, con
 }
 
 /// Reset the renderable, releasing all used content and pipelines            
-void CVulkanRenderable::ResetRenderable() {
+void VulkanRenderable::ResetRenderable() {
    for (auto& lod : mLOD) {
       lod.mGeometry.Reset();
       lod.mTexture.Reset();
@@ -137,34 +135,26 @@ void CVulkanRenderable::ResetRenderable() {
 }
 
 /// Called when owner changes components/traits                               
-void CVulkanRenderable::Refresh() {
+void VulkanRenderable::Refresh() {
    // Just reset - new resources will be regenerated or reused upon     
    // request if they need be                                           
    ResetRenderable();
 
    // Gather all instances for this renderable, and calculate levels    
-   mLevelRange = {};
-   mInstances.Clear();
-   for (auto owner : GetOwners()) {
-      for (auto unit : owner->GetUnits()) {
-         auto instance = dynamic_cast<const AInstance*>(unit);
-         if (!instance)
-            continue;
+   mInstances = GetOwners().GatherUnits<SeekStyle::Here>("Instance");
+   if (!mInstances.IsEmpty())
+      mLevelRange = mInstances[0]->GetLevel();
+   else
+      mLevelRange = {};
 
-         if (mInstances.IsEmpty())
-            mLevelRange = {instance->GetLevel()};
-         else
-            mLevelRange.Embrace(instance->GetLevel());
-
-         mInstances << instance;
-      }
-   }
+   for (auto instance : mInstances)
+      mLevelRange.Embrace(instance->GetLevel());
 
    // Attempt extracting pipeline/material/geometry/textures from owners
    for (auto owner : GetOwners()) {
       for (auto unit : owner->GetUnits()) {
          // First check for predefined pipeline                         
-         auto pipeline = dynamic_cast<CVulkanPipeline*>(unit);
+         auto pipeline = dynamic_cast<VulkanPipeline*>(unit);
          if (pipeline) {
             mPredefinedPipeline = pipeline;
             return;

@@ -12,7 +12,7 @@ using PCCmdBuffer = VkCommandBuffer;
 
 
 ///                                                                           
-///   VRAM INTERFACE                                                          
+///   Video memory interface                                                  
 ///                                                                           
 /// Has tools to manage the VRAM, produce VRAM buffers, move memory, etc.     
 ///                                                                           
@@ -30,7 +30,7 @@ public:
    PCCmdBuffer mTransferBuffer = nullptr;
 
 public:
-   bool Initialize(VkPhysicalDevice, VkDevice, uint32_t transferIndex);
+   void Initialize(VkPhysicalDevice, VkDevice, uint32_t transferIndex);
    void Destroy();
 
    uint32_t ChooseMemory(uint32_t type, VkMemoryPropertyFlags) const;

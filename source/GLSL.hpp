@@ -99,7 +99,7 @@ NOD() GLSL operator + (const GLSL&, const CT::NotText auto&);
 
 LANGULUS(ALWAYSINLINE)
 GLSL operator "" _glsl(const char* text, std::size_t size) {
-   return GLSL{ text, size };
+   return GLSL {text, size};
 }
 
 #include "GLSL.inl"

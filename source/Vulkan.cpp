@@ -93,15 +93,17 @@ Vulkan::Vulkan(Runtime* runtime, const Any&)
 
    // Setup the required validation layers                              
    #if LANGULUS_DEBUG()
-      Logger::Warning(Self(), "Vulkan will work in debug mode "
-         "- performance warning due to validation layers");
+      Logger::Warning(Self(), 
+         "Vulkan will work in debug mode"
+         " - performance warning due to validation layers"
+      );
 
       mValidationLayers.emplace_back("VK_LAYER_KHRONOS_validation");
       CheckValidationLayerSupport(mValidationLayers);
    #endif
 
    // Instance creation info                                            
-   VkInstanceCreateInfo createInfo = {};
+   VkInstanceCreateInfo createInfo {};
    createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
    createInfo.pApplicationInfo = &appInfo;
    createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
@@ -109,20 +111,20 @@ Vulkan::Vulkan(Runtime* runtime, const Any&)
    #if LANGULUS_DEBUG()
       createInfo.enabledLayerCount = static_cast<uint32_t>(mValidationLayers.size());
       createInfo.ppEnabledLayerNames = mValidationLayers.data();
-   #else
-      createInfo.enabledLayerCount = 0;
    #endif
 
    // Create instance                                                   
    auto result = vkCreateInstance(&createInfo, nullptr, &mInstance.Get());
    if (result != VK_SUCCESS) {
-      Logger::Error(Self(), "Error creating Vulkan instance");
+      Logger::Error(Self(), 
+         "Error creating Vulkan instance");
 
       if (result == VK_ERROR_EXTENSION_NOT_PRESENT) {
-         Logger::Error(Self(), "There was at least one unsupported extension, analyzing...");
+         Logger::Error(Self(), 
+            "There was at least one unsupported extension, analyzing...");
 
          // Get all supported extensions                                
-         uint32_t extensionCount = 0;
+         uint32_t extensionCount {};
          vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
          std::vector<VkExtensionProperties> available(extensionCount);
          vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, available.data());
@@ -160,7 +162,7 @@ Vulkan::Vulkan(Runtime* runtime, const Any&)
 
    #if LANGULUS_DEBUG()
       // Setup the debug relay                                          
-      VkDebugReportCallbackCreateInfoEXT relayInfo = {};
+      VkDebugReportCallbackCreateInfoEXT relayInfo {};
       relayInfo.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
 
       #ifdef LANGULUS_LOGGER_ENABLE_ERRORS
@@ -183,20 +185,19 @@ Vulkan::Vulkan(Runtime* runtime, const Any&)
       relayInfo.pfnCallback = VulkanLogRelay;
 
       // Get the debug relay extension                                  
-      auto func = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(mInstance, "vkCreateDebugReportCallbackEXT");
+      auto func = (PFN_vkCreateDebugReportCallbackEXT)
+         vkGetInstanceProcAddr(mInstance, "vkCreateDebugReportCallbackEXT");
+
       if (func)
          func(mInstance, &relayInfo, nullptr, &mLogRelay);
       else
-         throw Except::Graphics(pcLogSelfError
-            << "Can not find vkCreateDebugReportCallbackEXT function - build as release "
-            << "or change PC_DEBUG to PC_DISABLED, if you don't need this");
+         LANGULUS_THROW(Graphics, "vkCreateDebugReportCallbackEXT failed - try building in release mode");
    #endif
 
    // Pick good hardware                                                
    mAdapter = PickAdapter();
    if (!mAdapter)
-      throw Except::Graphics(pcLogSelfError
-         << "Error picking graphics adapter - vulkan module is unusable");
+      LANGULUS_THROW(Graphics, "Error picking graphics adapter - vulkan module is unusable");
 
    // Show some info                                                    
    VkPhysicalDeviceProperties adapter_info;
@@ -208,70 +209,75 @@ Vulkan::Vulkan(Runtime* runtime, const Any&)
    uint32_t queueCount;
    vkGetPhysicalDeviceQueueFamilyProperties(mAdapter, &queueCount, nullptr);
    if (queueCount == 0)
-      throw Except::Graphics(pcLogSelfError
-         << "Your adapter is broken... i think - vulkan module is unusable");
+      LANGULUS_THROW(Graphics, "vkGetPhysicalDeviceQueueFamilyProperties returned no queues");
 
-   std::vector<VkQueueFamilyProperties> queueProperties(queueCount);
-   vkGetPhysicalDeviceQueueFamilyProperties(mAdapter, &queueCount, &queueProperties[0]);
+   TAny<VkQueueFamilyProperties> queueProperties;
+   queueProperties.New(queueCount);
+   vkGetPhysicalDeviceQueueFamilyProperties(mAdapter, &queueCount, queueProperties.GetRaw());
+
    uint32_t computeIndex = UINT32_MAX;
    for (uint32_t i = 0; i < queueCount; i++) {
       if (queueProperties[i].queueFlags & VK_QUEUE_COMPUTE_BIT && computeIndex == UINT32_MAX) {
          mSupportsComputation = true;
          computeIndex = i;
       }
+
       if (queueProperties[i].queueFlags & VK_QUEUE_TRANSFER_BIT)
          mSupportsTransfer = true;
       if (queueProperties[i].queueFlags & VK_QUEUE_SPARSE_BINDING_BIT)
          mSupportsSparseBinding = true;
    }
 
-   if (mSupportsComputation)
-      pcLogSelfVerbose << "Your GPU supports data computation - it will be used for large-scale computation";
+   if (mSupportsComputation) {
+      Logger::Verbose(Self(),
+         "Your GPU supports data computation"
+         " - it will be used for large-scale computation");
+   }
+
    if (mSupportsTransfer)
-      pcLogSelfVerbose << "Your GPU supports asynchronous queues";
+      Logger::Verbose(Self(), "Your GPU supports asynchronous queues");
+
    if (mSupportsSparseBinding)
-      pcLogSelfVerbose << "Your GPU supports sparse binding";
+      Logger::Verbose(Self(), "Your GPU supports sparse binding");
 
    // Create queues for rendering & presenting                          
-   std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-   std::set<uint32_t> uniqueQueueFamilies = { computeIndex };
-   float queuePriority = 1.0f;
+   TAny<VkDeviceQueueCreateInfo> queueCreateInfos;
+   std::set<uint32_t> uniqueQueueFamilies {computeIndex};
+   float queuePriority {1};
    for (int queueFamily : uniqueQueueFamilies) {
-      VkDeviceQueueCreateInfo queueCreateInfo = {};
+      VkDeviceQueueCreateInfo queueCreateInfo {};
       queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
       queueCreateInfo.queueFamilyIndex = queueFamily;
       queueCreateInfo.queueCount = 1;
       queueCreateInfo.pQueuePriorities = &queuePriority;
-      queueCreateInfos.push_back(queueCreateInfo);
+      queueCreateInfos << queueCreateInfo;
    }
 
-   VkPhysicalDeviceFeatures deviceFeatures = {};
+   VkPhysicalDeviceFeatures deviceFeatures {};
    deviceFeatures.samplerAnisotropy = VK_TRUE;
 
-   VkDeviceCreateInfo deviceInfo = {};
+   VkDeviceCreateInfo deviceInfo {};
    deviceInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-   deviceInfo.pQueueCreateInfos = queueCreateInfos.data();
-   deviceInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+   deviceInfo.pQueueCreateInfos = queueCreateInfos.GetRaw();
+   deviceInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.GetCount());
    deviceInfo.pEnabledFeatures = &deviceFeatures;
-   deviceInfo.enabledExtensionCount = 0;
 
    #if LANGULUS_DEBUG()
       deviceInfo.enabledLayerCount = static_cast<uint32_t>(GetValidationLayers().size());
       deviceInfo.ppEnabledLayerNames = GetValidationLayers().data();
-   #else
-      deviceInfo.enabledLayerCount = 0;
    #endif
 
    // Create the computation device                                     
-   if (vkCreateDevice(mAdapter, &deviceInfo, nullptr, &mDevice.mValue))
-      throw Except::Graphics(pcLogSelfError
-         << "Could not create logical device for rendering - vulkan module is unusable");
+   if (vkCreateDevice(mAdapter, &deviceInfo, nullptr, &mDevice.Get())) {
+      LANGULUS_THROW(Graphics,
+         "Could not create logical device for rendering"
+         " - vulkan module is unusable");
+   }
 
    // Get computation queue                                             
-   vkGetDeviceQueue(mDevice, computeIndex, 0, &mComputer.mValue);
+   vkGetDeviceQueue(mDevice, computeIndex, 0, &mComputer.Get());
 
-   pcLogSelfVerbose << "Initialized";
-   ClassValidate();
+   Logger::Verbose(Self(), "Initialized");
 }
 
 /// Vulkan module destruction                                                 
@@ -317,13 +323,13 @@ unsigned Vulkan::RateDevice(const VkPhysicalDevice& device) const {
 
    // Application can't function without geometry shaders               
    if (!deviceFeatures.geometryShader) {
-      pcLogSelfError << "Device doesn't support geometry shaders";
+      Logger::Error(Self(), "Device doesn't support geometry shaders");
       return 0;
    }
 
    // Application can't function without anistropic filtering           
    if (!deviceFeatures.samplerAnisotropy) {
-      pcLogSelfError << "Device doesn't support anistropic filtering";
+      Logger::Error(Self(), "Device doesn't support anistropic filtering");
       return 0;
    }
 
@@ -333,11 +339,14 @@ unsigned Vulkan::RateDevice(const VkPhysicalDevice& device) const {
 /// Pick the best rated adapter                                               
 ///   @return the physical device with the best rating                        
 VkPhysicalDevice Vulkan::PickAdapter() const {
-   pcu32 deviceCount = 0;
+   uint32_t deviceCount {};
    vkEnumeratePhysicalDevices(mInstance, &deviceCount, nullptr);
 
    if (deviceCount == 0) {
-      pcLogSelfError << "No graphical device was detected in your computer - vulkan module is unusable";
+      Logger::Error(Self(), 
+         "No graphical device was detected in your computer"
+         " - vulkan module is unusable"
+      );
       return nullptr;
    }
 
@@ -345,10 +354,10 @@ VkPhysicalDevice Vulkan::PickAdapter() const {
    vkEnumeratePhysicalDevices(mInstance, &deviceCount, devices.data());
 
    // Rate all devices, pick best                                       
-   pcptr best_rated = 0;
-   VkPhysicalDevice result = nullptr;
+   Offset best_rated {};
+   VkPhysicalDevice result {};
    for (const auto& device : devices) {
-      pcptr newdevice = RateDevice(device);
+      Offset newdevice = RateDevice(device);
       if (newdevice > best_rated) {
          best_rated = newdevice;
          result = device;
@@ -356,20 +365,20 @@ VkPhysicalDevice Vulkan::PickAdapter() const {
    }
 
    if (best_rated == 0)
-      pcLogSelfWarning << "The graphical hardware you have is quite shitty";
+      Logger::Warning(Self(), "The graphical hardware you have is quite shitty");
 
    return result;
 }
 
 /// Get required extension layers                                             
-std::vector<const char*> Vulkan::GetRequiredExtensions() const {
+TokenSet Vulkan::GetRequiredExtensions() const {
    std::vector<const char*> extensions;
    #if LANGULUS_DEBUG()
       extensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
    #endif
    
    extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
-   #if LANGULUS_OS_IS(WINDOWS)
+   #if LANGULUS_OS(WINDOWS)
       extensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
    #endif
    return extensions;
@@ -377,7 +386,7 @@ std::vector<const char*> Vulkan::GetRequiredExtensions() const {
 
 /// Module update routine                                                     
 ///   @param dt - time from last update                                       
-void Vulkan::Update(PCTime) {
+void Vulkan::Update(Time) {
    for (auto& renderer : mRenderers)
       renderer.Update();
 }

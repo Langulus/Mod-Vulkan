@@ -13,7 +13,7 @@
 
 /// VRAM texture construction                                                 
 ///   @param producer - the texture producer                                  
-VulkanTexture::VulkanTexture(CVulkanRenderer* producer)
+VulkanTexture::VulkanTexture(VulkanRenderer* producer)
    : IContentVRAM {MetaData::Of<VulkanTexture>()}
    , TProducedFrom {producer} {
    ClassValidate();

@@ -8,6 +8,7 @@
 #pragma once
 #include "VulkanRenderer.hpp"
 
+using TokenSet = ::std::vector<const char*>;
 
 ///                                                                           
 ///   Vulkan graphics module                                                  
@@ -36,9 +37,8 @@ private:
    // True if hardware has sparse binding support                       
    bool mSupportsSparseBinding = false;
    // List of renderer components                                       
-   TFactory<CVulkanRenderer> mRenderers;
+   TFactory<VulkanRenderer> mRenderers;
 
-   using TokenSet = ::std::vector<const char*>;
 
    #if LANGULUS_DEBUG()
       TokenSet mValidationLayers;

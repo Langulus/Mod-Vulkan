@@ -15,31 +15,33 @@
 
 
 ///                                                                           
-///   THE VULKAN RENDERER COMPONENT                                           
+///   Vulkan renderer                                                         
 ///                                                                           
-/// Binds with a window and renders to it                                     
-/// Manages framebuffers, VRAM contents, and layers                           
+/// Binds with a window and renders to it. Manages framebuffers, VRAM         
+/// contents, and layers                                                      
 ///                                                                           
-class CVulkanRenderer : public Unit {
+class VulkanRenderer : public Unit {
    LANGULUS(PRODUCER) Vulkan;
+   LANGULUS_VERBS(Verbs::Create);
+protected:
+   friend struct UBO;
 
-private:
-   Ptr<const AWindow> mWindow;
+   Ptr<const Unit> mWindow;
 
    // The logical device                                                
    Own<VkDevice> mDevice;
    // VRAM memory properties                                            
-   VRAM mVRAM;
+   VulkanMemory mVRAM;
    // Physical device properties                                        
-   VkPhysicalDeviceProperties mPhysicalProperties = {};
+   VkPhysicalDeviceProperties mPhysicalProperties {};
    // Physical device features                                          
-   VkPhysicalDeviceFeatures mPhysicalFeatures = {};
+   VkPhysicalDeviceFeatures mPhysicalFeatures {};
 
    // Rendering surface                                                 
    Own<VkSurfaceKHR> mSurface;
    // Swap chain                                                        
    Own<VkSwapchainKHR> mSwapChain;
-   std::vector<VkImage> mSwapChainImages;
+   TAny<VkImage> mSwapChainImages;
    // Swap chain frames                                                 
    Frames mFrame;
    // Framebuffers                                                      
@@ -47,26 +49,26 @@ private:
    // Command buffers                                                   
    CmdBuffers mCommandBuffer;
    // Depth image                                                       
-   VRAMImage mDepthImage;
+   VulkanImage mDepthImage;
    // Depth image view                                                  
    Own<VkImageView> mDepthImageView;
    // The main rendering pass                                           
-   std::vector<VkAttachmentDescription> mPassAttachments;
+   TAny<VkAttachmentDescription> mPassAttachments;
    Own<VkRenderPass> mPass;
 
    // Fence for each framebuffer                                        
-   std::vector<VkFence>   mNewBufferFence;
+   TAny<VkFence> mNewBufferFence;
    // I think this is not used                                          
    Own<VkSemaphore> mNewFrameFence;
    // Frame finished                                                    
    Own<VkSemaphore> mFrameFinished;
 
    // Graphics family                                                   
-   uint32_t mGraphicIndex = 0;
+   uint32_t mGraphicIndex {};
    // Presentation family                                               
-   uint32_t mPresentIndex = 0;
+   uint32_t mPresentIndex {};
    // Transfer family                                                   
-   uint32_t mTransferIndex = 0;
+   uint32_t mTransferIndex {};
 
    // For draw commands                                                 
    Own<VkCommandPool> mCommandPool;
@@ -77,81 +79,73 @@ private:
    Own<VkQueue> mPresentQueue;
 
    // Current frame index                                               
-   uint32_t mCurrentFrame = 0;
-   // Previous resolution (for detection)                               
-   vec2 mResolution;
+   uint32_t mCurrentFrame {};
+   // Previous resolution (for detecting change)                        
+   Vec2 mResolution;
    // Renderer initialized                                              
-   bool mRendererInitialized = false;
+   bool mRendererInitialized {};
 
-private:
    // Layers                                                            
-   TFactory<CVulkanLayer> mLayers;
+   TFactory<VulkanLayer> mLayers;
    // Pipelines                                                         
-   TFactoryUnique<CVulkanPipeline> mPipelines;
+   TFactoryUnique<VulkanPipeline> mPipelines;
    // Shader library                                                    
-   TFactoryUnique<CVulkanShader> mShaders;
+   TFactoryUnique<VulkanShader> mShaders;
    // Geometry content mirror, keeps RAM/VRAM synchronized              
-   TFactoryUnique<CVulkanGeometry> mGeometries;
+   TFactoryUnique<VulkanGeometry> mGeometries;
    // Texture content mirror, keeps RAM/VRAM synchronized               
-   TFactoryUnique<CVulkanTexture> mTextures;
+   TFactoryUnique<VulkanTexture> mTextures;
 
 public:
-   REFLECT(CVulkanRenderer);
-   CVulkanRenderer(MVulkan*);
-   CVulkanRenderer(CVulkanRenderer&&) noexcept = default;
-   CVulkanRenderer& operator = (CVulkanRenderer&&) noexcept = default;
-   ~CVulkanRenderer();
+   VulkanRenderer(Vulkan*);
+   ~VulkanRenderer();
 
-   void Initialize(AWindow*) final;
-   void Resize(const vec2&) final;
-   void Update() final;
+   void Create(Verb&);
+
+   void Draw();
+   void Initialize(Unit*);
+   void Resize(const Vec2&);
    void Uninitialize();
 
-   PC_VERB(Create);
-   PC_VERB(Interpret);
 
    /// Get the current command buffer                                         
    ///   @return the command buffer                                           
-   NOD() inline auto& GetRenderCB() const noexcept {
+   NOD() auto& GetRenderCB() const noexcept {
       return mCommandBuffer[mCurrentFrame];
    }
 
    /// Get hardware dependent UBO outer alignment for dynamic buffers         
    ///   @return the alignment                                                
-   NOD() inline pcptr GetOuterUBOAlignment() const noexcept {
-      return static_cast<pcptr>(
+   NOD() Size GetOuterUBOAlignment() const noexcept {
+      return static_cast<Size>(
          mPhysicalProperties.limits.minUniformBufferOffsetAlignment
       );
    }
-
-   PC_SET(VRAM);
-   PC_GET(Device);
-   PC_GET(Resolution);
-   PC_GET(Pass);
-   PC_GET(PassAttachments);
 
    NOD() VkSurfaceFormatKHR GetSurfaceFormat() const noexcept;
 
    /// Cache RAM content                                                      
    ///   @param content - the RAM content to cache                            
    ///   @return VRAM content, or nullptr if can't cache it                   
-   template<Unit T>
-   NOD() auto Cache(const T* content) requires Dense<T> {
-      if constexpr (pcHasBase<T, ATexture>)
+   template<CT::Unit T>
+   NOD() auto Cache(const T* content) requires CT::Dense<T> {
+      if constexpr (CT::DerivedFrom<T, ATexture>)
          return mTextures.CreateInner(content);
-      else if constexpr (pcHasBase<T, AGeometry>)
+      else if constexpr (CT::DerivedFrom<T, AGeometry>)
          return mGeometries.CreateInner(content);
-      else LANGULUS_ASSERT("Can't cache RAM content in VRAM");
+      else
+         LANGULUS_ERROR("Can't cache RAM content in VRAM");
    }
 
    /// Merge VRAM content                                                     
    ///   @param content - the RAM content to cache                            
    ///   @return VRAM content, or nullptr if can't cache it                   
-   template<Unit T>
-   NOD() auto Cache(T&& content) requires Dense<T> {
-      if constexpr (Same<T, CVulkanShader>)
-         return mShaders.Merge(pcForward<T>(content));
-      else LANGULUS_ASSERT("Can't merge content in VRAM");
+   template<CT::Unit T>
+   NOD() auto Cache(T&& content) requires CT::Dense<T> {
+      if constexpr (CT::DerivedFrom<T, VulkanShader>)
+         return mShaders.Merge(Forward<T>(content));
+      else
+         LANGULUS_ERROR("Can't merge content in VRAM");
    }
 
 private:

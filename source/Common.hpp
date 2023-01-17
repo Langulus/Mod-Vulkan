@@ -26,7 +26,7 @@ LANGULUS_DEFINE_TRAIT(AspectRatio, "Aspect ratio trait (width / height), usually
 LANGULUS_DEFINE_TRAIT(Viewport, "Viewport and depth clipping, usually a Range4");
 LANGULUS_DEFINE_TRAIT(Projection, "Camera projection matrix");
 LANGULUS_DEFINE_TRAIT(View, "Camera view matrix");
-LANGULUS_DEFINE_TRAIT(Model, "Instance model matrix");
+//LANGULUS_DEFINE_TRAIT(Model, "Instance model matrix");
 
 using namespace Langulus;
 using namespace Langulus::Flow;
@@ -35,6 +35,7 @@ using namespace Langulus::Entity;
 using namespace Langulus::Math;
 
 class Vulkan;
+class VulkanMemory;
 class VulkanRenderer;
 class VulkanLayer;
 class VulkanCamera;
@@ -337,7 +338,7 @@ protected:
 
 public:
    constexpr RefreshRate() noexcept = default;
-   constexpr RefreshRate(Type) noexcept;
+   constexpr RefreshRate(const CT::DenseNumber auto&) noexcept;
 
    constexpr bool IsUniform() const noexcept;
    constexpr bool IsStaticUniform() const noexcept;

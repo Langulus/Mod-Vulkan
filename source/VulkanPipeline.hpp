@@ -9,6 +9,9 @@
 #include "UBO.hpp"
 
 
+///                                                                           
+/// Pipeline subscriber                                                       
+///                                                                           
 struct PipeSubscriber {
    uint32_t offsets[RRate::DynamicUniformCount] {};
    uint32_t samplerSet {};
@@ -21,9 +24,9 @@ struct PipeSubscriber {
 ///                                                                           
 class VulkanPipeline : public Unit {
    LANGULUS(PRODUCER) VulkanRenderer;
-
+   LANGULUS_VERBS(Verbs::Create);
 private:
-   using Bindings = std::vector<VkDescriptorSetLayoutBinding>;
+   using Bindings = TAny<VkDescriptorSetLayoutBinding>;
 
    void CreateDescriptorLayoutAndSet(const Bindings&, UBOLayout*, VkDescriptorSet*);
    void CreateUniformBuffers();
@@ -52,7 +55,7 @@ private:
    // Uniform buffer objects for each RefreshRate                       
    DataUBO<false> mStaticUBO[RRate::StaticUniformCount];
    DataUBO<true> mDynamicUBO[RRate::DynamicUniformCount];
-   std::vector<DataUBO<true>*> mRelevantDynamicDescriptors;
+   TAny<DataUBO<true>*> mRelevantDynamicDescriptors;
 
    // Sets and samplers for textures                                    
    TAny<SamplerUBO> mSamplerUBO;
@@ -62,39 +65,40 @@ private:
    // Vertex input assembly descriptor                                  
    VertexAssembly mAssembly {};
    // Topology                                                          
-   Topology mPrimitive = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+   Topology mPrimitive {VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST};
    // Blending mode (participates in hash)                              
-   BlendMode mBlendMode = BlendMode::Normal;
+   BlendMode mBlendMode {BlendMode::Alpha};
    // Toggle depth testing and writing                                  
-   bool mDepth = true;
+   bool mDepth {true};
 
    // Subscribers                                                       
-   std::vector<PipeSubscriber> mSubscribers;
-   std::vector<const VulkanGeometry*> mGeometries;
+   TAny<PipeSubscriber> mSubscribers;
+   TAny<const VulkanGeometry*> mGeometries;
 
    Hash mHash;
-   bool mGenerated = false;
-   Ref<const AMaterial> mOriginalContent;
+   bool mGenerated {false};
+   Ptr<const Unit> mOriginalContent;
 
 public:
-   VulkanPipeline(CVulkanRenderer*);
+   VulkanPipeline(VulkanRenderer*);
    VulkanPipeline(VulkanPipeline&&) noexcept = default;
    ~VulkanPipeline();
 
    VulkanPipeline& operator = (VulkanPipeline&&) noexcept = default;
 
    NOD() const Hash& GetHash() const noexcept;
-   bool operator == (const ME&) const noexcept;
 
-   PC_VERB(Create);
+   bool operator == (const VulkanPipeline&) const noexcept;
+
+   void Create(Verb&);
 
    bool PrepareFromConstruct(const Construct&);
-   bool PrepareFromMaterial(const AMaterial*);
+   bool PrepareFromMaterial(const Unit*);
    bool PrepareFromCode(const GLSL&);
 
    void Initialize();
    void Uninitialize();
-   NOD() pcptr RenderLevel(const pcptr&) const;
+   NOD() Count RenderLevel(const Offset&) const;
    void RenderSubscriber(const PipeSubscriber&) const;
    void ResetUniforms();
 
@@ -105,89 +109,91 @@ public:
    ///   @param value - the value to use                                      
    ///   @param index - the index of the uniform of this kind                 
    ///                  used as ID only when setting a texture                
-   template<RRate::Enum RATE, RTTI::ReflectedTrait TRAIT, RTTI::ReflectedData DATA>
-   void SetUniform(const DATA& value, pcptr index = 0) {
-      if constexpr (Same<DATA, CVulkanTexture>) {
-         static_assert(RATE == RRate::PerRenderable,
+   template<RRate::Enum RATE, CT::Trait TRAIT, CT::Data DATA>
+   void SetUniform(const DATA& value, Offset index = 0) {
+      constexpr RRate RATED = RATE;
+
+      if constexpr (Same<DATA, VulkanTexture>) {
+         static_assert(RATE == RRate::Renderable,
             "Setting a texture requires RRate::PerRenderable");
          // Set the sampler with the given index                        
-         mSamplerUBO[mSubscribers.back().samplerSet].template Set<DATA>(value, index);
+         mSamplerUBO[mSubscribers.Last().samplerSet]
+            .template Set<DATA>(value, index);
       }
-      else if constexpr (Same<DATA, CVulkanGeometry>) {
-         static_assert(RATE == RRate::PerRenderable,
+      else if constexpr (Same<DATA, VulkanGeometry>) {
+         static_assert(RATE == RRate::Renderable,
             "Setting a geometry stream requires RRate::PerRenderable");
          // Set the geometry stream, make sure VRAM is initialized      
          value->Initialize();
-         mGeometries[mSubscribers.back().geometrySet] = value;
+         mGeometries[mSubscribers.Last().geometrySet] = value;
       }
-      else if constexpr (RRate(RATE).IsStaticUniform()) {
+      else if constexpr (RATED.IsStaticUniform()) {
          // Set a static uniform                                        
          (index);
-         constexpr auto rate = RRate(RATE).GetStaticUniformIndex();
+         constexpr auto rate = RATED.GetStaticUniformIndex();
          mStaticUBO[rate].template Set<TRAIT, DATA>(value);
       }
-      else if constexpr (RRate(RATE).IsDynamicUniform()) {
+      else if constexpr (RATED.IsDynamicUniform()) {
          // Set a dynamic uniform                                       
          (index);
-         constexpr auto rate = RRate(RATE).GetDynamicUniformIndex();
+         constexpr auto rate = RATED.GetDynamicUniformIndex();
          mDynamicUBO[rate].template Set<TRAIT, DATA>(value);
       }
-      else LANGULUS_ASSERT("Unsupported uniform rate");
+      else LANGULUS_ERROR("Unsupported uniform rate");
    }
 
    /// Push the current samplers and dynamic uniforms, advancing indices      
    ///   @tparam RATE - the rate to push                                      
    ///   @tparam SUBSCRIBE - whether or not to subscribe for batched draw     
-   ///   @return the byte offset of the pushed uniform block of dynamic RATE  
-   ///   @return the above, but paired with the sampler set index in use, and 
-   ///           the geometry set index in use, if   RATE is PerRenderable    
+   ///   @return the subscriber, if SUBSCRIBE is true, and RATE is dynamic    
    template<RRate::Enum RATE, bool SUBSCRIBE = true>
    NOD() auto PushUniforms() {
-      if constexpr (RRate(RATE).IsStaticUniform()) {
+      constexpr RRate RATED = RATE;
+
+      if constexpr (RATED.IsStaticUniform()) {
          // Pushing static uniforms does nothing                        
-         SAFETY(pcLogSelfError << "Trying to push a static uniform block "
-            "- although not fatal, there's no point in doing that");
+         SAFETY(Logger::Warning(
+            "Trying to push a static uniform block"
+            " - although not fatal, it's suboptimal doing that"
+         ));
       }
-      else if constexpr (RRate(RATE).IsDynamicUniform()) {
+      else if constexpr (RATED.IsDynamicUniform()) {
          // Push a dynamic rate                                         
-         constexpr auto rate = RRate(RATE).GetDynamicUniformIndex();
+         constexpr auto rate = RATED.GetDynamicUniformIndex();
 
          mDynamicUBO[rate].Push();
 
-         if constexpr (RATE == RRate::PerRenderable) {
+         if constexpr (RATE == RRate::Renderable) {
             // When pushing PerRenderable state, create new sampler set 
             // and a new geometry set for next SetUniform calls         
             CreateNewSamplerSet();
             CreateNewGeometrySet();
          }
 
-         if constexpr (RATE == RRate::PerInstance) {
+         if constexpr (RATE == RRate::Instance) {
             // Push a new subscriber only on new instance               
-            PipeSubscriber newSubscriber = mSubscribers.back();
-            pcptr i = 0;
-            for (auto ubo : mRelevantDynamicDescriptors) {
-               newSubscriber.offsets[i] = ubo->GetOffset();
-               ++i;
-            }
+            PipeSubscriber newSubscriber = mSubscribers.Last();
+            Offset i {};
+            for (auto ubo : mRelevantDynamicDescriptors)
+               newSubscriber.offsets[i++] = ubo->GetOffset();
 
             if constexpr (SUBSCRIBE)
-               mSubscribers.push_back(newSubscriber);
+               mSubscribers << newSubscriber;
             else {
-               std::swap(mSubscribers.back(), newSubscriber);
+               ::std::swap(mSubscribers.Last(), newSubscriber);
                return newSubscriber;
             }
          }
       }
-      else LANGULUS_ASSERT("Unsupported uniform rate to push");
+      else LANGULUS_ERROR("Unsupported uniform rate to push");
    }
 
    ///                                                                        
-   ///   @return                                                              
    template<RRate::Enum RATE>
    NOD() auto GetRelevantDynamicUBOIndexOfRate() const noexcept {
-      constexpr auto r = RRate(RRate::PerLevel).GetDynamicUniformIndex();
-      pcptr rtoi = 0;
-      for (pcptr s = 0; s < r; ++s) {
+      constexpr auto r = RRate(RRate::Level).GetDynamicUniformIndex();
+      Offset rtoi {};
+      for (Offset s = 0; s < r; ++s) {
          // Unused dynamic UBOs do not participate in offsets!          
          // Find what's the relevant index for 'r'                      
          if (mDynamicUBO[s].IsValid())

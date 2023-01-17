@@ -12,14 +12,12 @@
 
 /// Vulkan renderer construction                                              
 ///   @param producer - producer of the renderer                              
-VulkanLayer::VulkanLayer(CVulkanRenderer* producer)
+VulkanLayer::VulkanLayer(VulkanRenderer* producer)
    : AVisualLayer {MetaData::Of<VulkanLayer>()}
    , TProducedFrom {producer}
    , mCameras {this}
    , mRenderables {this}
-   , mLights {this} {
-   ClassValidate();
-}
+   , mLights {this} {}
 
 /// Create/destroy renderables, cameras, lights                               
 ///   @param verb - creation verb                                             
@@ -36,13 +34,13 @@ bool VulkanLayer::Generate(PipelineSet& relevantPipelines) {
    CompileCameras();
    auto n = CompileLevels();
    for (auto p : mRelevantPipelines)
-      relevantPipelines.insert(p);
+      relevantPipelines << p;
    return n > 0;
 }
 
 /// Get the window of the renderer                                            
 ///   @return the window pointers                                             
-const AWindow* VulkanLayer::GetWindow() const {
+const Unit* VulkanLayer::GetWindow() const {
    return GetProducer()->GetWindow();
 }
 
@@ -55,12 +53,13 @@ void VulkanLayer::CompileCameras() {
    }
 }
 
-/// Compile a single instance, culling it if able                             
+/// Compile a single renderable instance, culling it if able                  
+/// This will create or reuse a pipeline, capable of rendering it             
 ///   @param renderable - the renderable to compile                           
 ///   @param instance - the instance to compile                               
 ///   @param lod - the lod state to use                                       
 ///   @return the pipeline if instance is relevant                            
-CVulkanPipeline* VulkanLayer::CompileInstance(CVulkanRenderable* renderable, const AInstance* instance, LodState& lod) {
+VulkanPipeline* VulkanLayer::CompileInstance(VulkanRenderable* renderable, const Unit* instance, LodState& lod) {
    if (!instance) {
       // No instances, so culling based only on default level           
       if (lod.mLevel != Level::Default)
@@ -83,15 +82,15 @@ CVulkanPipeline* VulkanLayer::CompileInstance(CVulkanRenderable* renderable, con
    // Get relevant geometry                                             
    const auto geometry = renderable->GetGeometry(lod);
    if (geometry)
-      pipeline->SetUniform<RRate::PerRenderable, Traits::Model>(geometry);
+      pipeline->SetUniform<RRate::Renderable, Traits::Geometry>(geometry);
 
    // Get relevant textures                                             
    const auto textures = renderable->GetTextures(lod);
    if (textures)
-      pipeline->SetUniform<RRate::PerRenderable, Traits::Texture>(textures);
+      pipeline->SetUniform<RRate::Renderable, Traits::Texture>(textures);
 
    // Push uniforms                                                     
-   pipeline->SetUniform<RRate::PerInstance, Traits::ModelTransform>(lod.mModel);
+   pipeline->SetUniform<RRate::Instance, Traits::Transformation>(lod.mModel);
    return pipeline;
 }
 
@@ -101,33 +100,35 @@ CVulkanPipeline* VulkanLayer::CompileInstance(CVulkanRenderable* renderable, con
 ///   @param lod - the lod state to use                                       
 ///   @param pipesPerCamera - [out] pipelines used by the hierarchy           
 ///   @return 1 if something from the hierarchy was rendered                  
-pcptr VulkanLayer::CompileEntity(const Entity* entity, LodState& lod, PipelineSet& pipesPerCamera) {
+Count VulkanLayer::CompileThing(const Thing* thing, LodState& lod, PipelineSet& pipesPerCamera) {
    // Iterate all renderables of the entity, which are part of this     
    // layer - disregard all others                                      
-   std::vector<CVulkanRenderable*> relevantRenderables;
-   for (auto unit : entity->GetUnits()) {
-      auto renderable = dynamic_cast<CVulkanRenderable*>(unit);
+   TAny<VulkanRenderable*> relevantRenderables;
+   for (auto unit : thing->GetUnits()) {
+      auto renderable = dynamic_cast<VulkanRenderable*>(unit);
       if (renderable && !renderable->IsClassIrrelevant() && mRenderables.Owns(renderable))
-         relevantRenderables.push_back(renderable);
+         relevantRenderables << renderable;
    }
 
    // Compile the instances associated with these renderables           
-   pcptr renderedInstances = 0;
+   Count renderedInstances {};
    for (auto renderable : relevantRenderables) {
       if (renderable->GetInstances().IsEmpty()) {
          // Imagine a default instance                                  
          auto pipeline = CompileInstance(renderable, nullptr, lod);
          if (pipeline) {
-            const auto sub = pipeline->PushUniforms<RRate::PerInstance, false>();
-            pipeline->PushUniforms<RRate::PerRenderable, false>();
-            pipesPerCamera.insert(pipeline);
-            mRelevantPipelines.insert(pipeline);
-            auto& s = mSubscribers.back();
+            const auto sub = pipeline->PushUniforms<RRate::Instance, false>();
+            pipeline->PushUniforms<RRate::Renderable, false>();
+            pipesPerCamera << pipeline;
+            mRelevantPipelines << pipeline;
+
+            auto& s = mSubscribers.Last();
             s.pipeline = pipeline;
             s.sub = sub;
-            mSubscribers.emplace_back();
-            ++mSubscriberCountPerLevel.back();
-            ++mSubscriberCountPerCamera.back();
+            mSubscribers.New(1);
+
+            ++mSubscriberCountPerLevel.Last();
+            ++mSubscriberCountPerCamera.Last();
             ++renderedInstances;
          }
       }
@@ -138,26 +139,28 @@ pcptr VulkanLayer::CompileEntity(const Entity* entity, LodState& lod, PipelineSe
 
          auto pipeline = CompileInstance(renderable, instance, lod);
          if (pipeline) {
-            const auto sub = pipeline->PushUniforms<RRate::PerInstance, false>();
-            pipeline->PushUniforms<RRate::PerRenderable, false>();
-            pipesPerCamera.insert(pipeline);
-            mRelevantPipelines.insert(pipeline);
-            auto& s = mSubscribers.back();
+            const auto sub = pipeline->PushUniforms<RRate::Instance, false>();
+            pipeline->PushUniforms<RRate::Renderable, false>();
+            pipesPerCamera << pipeline;
+            mRelevantPipelines << pipeline;
+
+            auto& s = mSubscribers.Last();
             s.pipeline = pipeline;
             s.sub = sub;
-            mSubscribers.emplace_back();
-            ++mSubscriberCountPerLevel.back();
-            ++mSubscriberCountPerCamera.back();
+            mSubscribers.New(1);
+
+            ++mSubscriberCountPerLevel.Last();
+            ++mSubscriberCountPerCamera.Last();
             ++renderedInstances;
          }
       }
    }
 
    // Nest to children                                                  
-   for (auto& child : entity->GetChildren()) {
+   for (auto& child : thing->GetChildren()) {
       if (child->IsClassIrrelevant())
          continue;
-      renderedInstances += CompileEntity(child, lod, pipesPerCamera);
+      renderedInstances += CompileThing(child, lod, pipesPerCamera);
    }
 
    return renderedInstances > 0;
@@ -169,7 +172,12 @@ pcptr VulkanLayer::CompileEntity(const Entity* entity, LodState& lod, PipelineSe
 ///   @param level - the level to compile                                     
 ///   @param pipesPerCamera - [out] pipeline set for the current level only   
 ///   @return the number of compiled entities                                 
-pcptr VulkanLayer::CompileLevelHierarchical(const mat4& view, const mat4& projection, Level level, PipelineSet& pipesPerCamera) {
+Count VulkanLayer::CompileLevelHierarchical(
+   const Matrix4& view, 
+   const Matrix4& projection, 
+   Level level, 
+   PipelineSet& pipesPerCamera
+) {
    // Construct view and frustum   for culling                          
    LodState lod;
    lod.mLevel = level;
@@ -178,11 +186,12 @@ pcptr VulkanLayer::CompileLevelHierarchical(const mat4& view, const mat4& projec
    lod.mFrustum = lod.mViewInverted * projection;
 
    // Nest-iterate all children of the layer owner                      
-   pcptr renderedEntities = 0;
+   Count renderedEntities {};
    for (auto owner : GetOwners()) {
       if (owner->IsClassIrrelevant())
          continue;
-      renderedEntities += CompileEntity(owner, lod, pipesPerCamera);
+
+      renderedEntities += CompileThing(owner, lod, pipesPerCamera);
    }
    
    if (renderedEntities) {
@@ -191,19 +200,19 @@ pcptr VulkanLayer::CompileLevelHierarchical(const mat4& view, const mat4& projec
          const auto projectedView = lod.mViewInverted * projection;
          const auto projectedViewInverted = projectedView.Invert();
 
-         pipeline->SetUniform<RRate::PerLevel, Traits::ViewTransform>(lod.mView);
-         pipeline->SetUniform<RRate::PerLevel, Traits::ViewTransformInverted>(lod.mViewInverted);
-         pipeline->SetUniform<RRate::PerLevel, Traits::ViewProjectTransform>(projectedView);
-         pipeline->SetUniform<RRate::PerLevel, Traits::ViewProjectTransformInverted>(projectedViewInverted);
-         pipeline->SetUniform<RRate::PerLevel, Traits::Level>(level);
-         pipeline->PushUniforms<RRate::PerLevel, false>();
+         pipeline->SetUniform<RRate::Level, Traits::ViewTransform>(lod.mView);
+         pipeline->SetUniform<RRate::Level, Traits::ViewTransformInverted>(lod.mViewInverted);
+         pipeline->SetUniform<RRate::Level, Traits::ViewProjectTransform>(projectedView);
+         pipeline->SetUniform<RRate::Level, Traits::ViewProjectTransformInverted>(projectedViewInverted);
+         pipeline->SetUniform<RRate::Level, Traits::Level>(level);
+         pipeline->PushUniforms<RRate::Level, false>();
       }
 
-      mSubscriberCountPerLevel.emplace_back();
+      mSubscriberCountPerLevel.New(1);
 
       // Store the negative level in the set, so they're always in      
       // a descending order                                             
-      mRelevantLevels.insert(-level);
+      mRelevantLevels << -level;
    }
 
    return renderedEntities;
@@ -215,7 +224,12 @@ pcptr VulkanLayer::CompileLevelHierarchical(const mat4& view, const mat4& projec
 ///   @param level - the level to compile                                     
 ///   @param pipesPerCamera - [out] pipeline set for the current level only   
 ///   @return 1 if anything was rendered, zero otherwise                      
-pcptr VulkanLayer::CompileLevelBatched(const mat4& view, const mat4& projection, Level level, PipelineSet& pipesPerCamera) {
+Count VulkanLayer::CompileLevelBatched(
+   const Matrix4& view, 
+   const Matrix4& projection, 
+   Level level, 
+   PipelineSet& pipesPerCamera
+) {
    // Construct view and frustum   for culling                          
    LodState lod;
    lod.mLevel = level;
@@ -224,7 +238,7 @@ pcptr VulkanLayer::CompileLevelBatched(const mat4& view, const mat4& projection,
    lod.mFrustum = lod.mViewInverted * projection;
 
    // Iterate all renderables                                           
-   pcptr renderedInstances = 0;
+   Count renderedInstances {};
    for (auto& renderable : mRenderables) {
       if (renderable.IsClassIrrelevant())
          continue;
@@ -232,20 +246,20 @@ pcptr VulkanLayer::CompileLevelBatched(const mat4& view, const mat4& projection,
       if (renderable.GetInstances().IsEmpty()) {
          auto pipeline = CompileInstance(&renderable, nullptr, lod);
          if (pipeline) {
-            pipeline->PushUniforms<RRate::PerInstance>();
-            pipeline->PushUniforms<RRate::PerRenderable>();
-            pipesPerCamera.insert(pipeline);
-            mRelevantPipelines.insert(pipeline);
+            pipeline->PushUniforms<RRate::Instance>();
+            pipeline->PushUniforms<RRate::Renderable>();
+            pipesPerCamera << pipeline;
+            mRelevantPipelines << pipeline;
             ++renderedInstances;
          }
       }
       else for (auto instance : renderable.GetInstances()) {
          auto pipeline = CompileInstance(&renderable, instance, lod);
          if (pipeline) {
-            pipeline->PushUniforms<RRate::PerInstance>();
-            pipeline->PushUniforms<RRate::PerRenderable>();
-            pipesPerCamera.insert(pipeline);
-            mRelevantPipelines.insert(pipeline);
+            pipeline->PushUniforms<RRate::Instance>();
+            pipeline->PushUniforms<RRate::Renderable>();
+            pipesPerCamera << pipeline;
+            mRelevantPipelines << pipeline;
             ++renderedInstances;
          }
       }
@@ -257,16 +271,16 @@ pcptr VulkanLayer::CompileLevelBatched(const mat4& view, const mat4& projection,
          const auto projectedView = lod.mViewInverted * projection;
          const auto projectedViewInverted = projectedView.Invert();
 
-         pipeline->SetUniform<RRate::PerLevel, Traits::ViewTransform>(lod.mView);
-         pipeline->SetUniform<RRate::PerLevel, Traits::ViewTransformInverted>(lod.mViewInverted);
-         pipeline->SetUniform<RRate::PerLevel, Traits::ViewProjectTransform>(projectedView);
-         pipeline->SetUniform<RRate::PerLevel, Traits::ViewProjectTransformInverted>(projectedViewInverted);
-         pipeline->SetUniform<RRate::PerLevel, Traits::Level>(level);
-         pipeline->PushUniforms<RRate::PerLevel>();
+         pipeline->SetUniform<RRate::Level, Traits::ViewTransform>(lod.mView);
+         pipeline->SetUniform<RRate::Level, Traits::ViewTransformInverted>(lod.mViewInverted);
+         pipeline->SetUniform<RRate::Level, Traits::ViewProjectTransform>(projectedView);
+         pipeline->SetUniform<RRate::Level, Traits::ViewProjectTransformInverted>(projectedViewInverted);
+         pipeline->SetUniform<RRate::Level, Traits::Level>(level);
+         pipeline->PushUniforms<RRate::Level>();
 
          // Store the negative level in the set, so they're always in   
          // a descending order                                          
-         mRelevantLevels.insert(-level);
+         mRelevantLevels << -level;
       }
 
       return 1;
@@ -277,43 +291,43 @@ pcptr VulkanLayer::CompileLevelBatched(const mat4& view, const mat4& projection,
 
 /// Compile all levels and their instances                                    
 ///   @return the number of relevant cameras                                  
-pcptr VulkanLayer::CompileLevels() {
-   pcptr renderedCameras = 0;
-   mRelevantLevels.clear();
-   mRelevantPipelines.clear();
+Count VulkanLayer::CompileLevels() {
+   Count renderedCameras {};
+   mRelevantLevels.Clear();
+   mRelevantPipelines.Clear();
 
    if (mStyle & Style::Hierarchical) {
-      mSubscribers.clear();
-      mSubscribers.emplace_back();
-      mSubscriberCountPerLevel.clear();
-      mSubscriberCountPerLevel.emplace_back();
-      mSubscriberCountPerCamera.clear();
-      mSubscriberCountPerCamera.emplace_back();
+      mSubscribers.Clear();
+      mSubscribers.New(1);
+      mSubscriberCountPerLevel.Clear();
+      mSubscriberCountPerLevel.New(1);
+      mSubscriberCountPerCamera.Clear();
+      mSubscriberCountPerCamera.New(1);
    }
 
    if (mCameras.IsEmpty()) {
       // No camera, so just render default level on the whole screen    
       PipelineSet pipesPerCamera;
       if (mStyle & Style::Hierarchical)
-         CompileLevelHierarchical(mat4::Identity(), mat4::Identity(), Level::Default, pipesPerCamera);
+         CompileLevelHierarchical({}, {}, {}, pipesPerCamera);
       else
-         CompileLevelBatched(mat4::Identity(), mat4::Identity(), Level::Default, pipesPerCamera);
+         CompileLevelBatched({}, {}, {}, pipesPerCamera);
 
-      if (!pipesPerCamera.empty()) {
+      if (!pipesPerCamera.IsEmpty()) {
          for (auto pipeline : pipesPerCamera) {
             // Push PerCamera uniforms if required                      
-            pipeline->SetUniform<RRate::PerCamera, Traits::ProjectTransform>(mat4::Identity());
-            pipeline->SetUniform<RRate::PerCamera, Traits::ProjectTransformInverted>(mat4::Identity());
-            pipeline->SetUniform<RRate::PerCamera, Traits::FOV>(real(0));
-            pipeline->SetUniform<RRate::PerCamera, Traits::Resolution>(GetWindow()->GetSize());
+            pipeline->SetUniform<RRate::Camera, Traits::ProjectTransform>(Matrix4 {});
+            pipeline->SetUniform<RRate::Camera, Traits::ProjectTransformInverted>(Matrix4 {});
+            pipeline->SetUniform<RRate::Camera, Traits::FOV>(Radians {});
+            pipeline->SetUniform<RRate::Camera, Traits::Resolution>(GetWindow()->GetSize());
             if (mStyle & Style::Hierarchical)
-               pipeline->PushUniforms<RRate::PerCamera, false>();
+               pipeline->PushUniforms<RRate::Camera, false>();
             else
-               pipeline->PushUniforms<RRate::PerCamera>();
+               pipeline->PushUniforms<RRate::Camera>();
          }
 
          if (mStyle & Style::Hierarchical)
-            mSubscriberCountPerCamera.emplace_back();
+            mSubscriberCountPerCamera.New(1);
          ++renderedCameras;
       }
    }
@@ -337,28 +351,28 @@ pcptr VulkanLayer::CompileLevels() {
          // Default level style - checks only if camera sees default    
          const auto view = camera.GetViewTransform(Level::Default);
          if (mStyle & Style::Hierarchical)
-            CompileLevelHierarchical(view, camera.GetProjection(), Level::Default, pipesPerCamera);
+            CompileLevelHierarchical(view, camera.GetProjection(), {}, pipesPerCamera);
          else
-            CompileLevelBatched(view, camera.GetProjection(), Level::Default, pipesPerCamera);
+            CompileLevelBatched(view, camera.GetProjection(), {}, pipesPerCamera);
       }
       else continue;
 
-      if (!pipesPerCamera.empty()) {
+      if (!pipesPerCamera.IsEmpty()) {
          for (auto pipeline : pipesPerCamera) {
             // Push PerCamera uniforms if required                      
-            pipeline->SetUniform<RRate::PerCamera, Traits::ProjectTransform>(camera.GetProjection());
-            pipeline->SetUniform<RRate::PerCamera, Traits::ProjectTransformInverted>(camera.GetProjectionInverted());
-            pipeline->SetUniform<RRate::PerCamera, Traits::FOV>(camera.GetFOV());
-            pipeline->SetUniform<RRate::PerCamera, Traits::Resolution>(camera.GetResolution());
+            pipeline->SetUniform<RRate::Camera, Traits::ProjectTransform>(camera.mProjection);
+            pipeline->SetUniform<RRate::Camera, Traits::ProjectTransformInverted>(camera.mProjectionInverted);
+            pipeline->SetUniform<RRate::Camera, Traits::FOV>(camera.mFOV);
+            pipeline->SetUniform<RRate::Camera, Traits::Resolution>(camera.mResolution);
             if (mStyle & Style::Hierarchical)
-               pipeline->PushUniforms<RRate::PerCamera, false>();
+               pipeline->PushUniforms<RRate::Camera, false>();
             else
-               pipeline->PushUniforms<RRate::PerCamera>();
+               pipeline->PushUniforms<RRate::Camera>();
          }
 
          if (mStyle & Style::Hierarchical)
-            mSubscriberCountPerCamera.emplace_back();
-         mRelevantCameras.insert(&camera);
+            mSubscriberCountPerCamera.New(1);
+         mRelevantCameras << &camera;
          ++renderedCameras;
       }
    }
@@ -388,12 +402,12 @@ void VulkanLayer::RenderBatched(VkCommandBuffer cb, const VkRenderPass& pass, co
    clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
    clearValues[1].depthStencil = {1.0f, 0};
 
-   VkClearAttachment depthsweep = {};
+   VkClearAttachment depthsweep {};
    depthsweep.colorAttachment = VK_ATTACHMENT_UNUSED;
    depthsweep.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
    depthsweep.clearValue.depthStencil = clearValues[1].depthStencil;
 
-   VkRenderPassBeginInfo renderPassInfo = {};
+   VkRenderPassBeginInfo renderPassInfo {};
    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
    renderPassInfo.renderPass = pass;
    renderPassInfo.framebuffer = fb;
@@ -404,9 +418,9 @@ void VulkanLayer::RenderBatched(VkCommandBuffer cb, const VkRenderPass& pass, co
    renderPassInfo.pClearValues = static_cast<const VkClearValue*>(clearValues);
 
    // Iterate all valid cameras                                         
-   std::unordered_map<const CVulkanPipeline*, pcptr> done;
+   TUnorderedMap<const VulkanPipeline*, Count> done;
 
-   if (mRelevantCameras.empty()) {
+   if (mRelevantCameras.IsEmpty()) {
       VkViewport viewport {};
       viewport.width = GetProducer()->GetResolution()[0];
       viewport.height = GetProducer()->GetResolution()[1];
@@ -426,7 +440,7 @@ void VulkanLayer::RenderBatched(VkCommandBuffer cb, const VkRenderPass& pass, co
             done[pipeline] = pipeline->RenderLevel(done[pipeline]);
          }
 
-         if (level != *mRelevantLevels.rbegin()) {
+         if (level != mRelevantLevels.Last()) {
             // Clear depth after rendering this level (if not last)     
             const VkClearRect rect {scissor, 0, 1};
             vkCmdClearAttachments(cb, 1, &depthsweep, 1, &rect);
@@ -437,12 +451,12 @@ void VulkanLayer::RenderBatched(VkCommandBuffer cb, const VkRenderPass& pass, co
       vkCmdEndRenderPass(cb);
    }
    else for (const auto camera : mRelevantCameras) {
-      renderPassInfo.renderArea.extent.width = uint32_t(camera->GetResolution()[0]);
-      renderPassInfo.renderArea.extent.height = uint32_t(camera->GetResolution()[1]);
+      renderPassInfo.renderArea.extent.width = camera->mResolution[0];
+      renderPassInfo.renderArea.extent.height = camera->mResolution[1];
 
       vkCmdBeginRenderPass(cb, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-      vkCmdSetViewport(cb, 0, 1, &camera->GetVulkanViewport());
-      vkCmdSetScissor(cb, 0, 1, &camera->GetVulkanScissor());
+      vkCmdSetViewport(cb, 0, 1, &camera->mVulkanViewport);
+      vkCmdSetScissor(cb, 0, 1, &camera->mVulkanScissor);
 
       // Iterate all relevant levels                                    
       for (const auto& level : mRelevantLevels) {
@@ -451,9 +465,9 @@ void VulkanLayer::RenderBatched(VkCommandBuffer cb, const VkRenderPass& pass, co
             done[pipeline] = pipeline->RenderLevel(done[pipeline]);
          }
 
-         if (level != *mRelevantLevels.rbegin()) {
+         if (level != mRelevantLevels.Last()) {
             // Clear depth after rendering this level (if not last)     
-            const VkClearRect rect {camera->GetVulkanScissor(), 0, 1};
+            const VkClearRect rect {camera->mVulkanScissor, 0, 1};
             vkCmdClearAttachments(cb, 1, &depthsweep, 1, &rect);
          }
       }
@@ -489,11 +503,11 @@ void VulkanLayer::RenderHierarchical(VkCommandBuffer cb, const VkRenderPass& pas
    renderPassInfo.clearValueCount = 2;
    renderPassInfo.pClearValues = static_cast<const VkClearValue*>(clearValues);
 
-   pcptr subscribersDone = 0;
+   Count subscribersDone {};
    auto subscriberCountPerLevel = &mSubscriberCountPerLevel[0];
 
    // Iterate all valid cameras                                         
-   if (mRelevantCameras.empty()) {
+   if (mRelevantCameras.IsEmpty()) {
       VkViewport viewport {};
       viewport.width = GetProducer()->GetResolution()[0];
       viewport.height = GetProducer()->GetResolution()[1];
@@ -509,12 +523,12 @@ void VulkanLayer::RenderHierarchical(VkCommandBuffer cb, const VkRenderPass& pas
       // Iterate all relevant levels                                    
       for (const auto& level : mRelevantLevels) {
          // Draw all subscribers to the pipeline for the current level  
-         for (pcptr s = 0; s < *subscriberCountPerLevel; ++s) {
+         for (Count s = 0; s < *subscriberCountPerLevel; ++s) {
             auto& subscriber = mSubscribers[subscribersDone + s];
             subscriber.pipeline->RenderSubscriber(subscriber.sub);
          }
 
-         if (level != *mRelevantLevels.rbegin()) {
+         if (level != mRelevantLevels.Last()) {
             // Clear depth after rendering this level (if not last)     
             const VkClearRect rect {scissor, 0, 1};
             vkCmdClearAttachments(cb, 1, &depthsweep, 1, &rect);
@@ -528,25 +542,25 @@ void VulkanLayer::RenderHierarchical(VkCommandBuffer cb, const VkRenderPass& pas
       vkCmdEndRenderPass(cb);
    }
    else for (const auto camera : mRelevantCameras) {
-      renderPassInfo.renderArea.extent.width = uint32_t(camera->GetResolution()[0]);
-      renderPassInfo.renderArea.extent.height = uint32_t(camera->GetResolution()[1]);
+      renderPassInfo.renderArea.extent.width = camera->mResolution[0];
+      renderPassInfo.renderArea.extent.height = camera->mResolution[1];
 
       vkCmdBeginRenderPass(cb, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-      vkCmdSetViewport(cb, 0, 1, &camera->GetVulkanViewport());
-      vkCmdSetScissor(cb, 0, 1, &camera->GetVulkanScissor());
+      vkCmdSetViewport(cb, 0, 1, &camera->mVulkanViewport);
+      vkCmdSetScissor(cb, 0, 1, &camera->mVulkanScissor);
 
       // Iterate all relevant levels                                    
       for (const auto& level : mRelevantLevels) {
          // Draw all subscribers to the pipeline for the current level  
          // and camera                                                  
-         for (pcptr s = 0; s < *subscriberCountPerLevel; ++s) {
+         for (Count s = 0; s < *subscriberCountPerLevel; ++s) {
             auto& subscriber = mSubscribers[subscribersDone + s];
             subscriber.pipeline->RenderSubscriber(subscriber.sub);
          }
 
-         if (level != *mRelevantLevels.rbegin()) {
+         if (level != mRelevantLevels.Last()) {
             // Clear depth after rendering this level (if not last)     
-            const VkClearRect rect {camera->GetVulkanScissor(), 0, 1};
+            const VkClearRect rect {camera->mVulkanScissor, 0, 1};
             vkCmdClearAttachments(cb, 1, &depthsweep, 1, &rect);
          }
 

@@ -14,6 +14,8 @@
 ///                                                                           
 class VRAM {
 protected:
+   friend class VulkanMemory;
+
    // Memory associated with buffer                                     
    Own<VkDeviceMemory> mMemory;
    // Device associated with the buffer                                 
@@ -32,7 +34,9 @@ public:
 ///   VRAM buffer                                                             
 ///                                                                           
 class VulkanBuffer : public VRAM {
-public:
+protected:
+   friend class VulkanMemory;
+
    // Meta                                                              
    DMeta mMeta {};
    // Buffer                                                            
@@ -48,7 +52,9 @@ public:
 ///   VRAM image                                                              
 ///                                                                           
 class VulkanImage : public VRAM {
-public:
+protected:
+   friend class VulkanMemory;
+
    // Meta                                                              
    PixelView mView;
    // Buffer                                                            

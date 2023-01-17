@@ -5,32 +5,30 @@
 /// Distributed under GNU General Public License v3+                          
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
-#include "Vulkan.hpp"
-#include <iterator>
+#include "VulkanRenderer.hpp"
+#include <set>
 
 //#define PC_REPORT_RENDER_STATISTICS
 
 /// Vulkan renderer construction                                              
 ///   @param producer - producer of the renderer                              
-CVulkanRenderer::CVulkanRenderer(MVulkan* producer)
-   : ARenderer {MetaData::Of<CVulkanRenderer>()}
+VulkanRenderer::VulkanRenderer(Vulkan* producer)
+   : ARenderer {MetaData::Of<VulkanRenderer>()}
    , TProducedFrom {producer}
    , mLayers {this}
    , mPipelines {this}
    , mShaders {this}
    , mGeometries {this}
-   , mTextures {this} {
-   ClassValidate();
-}
+   , mTextures {this} { }
 
 /// Renderer destruction                                                      
-CVulkanRenderer::~CVulkanRenderer() {
+VulkanRenderer::~VulkanRenderer() {
    Uninitialize();
 }
 
-/// Initialize the renderer, creating the swapchain                           
+/// Initialize the renderer, creating the swapchain for a native window       
 ///   @param window - the window to use for the renderer                      
-void CVulkanRenderer::Initialize(AWindow* window) {
+void VulkanRenderer::Initialize(Unit* window) {
    if (mRendererInitialized)
       return;
 
@@ -121,7 +119,7 @@ void CVulkanRenderer::Initialize(AWindow* window) {
 
    // Create queues for rendering & presenting                          
    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-   std::set<uint32_t> uniqueQueueFamilies = {
+   std::set<uint32_t> uniqueQueueFamilies {
       mGraphicIndex,
       mPresentIndex,
       mTransferIndex
@@ -129,7 +127,7 @@ void CVulkanRenderer::Initialize(AWindow* window) {
 
    float queuePriority = 1.0f;
    for (auto queueFamily : uniqueQueueFamilies) {
-      VkDeviceQueueCreateInfo queueCreateInfo = {};
+      VkDeviceQueueCreateInfo queueCreateInfo {};
       queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
       queueCreateInfo.queueFamilyIndex = queueFamily;
       queueCreateInfo.queueCount = 1;
@@ -142,10 +140,10 @@ void CVulkanRenderer::Initialize(AWindow* window) {
    extensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
    // Specify required features here                                    
-   VkPhysicalDeviceFeatures deviceFeatures = {};
+   VkPhysicalDeviceFeatures deviceFeatures {};
    deviceFeatures.fillModeNonSolid = VK_TRUE;
 
-   VkDeviceCreateInfo deviceInfo = {};
+   VkDeviceCreateInfo deviceInfo {};
    deviceInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
    deviceInfo.pQueueCreateInfos = queueCreateInfos.data();
    deviceInfo.queueCreateInfoCount = uint32_t(queueCreateInfos.size());
@@ -157,58 +155,55 @@ void CVulkanRenderer::Initialize(AWindow* window) {
       // Add debug layers                                               
       deviceInfo.enabledLayerCount = uint32_t(mProducer->GetValidationLayers().size());
       deviceInfo.ppEnabledLayerNames = mProducer->GetValidationLayers().data();
-   #else
-      deviceInfo.enabledLayerCount = 0;
    #endif
 
    // Create the logical device                                         
-   if (vkCreateDevice(adapter, &deviceInfo, nullptr, &mDevice.mValue)) {
+   if (vkCreateDevice(adapter, &deviceInfo, nullptr, &mDevice.Get())) {
       Uninitialize();
-      throw Except::Graphics(pcLogSelfError
-         << "Could not create logical device for rendering. Aborting...");
+      LANGULUS_THROW(Graphics, "Could not create logical device for rendering");
    }
 
-   if (!mVRAM.Initialize(adapter, mDevice, mTransferIndex)) {
+   try { mVRAM.Initialize(adapter, mDevice, mTransferIndex); }
+   catch(...) {
       Uninitialize();
-      throw Except::Graphics(pcLogSelfError
-         << "Could not inspect device memory...");
+      throw;
    }
 
-   vkGetDeviceQueue(mDevice, mGraphicIndex, 0, &mRenderQueue.mValue);
-   vkGetDeviceQueue(mDevice, mPresentIndex, 0, &mPresentQueue.mValue);
+   vkGetDeviceQueue(mDevice, mGraphicIndex, 0, &mRenderQueue.Get());
+   vkGetDeviceQueue(mDevice, mPresentIndex, 0, &mPresentQueue.Get());
 
    // Create command pool for rendering                                 
-   VkCommandPoolCreateInfo poolInfo = {};
+   VkCommandPoolCreateInfo poolInfo {};
    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
    poolInfo.queueFamilyIndex = mGraphicIndex;
    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-   if (vkCreateCommandPool(mDevice, &poolInfo, nullptr, &mCommandPool.mValue)) {
+
+   if (vkCreateCommandPool(mDevice, &poolInfo, nullptr, &mCommandPool.Get())) {
       Uninitialize();
-      throw Except::Graphics(pcLogSelfError
-         << "Can't create command pool for rendering. Aborting...");
+      LANGULUS_THROW(Graphics, "Can't create command pool for rendering");
    }
 
    // Create sync primitives                                            
-   VkSemaphoreCreateInfo fenceInfo = {};
+   VkSemaphoreCreateInfo fenceInfo {};
    fenceInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-   if (vkCreateSemaphore(mDevice, &fenceInfo, nullptr, &mNewFrameFence.mValue)) {
+
+   if (vkCreateSemaphore(mDevice, &fenceInfo, nullptr, &mNewFrameFence.Get())) {
       Uninitialize();
-      throw Except::Graphics(pcLogSelfError
-         << "Can't create new frame semaphore. Aborting...");
+      LANGULUS_THROW(Graphics, "Can't create new frame semaphore");
    }
 
-   VkSemaphoreCreateInfo semaphoreInfo = {};
+   VkSemaphoreCreateInfo semaphoreInfo {};
    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-   if (vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &mFrameFinished.mValue)) {
+
+   if (vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &mFrameFinished.Get())) {
       Uninitialize();
-      throw Except::Graphics(pcLogSelfError
-         << "Can't create frame finished semaphore. Aborting...");
+      LANGULUS_THROW(Graphics, "Can't create frame finished semaphore");
    }
 
    VkSurfaceFormatKHR format = GetSurfaceFormat();
 
    // Define color attachment for the back buffer                       
-   VkAttachmentDescription colorAttachment = {};
+   VkAttachmentDescription colorAttachment {};
    colorAttachment.format = format.format;
    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -217,10 +212,10 @@ void CVulkanRenderer::Initialize(AWindow* window) {
    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-   mPassAttachments.push_back(colorAttachment);
+   mPassAttachments << colorAttachment;
 
    // Define depth attachment for the back buffer                       
-   VkAttachmentDescription depthAttachment = {};
+   VkAttachmentDescription depthAttachment {};
    depthAttachment.format = VK_FORMAT_D32_SFLOAT;
    depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
    depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -229,25 +224,25 @@ void CVulkanRenderer::Initialize(AWindow* window) {
    depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
    depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
    depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-   mPassAttachments.push_back(depthAttachment);
+   mPassAttachments << depthAttachment;
 
    // Subpass description                                               
-   VkAttachmentReference colorAttachmentRef = {};
+   VkAttachmentReference colorAttachmentRef {};
    colorAttachmentRef.attachment = 0;
    colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-   VkAttachmentReference depthAttachmentRef = {};
+   VkAttachmentReference depthAttachmentRef {};
    depthAttachmentRef.attachment = 1;
    depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-   VkSubpassDescription subpass = {};
+   VkSubpassDescription subpass {};
    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
    subpass.colorAttachmentCount = 1;
    subpass.pColorAttachments = &colorAttachmentRef;
    subpass.pDepthStencilAttachment = &depthAttachmentRef;
 
    // Create the main render pass                                       
-   VkSubpassDependency dependency = {};
+   VkSubpassDependency dependency {};
    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
    dependency.dstSubpass = 0;
    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -255,25 +250,24 @@ void CVulkanRenderer::Initialize(AWindow* window) {
    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
-   VkRenderPassCreateInfo renderPassInfo = {};
+   VkRenderPassCreateInfo renderPassInfo {};
    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-   renderPassInfo.attachmentCount = static_cast<uint32_t>(mPassAttachments.size());
-   renderPassInfo.pAttachments = mPassAttachments.data();
+   renderPassInfo.attachmentCount = static_cast<uint32_t>(mPassAttachments.GetCount());
+   renderPassInfo.pAttachments = mPassAttachments.GetRaw();
    renderPassInfo.subpassCount = 1;
    renderPassInfo.pSubpasses = &subpass;
    renderPassInfo.dependencyCount = 1;
    renderPassInfo.pDependencies = &dependency;
-   if (vkCreateRenderPass(mDevice, &renderPassInfo, nullptr, &mPass.mValue)) {
+
+   if (vkCreateRenderPass(mDevice, &renderPassInfo, nullptr, &mPass.Get())) {
       Uninitialize();
-      throw Except::Graphics(pcLogSelfError
-         << "Can't create main rendering pass. Aborting...");
+      LANGULUS_THROW(Graphics, "Can't create main rendering pass");
    }
 
    // Create the swap chain                                             
    if (!CreateSwapchain(format)) {
       Uninitialize();
-      throw Except::Graphics(pcLogSelfError
-         << "Can't create graphical pipeline. Aborting...");
+      LANGULUS_THROW(Graphics, "Can't create graphical pipeline");
    }
 
    // Get device properties                                             
@@ -287,8 +281,8 @@ void CVulkanRenderer::Initialize(AWindow* window) {
 /// Introduce renderables, cameras, lights, shaders, textures, geometry       
 /// Also initialized the renderer if a window is provided                     
 ///   @param verb - creation verb                                             
-void CVulkanRenderer::Create(Verb& verb) {
-   verb.GetArgument().ForEachDeep([&](AWindow* window) {
+void VulkanRenderer::Create(Verb& verb) {
+   verb.ForEachDeep([&](AWindow* window) {
       Initialize(window);
       verb.Done();
    });
@@ -301,7 +295,7 @@ void CVulkanRenderer::Create(Verb& verb) {
 }
 
 /// Deinitialize the renderer                                                 
-void CVulkanRenderer::Uninitialize() {
+void VulkanRenderer::Uninitialize() {
    if (mDevice) {
       vkDeviceWaitIdle(mDevice);
 
@@ -341,7 +335,7 @@ void CVulkanRenderer::Uninitialize() {
 
 /// Get backbuffer surface format                                             
 ///   @return the surface format of the swap chain                            
-VkSurfaceFormatKHR CVulkanRenderer::GetSurfaceFormat() const noexcept {
+VkSurfaceFormatKHR VulkanRenderer::GetSurfaceFormat() const noexcept {
    // Check supported image formats                                     
    const VkSurfaceFormatKHR error = {
       VK_FORMAT_MAX_ENUM, VK_COLOR_SPACE_MAX_ENUM_KHR
@@ -351,25 +345,29 @@ VkSurfaceFormatKHR CVulkanRenderer::GetSurfaceFormat() const noexcept {
    std::vector<VkSurfaceFormatKHR> surface_formats;
    uint32_t formatCount;
    if (vkGetPhysicalDeviceSurfaceFormatsKHR(adapter, mSurface, &formatCount, nullptr)) {
-      pcLogSelfError << "vkGetPhysicalDeviceSurfaceFormatsKHR failed. Aborting...";
+      Logger::Error(Self(), "vkGetPhysicalDeviceSurfaceFormatsKHR failed");
       return error;
    }
 
    if (formatCount != 0) {
       surface_formats.resize(formatCount);
       if (vkGetPhysicalDeviceSurfaceFormatsKHR(adapter, mSurface, &formatCount, surface_formats.data())) {
-         pcLogSelfError << "vkGetPhysicalDeviceSurfaceFormatsKHR failed. Aborting...";
+         Logger::Error(Self(), "vkGetPhysicalDeviceSurfaceFormatsKHR failed");
          return error;
       }
    }
 
    if (surface_formats.empty()) {
-      pcLogSelfError << "Could not create swap chain. Aborting...";
+      Logger::Error(Self(), "Could not create swap chain");
       return error;
    }
 
    // Choose image format                                               
-   VkSurfaceFormatKHR surfaceFormat = { VK_FORMAT_MAX_ENUM, VK_COLOR_SPACE_MAX_ENUM_KHR };
+   VkSurfaceFormatKHR surfaceFormat {
+      VK_FORMAT_MAX_ENUM,
+      VK_COLOR_SPACE_MAX_ENUM_KHR
+   };
+
    if (surface_formats.size() == 1 && surface_formats[0].format == VK_FORMAT_UNDEFINED) {
       surfaceFormat = {
          VK_FORMAT_B8G8R8A8_UNORM,
@@ -384,7 +382,7 @@ VkSurfaceFormatKHR CVulkanRenderer::GetSurfaceFormat() const noexcept {
    }
 
    if (surfaceFormat.colorSpace == VK_COLOR_SPACE_MAX_ENUM_KHR) {
-      pcLogSelfError << "Incompatible surface format and color space for swap chain. Aborting...";
+      Logger::Error(Self(), "Incompatible surface format and color space for swap chain");
       return error;
    }
 
@@ -394,44 +392,42 @@ VkSurfaceFormatKHR CVulkanRenderer::GetSurfaceFormat() const noexcept {
 /// Create the swapchain                                                      
 ///   @param format - surface format                                          
 ///   @return true on success                                                 
-bool CVulkanRenderer::CreateSwapchain(const VkSurfaceFormatKHR& format) {
+bool VulkanRenderer::CreateSwapchain(const VkSurfaceFormatKHR& format) {
    // Resolution                                                        
    auto adapter = mProducer->GetAdapter();
-   const real resx = mResolution[0];
-   const real resy = mResolution[1];
+   const Real resx = mResolution[0];
+   const Real resy = mResolution[1];
    const auto resxuint = uint32_t(resx);
    const auto resyuint = uint32_t(resy);
-   if (resxuint == 0 || resyuint == 0) {
-      throw Except::Graphics(pcLogSelfError
-         << "Bad resolution: " << resxuint << "x" << resyuint);
-   }
+   if (resxuint == 0 || resyuint == 0)
+      LANGULUS_THROW(Graphics, "Bad resolution");
 
    // Create swap chain                                                 
    VkSurfaceCapabilitiesKHR surface_caps;
    memset(&surface_caps, 0, sizeof(VkSurfaceCapabilitiesKHR));
-   std::vector<VkPresentModeKHR>   surface_presentModes;
+   std::vector<VkPresentModeKHR> surface_presentModes;
    if (vkGetPhysicalDeviceSurfaceCapabilitiesKHR(adapter, mSurface, &surface_caps)) {
-      pcLogSelfError << "vkGetPhysicalDeviceSurfaceCapabilitiesKHR failed. Aborting...";
+      Logger::Error(Self(), "vkGetPhysicalDeviceSurfaceCapabilitiesKHR failed");
       return false;
    }
 
    // Check supported present modes                                     
    uint32_t presentModeCount;
    if (vkGetPhysicalDeviceSurfacePresentModesKHR(adapter, mSurface, &presentModeCount, nullptr)) {
-      pcLogSelfError << "vkGetPhysicalDeviceSurfacePresentModesKHR failed. Aborting...";
+      Logger::Error(Self(), "vkGetPhysicalDeviceSurfacePresentModesKHR failed");
       return false;
    }
 
    if (presentModeCount != 0) {
       surface_presentModes.resize(presentModeCount);
       if (vkGetPhysicalDeviceSurfacePresentModesKHR(adapter, mSurface, &presentModeCount, surface_presentModes.data())) {
-         pcLogSelfError << "vkGetPhysicalDeviceSurfacePresentModesKHR failed. Aborting...";
+         Logger::Error(Self(), "vkGetPhysicalDeviceSurfacePresentModesKHR failed");
          return false;
       }
    }
    
    if (surface_presentModes.empty()) {
-      pcLogSelfError << "Could not create swap chain. Aborting...";
+      Logger::Error(Self(), "Could not create swap chain");
       return false;
    }
 
@@ -442,12 +438,18 @@ bool CVulkanRenderer::CreateSwapchain(const VkSurfaceFormatKHR& format) {
          surfacePresentMode = availablePresentMode;
    }
 
-   VkExtent2D extent = { resxuint, resyuint };
+   VkExtent2D extent {resxuint, resyuint};
    if (surface_caps.currentExtent.width != VK_INDEFINITELY)
       extent = surface_caps.currentExtent;
    else {
-      extent.width = pcMax(surface_caps.minImageExtent.width, pcMin(surface_caps.maxImageExtent.width, extent.width));
-      extent.height = pcMax(surface_caps.minImageExtent.height, pcMin(surface_caps.maxImageExtent.height, extent.height));
+      extent.width = Math::Max(
+         surface_caps.minImageExtent.width, 
+         Math::Min(surface_caps.maxImageExtent.width, extent.width)
+      );
+      extent.height = Math::Max(
+         surface_caps.minImageExtent.height, 
+         Math::Min(surface_caps.maxImageExtent.height, extent.height)
+      );
    }
 
    uint32_t imageCount = surface_caps.minImageCount + 1;
@@ -455,7 +457,7 @@ bool CVulkanRenderer::CreateSwapchain(const VkSurfaceFormatKHR& format) {
       imageCount = surface_caps.maxImageCount;
 
    // Setup the swapchain                                               
-   VkSwapchainCreateInfoKHR swapInfo = {};
+   VkSwapchainCreateInfoKHR swapInfo {};
    swapInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
    swapInfo.surface = mSurface;
    swapInfo.minImageCount = imageCount;
@@ -465,7 +467,12 @@ bool CVulkanRenderer::CreateSwapchain(const VkSurfaceFormatKHR& format) {
    swapInfo.imageArrayLayers = 1;   // 2 if stereoscopic                  
    swapInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-   const std::set<uint32_t> families = { mGraphicIndex, mPresentIndex, mTransferIndex };
+   const ::std::set<uint32_t> families {
+      mGraphicIndex,
+      mPresentIndex,
+      mTransferIndex
+   };
+
    std::vector<uint32_t> familiesvec;
    std::copy(families.begin(), families.end(), ::std::back_inserter(familiesvec));
    swapInfo.imageSharingMode = familiesvec.size() == 1 ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
@@ -476,33 +483,35 @@ bool CVulkanRenderer::CreateSwapchain(const VkSurfaceFormatKHR& format) {
    swapInfo.presentMode = surfacePresentMode;
    swapInfo.clipped = VK_TRUE;
    swapInfo.oldSwapchain = VK_NULL_HANDLE;
-   if (vkCreateSwapchainKHR(mDevice, &swapInfo, nullptr, &mSwapChain.mValue)) {
-      pcLogSelfError << "Can't create swap chain. Aborting...";
+
+   if (vkCreateSwapchainKHR(mDevice, &swapInfo, nullptr, &mSwapChain.Get())) {
+      Logger::Error(Self(), "Can't create swap chain");
       return false;
    }
 
    // Get images inside swapchain                                       
    if (vkGetSwapchainImagesKHR(mDevice, mSwapChain, &imageCount, nullptr)) {
-      pcLogSelfError << "vkGetSwapchainImagesKHR fails. Aborting...";
+      Logger::Error(Self(), "vkGetSwapchainImagesKHR fails");
       return false;
    }
 
    mSwapChainImages.resize(imageCount);
    if (vkGetSwapchainImagesKHR(mDevice, mSwapChain, &imageCount, mSwapChainImages.data())) {
-      pcLogSelfError << "vkGetSwapchainImagesKHR fails. Aborting...";
+      Logger::Error(Self(), "vkGetSwapchainImagesKHR fails");
       return false;
    }
 
    // Create the image views for the swap chain. They will all be       
    // single layer, 2D images, with no mipmaps.                         
    bool reverseFormat;
-   const auto viewf = pcVkFormatToDataID(format.format, reverseFormat).GetMeta();
+   const auto viewf = VkFormatToDMeta(format.format, reverseFormat);
    PixelView colorview(extent.width, extent.height, 1, 1, viewf, reverseFormat);
    mFrame.resize(mSwapChainImages.size());
-   for (uint32_t i = 0; i < mSwapChainImages.size(); i++) {
-      mVRAM.ImageTransfer(mSwapChainImages[i], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-      mVRAM.ImageTransfer(mSwapChainImages[i], VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
-      mFrame[i] = mVRAM.CreateImageView(mSwapChainImages[i], colorview, VK_IMAGE_ASPECT_COLOR_BIT);
+   for (uint32_t i = 0; i < mSwapChainImages.GetCount(); i++) {
+      auto& image = mSwapChainImages[i];
+      mVRAM.ImageTransfer(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+      mVRAM.ImageTransfer(image, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+      mFrame[i] = mVRAM.CreateImageView(image, colorview, VK_IMAGE_ASPECT_COLOR_BIT);
    }
    
    // Create the depth buffer image and view                            
@@ -514,8 +523,8 @@ bool CVulkanRenderer::CreateSwapchain(const VkSurfaceFormatKHR& format) {
    // Create framebuffers                                               
    mFramebuffer.resize(mFrame.size());
    for (uint32_t i = 0; i < mFrame.size(); ++i) {
-      VkImageView attachments[2] = { mFrame[i], mDepthImageView };
-      VkFramebufferCreateInfo framebufferInfo = {};
+      VkImageView attachments[2] { mFrame[i], mDepthImageView };
+      VkFramebufferCreateInfo framebufferInfo {};
       framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
       framebufferInfo.renderPass = mPass;
       framebufferInfo.attachmentCount = 2;
@@ -525,47 +534,48 @@ bool CVulkanRenderer::CreateSwapchain(const VkSurfaceFormatKHR& format) {
       framebufferInfo.layers = 1;
 
       if (vkCreateFramebuffer(mDevice, &framebufferInfo, nullptr, &mFramebuffer[i])) {
-         pcLogSelfError << "Can't create framebuffer. Aborting...";
+         Logger::Error(Self(), "Can't create framebuffer");
          return false;
       }
    }
 
    // Create a command buffer for each framebuffer                      
    mCommandBuffer.resize(mFramebuffer.size());
-   VkCommandBufferAllocateInfo allocInfo = {};
+   VkCommandBufferAllocateInfo allocInfo {};
    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
    allocInfo.commandPool = mCommandPool;
    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
    allocInfo.commandBufferCount = uint32_t(mCommandBuffer.size());
+
    if (vkAllocateCommandBuffers(mDevice, &allocInfo, mCommandBuffer.data())) {
-      pcLogSelfError << "Can't create command buffers. Aborting...";
+      Logger::Error(Self(), "Can't create command buffers");
       return false;
    }
 
    // Create command buffer fences                                      
-   if (mNewBufferFence.empty()) {
-      std::vector<VkFenceCreateInfo> fenceInfo(mFramebuffer.size());
-      mNewBufferFence.resize(mFramebuffer.size());
-      uint32_t bf = 0;
+   if (mNewBufferFence.IsEmpty()) {
+      TAny<VkFenceCreateInfo> fenceInfo;
+      fenceInfo.New(mFramebuffer.GetCount());
+      mNewBufferFence.Reserve(mFramebuffer.GetCount());
+
       for (auto& it : fenceInfo) {
-         it = {};
          it.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-         if (vkCreateFence(mDevice, &it, nullptr, &mNewBufferFence[bf])) {
-            pcLogSelfError << "Can't create buffer fence. Aborting...";
+         VkFence result;
+         if (vkCreateFence(mDevice, &it, nullptr, &result)) {
+            Logger::Error(Self(), "Can't create buffer fence");
             return false;
          }
-         ++bf;
+         mNewBufferFence << result;
       }
    }
 
    mCurrentFrame = 0;
-   ClassValidate();
    return true;
 }
 
 /// Recreate the swapchain (usually on window resize)                         
 ///   @return true on success                                                 
-bool CVulkanRenderer::RecreateSwapchain() {
+bool VulkanRenderer::RecreateSwapchain() {
    if (!mDevice)
       return false;
 
@@ -575,11 +585,11 @@ bool CVulkanRenderer::RecreateSwapchain() {
 }
 
 /// Destroy the current swapchain                                             
-void CVulkanRenderer::DestroySwapchain() {
+void VulkanRenderer::DestroySwapchain() {
    // Destroy fences                                                    
    for (auto& it : mNewBufferFence)
       vkDestroyFence(mDevice, it, nullptr);
-   mNewBufferFence.clear();
+   mNewBufferFence.Clear();
 
    // Destroy the depth buffer images                                   
    vkDestroyImageView(mDevice, mDepthImageView, nullptr);
@@ -589,34 +599,26 @@ void CVulkanRenderer::DestroySwapchain() {
    // Destroy framebuffers                                              
    for (auto &it : mFramebuffer)
       vkDestroyFramebuffer(mDevice, it, nullptr);
-   mFramebuffer.clear();
+   mFramebuffer.Clear();
    
    // Destroy command buffers. The command pool remains intact          
    vkFreeCommandBuffers(mDevice, mCommandPool, uint32_t(mCommandBuffer.size()), mCommandBuffer.data());
-   mCommandBuffer.clear();
+   mCommandBuffer.Clear();
    
    // Destroy image views                                               
    for (auto &it : mFrame)
       vkDestroyImageView(mDevice, it, nullptr);
-   mFrame.clear();
+   mFrame.Clear();
    
    // Destroy swapchain                                                 
    vkDestroySwapchainKHR(mDevice, mSwapChain, nullptr);
    mSwapChain = 0;
-   mSwapChainImages.clear();
-}
-
-/// Interpret anything as graphics                                            
-/// This verb can either mirror content in VRAM, or interpret geometry into   
-/// pixels. In other words - this is essentially the rendering routine!       
-///   @param verb - interpretation verb                                       
-void CVulkanRenderer::Interpret(Verb&) {
-   //TODO
+   mSwapChainImages.Clear();
 }
 
 /// Pick a back buffer and start writing the command buffer                   
 ///   @return true if something was rendered                                  
-bool CVulkanRenderer::StartRendering() {
+bool VulkanRenderer::StartRendering() {
    // Set next frame from the swapchain                                 
    // This changes mCurrentFrame globally for this renderer             
    auto result = vkAcquireNextImageKHR(
@@ -627,7 +629,7 @@ bool CVulkanRenderer::StartRendering() {
    // Check if resolution has changed                                   
    if (result == VK_ERROR_OUT_OF_DATE_KHR || (result && result != VK_SUBOPTIMAL_KHR)) {
       // Le strange error occurs                                        
-      pcLogSelfError << "Vulkan failed to resize swapchain";
+      Logger::Error(Self(), "Vulkan failed to resize swapchain");
       return false;
    }
 
@@ -639,7 +641,7 @@ bool CVulkanRenderer::StartRendering() {
    );
 
    // Begin writing to command buffer                                   
-   VkCommandBufferBeginInfo beginInfo = {};
+   VkCommandBufferBeginInfo beginInfo {};
    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
    vkBeginCommandBuffer(mCommandBuffer[mCurrentFrame], &beginInfo);
@@ -648,10 +650,10 @@ bool CVulkanRenderer::StartRendering() {
 
 /// Submit command buffers and present                                        
 ///   @return true if something was rendered                                  
-bool CVulkanRenderer::EndRendering() {
+bool VulkanRenderer::EndRendering() {
    // Command buffer ends                                               
    if (vkEndCommandBuffer(mCommandBuffer[mCurrentFrame]))
-      pcLogSelfError << "Can't end command buffer";
+      Logger::Error(Self(), "Can't end command buffer");
 
    // Submit command buffer to GPU                                      
    VkSubmitInfo submitInfo = {};
@@ -671,7 +673,7 @@ bool CVulkanRenderer::EndRendering() {
    submitInfo.signalSemaphoreCount = 1;
    submitInfo.pSignalSemaphores = static_cast<const VkSemaphore*>(signalSemaphores);
    if (vkQueueSubmit(mRenderQueue, 1, &submitInfo, VK_NULL_HANDLE)) {
-      pcLogSelfError << "Vulkan failed to submit render buffer";
+      Logger::Error(Self(), "Vulkan failed to submit render buffer");
       return false;
    }
 
@@ -692,21 +694,22 @@ bool CVulkanRenderer::EndRendering() {
       VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
    );
 
-   if (vkQueuePresentKHR(mPresentQueue, &presentInfo))
-      pcLogSelfError << "Vulkan failed to present - the frame will probably be lost";
+   if (vkQueuePresentKHR(mPresentQueue, &presentInfo)) {
+      Logger::Error(Self(),
+         "Vulkan failed to present - the frame will probably be lost");
+   }
+
    return true;
 }
 
 /// Resize the swapchain                                                      
 ///   @param size - the new size                                              
-void CVulkanRenderer::Resize(const vec2& size) {
+void VulkanRenderer::Resize(const Vec2& size) {
    if (!mSwapChain || mResolution != size) {
       mResolution = size;
 
-      if (!RecreateSwapchain()) {
-         throw Except::Graphics(pcLogSelfError
-            << "Swapchain recreation failed");
-      }
+      if (!RecreateSwapchain())
+         LANGULUS_THROW(Graphics,"Swapchain recreation failed");
 
       // Wait for resize to finish                                      
       vkDeviceWaitIdle(mDevice);
@@ -715,7 +718,7 @@ void CVulkanRenderer::Resize(const vec2& size) {
 
 /// Render an object, along with all of its children                          
 /// Rendering pipeline depends on each entity's components                    
-void CVulkanRenderer::Update() {
+void VulkanRenderer::Draw() {
    if (!mWindow || mWindow->IsMinimized())
       return;
 
@@ -726,12 +729,13 @@ void CVulkanRenderer::Update() {
    // But do it in the context of the window, as this renderer is       
    // most likely just its sideproduct and is somewhere else            
    TimeGradient timeGradient;
-   SAFETY(if (!mWindow->SeekValue<Traits::Time>(timeGradient)) pcLogSelfWarning
-      << "No time gradient found, so shader timers will be all zero");
+   SAFETY(if (!mWindow->SeekValue<Traits::Time>(timeGradient))
+      Logger::Warning(Self(), "No time gradient found, so shader timers will be all zero");
+
    auto timeFromInit = timeGradient.Current().SecondsReal();
-   TGrad2<vec2> mousePosition;
+   Grad2v2 mousePosition;
    mWindow->SeekValue<Traits::MousePosition>(mousePosition);
-   TGrad2<vec2> mouseScroll;
+   Grad2v2 mouseScroll;
    mWindow->SeekValue<Traits::MouseScroll>(mouseScroll);
 
    // Reset all pipelines that already exist                            
@@ -747,9 +751,9 @@ void CVulkanRenderer::Update() {
    // Upload any uniform buffer changes to VRAM                         
    // Once this data is uploaded, we're free to prepare the next frame  
    for (auto pipe : relevantPipes) {
-      pipe->SetUniform<RRate::PerTick, Traits::Time>(timeFromInit);
-      pipe->SetUniform<RRate::PerTick, Traits::MousePosition>(mousePosition.Current());
-      pipe->SetUniform<RRate::PerTick, Traits::MouseScroll>(mouseScroll.Current());
+      pipe->SetUniform<RRate::Tick, Traits::Time>(timeFromInit);
+      pipe->SetUniform<RRate::Tick, Traits::MousePosition>(mousePosition.Current());
+      pipe->SetUniform<RRate::Tick, Traits::MouseScroll>(mouseScroll.Current());
       pipe->UpdateUniformBuffers();
    }
 

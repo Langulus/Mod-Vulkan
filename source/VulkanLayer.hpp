@@ -16,19 +16,20 @@ struct LayerSubscriber {
    PipeSubscriber sub {};
 };
 
-using LevelSet = std::set<Level>;
-using CameraSet = std::unordered_set<const VulkanCamera*>;
-using PipelineSet = std::unordered_set<VulkanPipeline*>;
+using LevelSet = TOrderedSet<Level>;
+using CameraSet = TUnorderedSet<const VulkanCamera*>;
+using PipelineSet = TUnorderedSet<VulkanPipeline*>;
 
 
 ///                                                                           
 ///   Graphics layer unit                                                     
 ///                                                                           
 /// A logical group of cameras, renderables, and lights, isolated from other  
-/// layer. Useful for capsulating a GUI layer, for example.                   
+/// layers. Useful for capsulating a GUI, for example.                        
 ///                                                                           
 class VulkanLayer : public Unit {
-   LANGULUS(PRODUCER) CVulkanRenderer;
+   LANGULUS(PRODUCER) VulkanRenderer;
+   LANGULUS_VERBS(Verbs::Create);
 
 private:
    // List of cameras                                                   
@@ -46,68 +47,69 @@ private:
 
    // Subscribers, used only for hierarchical styled layers             
    // Otherwise, CVulkanPipeline::Subscriber is used                    
-   std::vector<LayerSubscriber> mSubscribers;
-   std::vector<pcptr> mSubscriberCountPerLevel;
-   std::vector<pcptr> mSubscriberCountPerCamera;
+   TAny<LayerSubscriber> mSubscribers;
+   TAny<Count> mSubscriberCountPerLevel;
+   TAny<Count> mSubscriberCountPerCamera;
 
-   /// The layer style determines how the scene will be compiled				
-   /// Combine these flags to configure the layer to your needs				
+   /// The layer style determines how the scene will be compiled              
+   /// Combine these flags to configure the layer to your needs               
    enum Style {
-      /// Batched layers are compiled for optimal performance, by grouping	
-      /// all similar renderables and drawing them at once						
-      /// This is the opposite of hierarchical rendering, because	it			
-      /// destroys the order in which renderables appear							
-      /// It is best suited for non-blended depth-tested scenes				
+      /// Batched layers are compiled for optimal performance, by grouping    
+      /// all similar renderables and drawing them at once                    
+      /// This is the opposite of hierarchical rendering, because   it        
+      /// destroys the order in which renderables appear                      
+      /// It is best suited for non-blended depth-tested scenes               
       Batched = 0,
 
-      /// Hierarchical layers preserve the order in which elements occur	
-      /// It is the opposite of batched rendering, because structure isn't	
-      /// lost. This style is a bit less efficient, but is mandatory for	
-      /// rendering UI for example														
+      /// Hierarchical layers preserve the order in which elements occur      
+      /// It is the opposite of batched rendering, because structure isn't    
+      /// lost. This style is a bit less efficient, but is mandatory for      
+      /// rendering UI for example                                            
       Hierarchical = 1,
 
-      /// A multilevel layer supports instances that are not in the default
-      /// human level. It is useful for rendering objects of the size of	
-      /// the universe, or of the size of atoms, depending on the camera	
-      /// configuration. Works by rendering the biggest levels first,		
-      /// working down to the camera's capabilities, clearing the depth		
-      /// after each successive level. This way one can seamlessly			
-      /// compose infinitely complex scenes. Needless to say, this incurs	
-      /// some performance penalty														
+      /// A multilevel layer supports instances that are not in the default   
+      /// human level. It is useful for rendering objects of the size of      
+      /// the universe, or of the size of atoms, depending on the camera      
+      /// configuration. Works by rendering the biggest levels first,         
+      /// working down to the camera's capabilities, clearing the depth       
+      /// after each successive level. This way one can seamlessly            
+      /// compose infinitely complex scenes. Needless to say, this incurs     
+      /// some performance penalty                                            
       Multilevel = 2,
 
-      /// If enabled, will separate light computation on a different pass	
-      /// Significantly improves performance on scenes with complex			
-      /// lighting and shadowing															
+      /// If enabled, will separate light computation on a different pass     
+      /// Significantly improves performance on scenes with complex           
+      /// lighting and shadowing                                              
       DeferredLights = 4,
 
-      /// If enabled will sort instances by distance to camera, before		
-      /// committing them for rendering												
+      /// If enabled will sort instances by distance to camera, before        
+      /// committing them for rendering                                       
       Sorted = 8,
 
-      /// The default visual layer style												
+      /// The default visual layer style                                      
       Default = Batched | Multilevel
    };
 
-protected:
    Style mStyle = Style::Default;
 
 public:
-   VulkanLayer(CVulkanRenderer*);
+   VulkanLayer(VulkanRenderer*);
 
-   PC_VERB(Create);
+   void Create(Verb&);
 
    bool Generate(PipelineSet&);
    void Render(VkCommandBuffer, const VkRenderPass&, const VkFramebuffer&) const;
-   const AWindow* GetWindow() const;
+   const Unit* GetWindow() const;
 
 private:
    void CompileCameras();
-   pcptr CompileLevelBatched(const mat4&, const mat4&, Level, PipelineSet&);
-   pcptr CompileLevelHierarchical(const mat4&, const mat4&, Level, PipelineSet&);
-   pcptr CompileEntity(const Entity*, LodState&, PipelineSet&);
-   CVulkanPipeline* CompileInstance(CVulkanRenderable*, const AInstance*, LodState&);
-   pcptr CompileLevels();
+
+   Count CompileLevelBatched(const Matrix4&, const Matrix4&, Level, PipelineSet&);
+   Count CompileLevelHierarchical(const Matrix4&, const Matrix4&, Level, PipelineSet&);
+   Count CompileThing(const Thing*, LodState&, PipelineSet&);
+   VulkanPipeline* CompileInstance(VulkanRenderable*, const Unit*, LodState&);
+   Count CompileLevels();
+
    void RenderBatched(VkCommandBuffer, const VkRenderPass&, const VkFramebuffer&) const;
    void RenderHierarchical(VkCommandBuffer, const VkRenderPass&, const VkFramebuffer&) const;
 };

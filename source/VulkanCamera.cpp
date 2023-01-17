@@ -11,13 +11,12 @@
 ///   @param producer - the camera producer                                   
 VulkanCamera::VulkanCamera(VulkanLayer* producer)
    : ACamera {MetaData::Of<VulkanCamera>()}
-   , TProducedFrom {producer} {
-   ClassValidate();
-}
+   , TProducedFrom {producer} { }
 
 /// Compile the camera                                                        
 void VulkanCamera::Compile() {
    mResolution = mProducer->GetWindow()->GetSize();
+
    if (mResolution[0] <= 1)
       mResolution[0] = 1;
    if (mResolution[1] <= 1)
@@ -44,8 +43,8 @@ void VulkanCamera::Compile() {
       //                      v                                         
       //                  -Aspect*Y                                     
       //                                                                
-      static const mat4 vulkanAdapter = mat4::Scalar(vec3(1, -1, -1));
-      mProjection = vulkanAdapter * mat4::PerspectiveFOV(
+      constexpr auto vulkanAdapter = Matrix4::Scalar(Vec3(1, -1, -1));
+      mProjection = vulkanAdapter * Matrix4::PerspectiveFOV(
          mFOV, mAspectRatio, mViewport.mMin[2], mViewport.mMax[2]
       );
    }
@@ -61,7 +60,7 @@ void VulkanCamera::Compile() {
       //     v                                                          
       //   +Aspect*Y                                                    
       //                                                                
-      mProjection = mat4::Orthographic(
+      mProjection = Matrix4::Orthographic(
          mViewport.mMax[0], mViewport.mMax[1], 
          mViewport.mMin[2], mViewport.mMax[2]
       );
@@ -83,24 +82,15 @@ void VulkanCamera::Compile() {
 
 /// Recompile the camera                                                      
 void VulkanCamera::Refresh() {
-   // Gather all instances for this camera                              
-   mInstances.Clear();
-   for (auto owner : GetOwners()) {
-      for (auto unit : owner->GetUnits()) {
-         auto instance = dynamic_cast<const AInstance*>(unit);
-         if (!instance)
-            continue;
-         mInstances << instance;
-      }
-   }
+   mInstances = GetOwners().GatherUnits<SeekStyle::Here>("Instance");
 }
 
 /// Get view transformation for a given level                                 
 ///   @param level - the level                                                
 ///   @return the view transformation for the camera                          
-mat4 VulkanCamera::GetViewTransform(Level level) const {
+Matrix4 VulkanCamera::GetViewTransform(Level level) const {
    if (mInstances.IsEmpty())
-      return mat4::Identity();
+      return Matrix4::Identity();
 
    return mInstances[0]->GetViewTransform(level);
 }

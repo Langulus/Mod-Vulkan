@@ -10,31 +10,29 @@
 
 
 ///                                                                           
-///   THE VULKAN RENDERABLE                                                   
+///   Vulkan renderable element                                               
 ///                                                                           
-/// Capsulates an object that can be rendered via a renderer                  
-/// This unit is an interface that gathers relevant graphical data about its  
-/// owners, and generates pipelines on Refresh(), that are able to visualize  
-/// it                                                                        
+/// Gives things the ability to be drawn to screen. The unit gathers relevant 
+/// graphical resources from the context, and generates a graphical pipeline  
+/// capable of visualizing it on Refresh()                                    
 ///                                                                           
 class VulkanRenderable : public Unit {
    LANGULUS(PRODUCER) VulkanLayer;
 
 private:
    // Precompiled instances and levels, updated on Refresh()            
-   TAny<const AInstance*> mInstances;
+   TAny<const Unit*> mInstances;
    TRange<Level> mLevelRange;
-   Ref<AMaterial> mMaterialContent;
-   Ref<AGeometry> mGeometryContent;
-   Ref<ATexture> mTextureContent;
-
-   Ref<VulkanPipeline> mPredefinedPipeline;
+   Ptr<Unit> mMaterialContent;
+   Ptr<Unit> mGeometryContent;
+   Ptr<Unit> mTextureContent;
+   Ptr<VulkanPipeline> mPredefinedPipeline;
 
    // Precompiled content, updated on Refresh()                         
    struct {
-      Ref<VulkanGeometry> mGeometry;
-      Ref<VulkanTexture> mTexture;
-      Ref<VulkanPipeline> mPipeline;
+      Ptr<VulkanGeometry> mGeometry;
+      Ptr<VulkanTexture> mTexture;
+      Ptr<VulkanPipeline> mPipeline;
    } mLOD[LodState::IndexCount];
 
    void ResetRenderable();
@@ -52,7 +50,4 @@ public:
    NOD() VulkanPipeline* GetOrCreatePipeline(const LodState&, const VulkanLayer*);
 
    void Refresh() override;
-
-   PC_GET(Instances);
-   PC_GET(LevelRange);
 };

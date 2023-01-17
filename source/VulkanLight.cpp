@@ -12,11 +12,4 @@
 ///   @param producer - the producer of the light                             
 VulkanLight::VulkanLight(VulkanLayer* producer)
    : ALight {MetaData::Of<VulkanLight>()}
-   , TProducedFrom {producer} {
-   ClassValidate();
-}
-
-/// Draw the light when using deferred rendering                              
-void VulkanLight::Draw() {
-   TODO();
-}
+   , TProducedFrom {producer} { }

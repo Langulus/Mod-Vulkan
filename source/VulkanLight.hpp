@@ -13,10 +13,7 @@
 ///   Light source unit                                                       
 ///                                                                           
 class VulkanLight : public Unit {
-   LANGULUS(PRODUCER) CVulkanRenderer;
-
+   LANGULUS(PRODUCER) VulkanLayer;
 private:
    VulkanLight(VulkanLayer*);
-
-   void Draw();
 };
