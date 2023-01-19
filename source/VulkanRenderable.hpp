@@ -16,9 +16,10 @@
 /// graphical resources from the context, and generates a graphical pipeline  
 /// capable of visualizing it on Refresh()                                    
 ///                                                                           
-class VulkanRenderable : public Unit {
+class VulkanRenderable : public A::GraphicsUnit {
+   LANGULUS(ABSTRACT) false;
    LANGULUS(PRODUCER) VulkanLayer;
-
+   LANGULUS_BASES(A::GraphicsUnit);
 private:
    // Precompiled instances and levels, updated on Refresh()            
    TAny<const Unit*> mInstances;
@@ -38,11 +39,7 @@ private:
    void ResetRenderable();
 
 public:
-   VulkanRenderable(VulkanLayer*);
-   VulkanRenderable(VulkanRenderable&&) noexcept = default;
-   ~VulkanRenderable();
-
-   VulkanRenderable& operator = (VulkanRenderable&&) noexcept = default;
+   VulkanRenderable(const Any&);
 
    NOD() auto GetRenderer() noexcept;
    NOD() VulkanGeometry* GetGeometry(const LodState&);

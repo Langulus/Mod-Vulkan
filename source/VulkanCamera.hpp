@@ -12,8 +12,10 @@
 ///                                                                           
 ///   Camera unit                                                             
 ///                                                                           
-class VulkanCamera : public Unit {
+class VulkanCamera : public A::GraphicsUnit {
+   LANGULUS(ABSTRACT) false;
    LANGULUS(PRODUCER) VulkanLayer;
+   LANGULUS_BASES(A::GraphicsUnit);
 protected:
    friend class VulkanLayer;
 
@@ -40,7 +42,7 @@ protected:
    Vec2u32 mResolution {640, 480};
 
 public:
-   VulkanCamera(VulkanLayer*);
+   VulkanCamera(const Any&);
 
    void Refresh() override;
    void Compile();

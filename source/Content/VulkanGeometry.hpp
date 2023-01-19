@@ -21,7 +21,7 @@ class VulkanGeometry : public ContentVRAM {
 
 private:
    // Vertex info                                                       
-   VertexView mView;
+   GeometryView mView;
    DMeta mTopology {};
 
    // The buffers                                                       

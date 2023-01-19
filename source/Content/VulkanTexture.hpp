@@ -20,7 +20,7 @@ class VulkanTexture : public ContentVRAM {
 
 private:
    // Original content texture view                                     
-   PixelView mView;
+   TextureView mView;
    // Image                                                             
    VulkanImage mImage;
    // Image view                                                        

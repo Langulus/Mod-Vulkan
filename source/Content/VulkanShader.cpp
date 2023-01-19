@@ -57,7 +57,7 @@ bool VulkanShader::InitializeFromMaterial(ShaderStage::Enum stage, const AMateri
       throw Except::Graphics(pcLogSelfError << "No uniforms/inputs provided by generator");
 
    // Add relevant inputs                                               
-   const auto index = RRate(RRate::StagesBegin + stage).GetInputIndex();
+   const auto index = Rate(Rate::StagesBegin + stage).GetInputIndex();
    auto& inputs = uniforms->As<TAny<Trait>>(index);
    for (auto& attribute : inputs)
       AddInput(attribute);
@@ -160,13 +160,13 @@ void VulkanShader::AddInput(const Trait& input) {
    // generating code                                                   
    switch (mStage) {
    case ShaderStage::Pixel:
-      mInputs[RRate(RRate::PerPixel).GetStageIndex()] << input;
+      mInputs[Rate(Rate::PerPixel).GetStageIndex()] << input;
       return;
    case ShaderStage::Geometry:
-      mInputs[RRate(RRate::PerPrimitive).GetStageIndex()] << input;
+      mInputs[Rate(Rate::PerPrimitive).GetStageIndex()] << input;
       return;
    case ShaderStage::Vertex:
-      mInputs[RRate(RRate::PerVertex).GetStageIndex()] << input;
+      mInputs[Rate(Rate::PerVertex).GetStageIndex()] << input;
       // Note this is the only case where we continue   after the switch
       break;
    default:
@@ -220,6 +220,7 @@ void VulkanShader::AddInput(const Trait& input) {
 
 /// Get a VkShaderStageFlagBits corresponding the the this shader's stage     
 ///   @return the flag                                                        
+LANGULUS(ALWAYSINLINE)
 VkShaderStageFlagBits VulkanShader::GetStageFlagBit() const noexcept {
    static constexpr VkShaderStageFlagBits StageMap[ShaderStage::Counter] = {
       VK_SHADER_STAGE_VERTEX_BIT,
@@ -232,6 +233,37 @@ VkShaderStageFlagBits VulkanShader::GetStageFlagBit() const noexcept {
 
    return StageMap[mStage];
 }
+
+LANGULUS(ALWAYSINLINE)
+bool VulkanShader::IsCompiled() const noexcept {
+   return mCompiled;
+}
+
+LANGULUS(ALWAYSINLINE)
+auto& VulkanShader::GetShader() const noexcept {
+   return mStageDescription;
+}
+
+LANGULUS(ALWAYSINLINE)
+auto& VulkanShader::GetBindings() const noexcept {
+   return mBindings;
+}
+
+LANGULUS(ALWAYSINLINE)
+auto& VulkanShader::GetAttributes() const noexcept {
+   return mAttributes;
+}
+
+LANGULUS(ALWAYSINLINE)
+auto& VulkanShader::GetCode() const noexcept {
+   return mCode;
+}
+
+LANGULUS(ALWAYSINLINE)
+Rate VulkanShader::GetRate() const noexcept {
+   return mStage + Rate::StagesBegin;
+}
+
 
 // in order to mix standard rasterizer with ray marcher we must first linearize depth
 // uniform float near;

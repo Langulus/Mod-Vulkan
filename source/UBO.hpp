@@ -107,7 +107,7 @@ public:
 ///                                                                           
 ///   Wraps either                                                            
 /// VK_DESCRIPTOR_TYPE_SAMPLER or VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER   
-/// These are updated only at RRate::PerRenderable, one such is used for      
+/// These are updated only at Rate::PerRenderable, one such is used for      
 /// layout(set = 2)                                                           
 ///                                                                           
 struct SamplerUBO {

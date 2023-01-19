@@ -56,7 +56,7 @@ protected:
    friend class VulkanMemory;
 
    // Meta                                                              
-   PixelView mView;
+   TextureView mView;
    // Buffer                                                            
    Own<VkImage> mBuffer;
    // VRAM image info                                                   

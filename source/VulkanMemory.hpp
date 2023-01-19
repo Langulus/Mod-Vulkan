@@ -14,7 +14,7 @@ using PCCmdBuffer = VkCommandBuffer;
 ///                                                                           
 ///   Video memory interface                                                  
 ///                                                                           
-/// Has tools to manage the VRAM, produce VRAM buffers, move memory, etc.     
+/// Has tools to manage the VRAM, and produce VRAM buffers                    
 ///                                                                           
 class VulkanMemory {
 public:
@@ -39,11 +39,11 @@ public:
    VulkanBuffer CreateBuffer(DMeta, VkDeviceSize, VkBufferUsageFlags, VkMemoryPropertyFlags) const;
    void DestroyBuffer(VulkanBuffer&) const;
 
-   VulkanImage CreateImage(const PixelView&, VkImageUsageFlags) const;
+   VulkanImage CreateImage(const TextureView&, VkImageUsageFlags) const;
    void DestroyImage(VulkanImage&) const;
 
-   VkImageView CreateImageView(const VkImage&, const PixelView&, VkImageAspectFlags);
-   VkImageView CreateImageView(const VkImage&, const PixelView&);
+   VkImageView CreateImageView(const VkImage&, const TextureView&, VkImageAspectFlags);
+   VkImageView CreateImageView(const VkImage&, const TextureView&);
 
    void ImageTransfer(VulkanImage&, VkImageLayout from, VkImageLayout to);
    void ImageTransfer(VkImage&, VkImageLayout from, VkImageLayout to);

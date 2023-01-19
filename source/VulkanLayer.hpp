@@ -27,10 +27,11 @@ using PipelineSet = TUnorderedSet<VulkanPipeline*>;
 /// A logical group of cameras, renderables, and lights, isolated from other  
 /// layers. Useful for capsulating a GUI, for example.                        
 ///                                                                           
-class VulkanLayer : public Unit {
+class VulkanLayer : public A::GraphicsUnit {
+   LANGULUS(ABSTRACT) false;
    LANGULUS(PRODUCER) VulkanRenderer;
+   LANGULUS_BASES(A::GraphicsUnit);
    LANGULUS_VERBS(Verbs::Create);
-
 private:
    // List of cameras                                                   
    TFactory<VulkanCamera> mCameras;
@@ -93,7 +94,7 @@ private:
    Style mStyle = Style::Default;
 
 public:
-   VulkanLayer(VulkanRenderer*);
+   VulkanLayer(const Any&);
 
    void Create(Verb&);
 

@@ -595,8 +595,8 @@ void VulkanPipeline::CreateUniformBuffers() {
 
    // Create descriptor pools                                           
    static constinit VkDescriptorPoolSize poolSizes[] {
-      { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, RRate::StaticUniformCount },
-      { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, RRate::DynamicUniformCount },
+      { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, Rate::StaticUniformCount },
+      { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, Rate::DynamicUniformCount },
       { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 8 },
       { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 8 },
       { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 8 }
@@ -617,11 +617,11 @@ void VulkanPipeline::CreateUniformBuffers() {
    {
       // For each static uniform rate (set = 0)...                      
       Bindings bindings;
-      for (Count rate = 0; rate < RRate::StaticUniformCount; ++rate) {
+      for (Count rate = 0; rate < Rate::StaticUniformCount; ++rate) {
          auto& ubo = mStaticUBO[rate];
 
          // Add relevant inputs                                         
-         const auto index = RRate(RRate::StaticUniformBegin + rate).GetInputIndex();
+         const auto index = Rate(Rate::StaticUniformBegin + rate).GetInputIndex();
          auto& inputs = uniforms->As<TAny<Trait>>(index);
          for (auto& trait : inputs) {
             if (trait.TraitIs<Traits::Texture>())
@@ -660,11 +660,11 @@ void VulkanPipeline::CreateUniformBuffers() {
    // Create the dynamic sets (0)                                       
    {
       Bindings bindings;
-      for (Offset rate = 0; rate < RRate::DynamicUniformCount; ++rate) {
+      for (Offset rate = 0; rate < Rate::DynamicUniformCount; ++rate) {
          auto& ubo = mDynamicUBO[rate];
 
          // Add relevant inputs                                         
-         const auto index = RRate(RRate::DynamicUniformBegin + rate).GetInputIndex();
+         const auto index = Rate(Rate::DynamicUniformBegin + rate).GetInputIndex();
          auto& inputs = uniforms->As<TAny<Trait>>(index);
          for (auto& trait : inputs) {
             if (trait.TraitIs<Traits::Texture>())
@@ -701,11 +701,11 @@ void VulkanPipeline::CreateUniformBuffers() {
       CreateDescriptorLayoutAndSet(bindings, &mDynamicUBOLayout.Get(), &mDynamicUBOSet.Get());
    }
 
-   // Finally, set the samplers for RRate::PerRenderable only (set = 2) 
+   // Finally, set the samplers for Rate::PerRenderable only (set = 2) 
    {
       // Add relevant inputs                                            
       SamplerUBO ubo;
-      const auto index = RRate(RRate::Renderable).GetInputIndex();
+      const auto index = Rate(Rate::Renderable).GetInputIndex();
       auto& inputs = uniforms->As<TAny<Trait>>(index);
       for (auto& trait : inputs) {
          if (!trait.TraitIs<Traits::Texture>())
@@ -803,7 +803,7 @@ Count VulkanPipeline::RenderLevel(const Offset& offset) const {
 
    // Get the initial state to check for interrupts                     
    const auto& initial = mSubscribers[offset];
-   const auto r = GetRelevantDynamicUBOIndexOfRate<RRate::Level>();
+   const auto r = GetRelevantDynamicUBOIndexOfRate<Rate::Level>();
 
    // And for each subscriber...                                        
    Offset i = offset;

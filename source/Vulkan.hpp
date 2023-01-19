@@ -10,17 +10,17 @@
 
 using TokenSet = ::std::vector<const char*>;
 
+
 ///                                                                           
 ///   Vulkan graphics module                                                  
 ///                                                                           
 /// Manages and produces renderers. By default, the module itself can convey  
 /// GPU computations, if hardware allows it                                   
 ///                                                                           
-class Vulkan : public Module {
+class Vulkan : public A::Graphics {
    LANGULUS(ABSTRACT) false;
-   LANGULUS_BASES(Module);
+   LANGULUS_BASES(A::Graphics);
    LANGULUS_VERBS(Verbs::Create);
-
 private:
    // The vulkan instance                                               
    Own<VkInstance> mInstance;
@@ -38,7 +38,6 @@ private:
    bool mSupportsSparseBinding = false;
    // List of renderer components                                       
    TFactory<VulkanRenderer> mRenderers;
-
 
    #if LANGULUS_DEBUG()
       TokenSet mValidationLayers;

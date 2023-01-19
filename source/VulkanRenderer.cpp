@@ -505,7 +505,7 @@ bool VulkanRenderer::CreateSwapchain(const VkSurfaceFormatKHR& format) {
    // single layer, 2D images, with no mipmaps.                         
    bool reverseFormat;
    const auto viewf = VkFormatToDMeta(format.format, reverseFormat);
-   PixelView colorview(extent.width, extent.height, 1, 1, viewf, reverseFormat);
+   TextureView colorview(extent.width, extent.height, 1, 1, viewf, reverseFormat);
    mFrame.resize(mSwapChainImages.size());
    for (uint32_t i = 0; i < mSwapChainImages.GetCount(); i++) {
       auto& image = mSwapChainImages[i];
@@ -515,7 +515,7 @@ bool VulkanRenderer::CreateSwapchain(const VkSurfaceFormatKHR& format) {
    }
    
    // Create the depth buffer image and view                            
-   PixelView depthview(extent.width, extent.height, 1, 1, DataID::Reflect<depth32>());
+   TextureView depthview(extent.width, extent.height, 1, 1, DataID::Reflect<depth32>());
    mDepthImage = mVRAM.CreateImage(depthview, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
    mDepthImageView = mVRAM.CreateImageView(mDepthImage.mBuffer, depthview);
    mVRAM.ImageTransfer(mDepthImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
@@ -751,9 +751,9 @@ void VulkanRenderer::Draw() {
    // Upload any uniform buffer changes to VRAM                         
    // Once this data is uploaded, we're free to prepare the next frame  
    for (auto pipe : relevantPipes) {
-      pipe->SetUniform<RRate::Tick, Traits::Time>(timeFromInit);
-      pipe->SetUniform<RRate::Tick, Traits::MousePosition>(mousePosition.Current());
-      pipe->SetUniform<RRate::Tick, Traits::MouseScroll>(mouseScroll.Current());
+      pipe->SetUniform<Rate::Tick, Traits::Time>(timeFromInit);
+      pipe->SetUniform<Rate::Tick, Traits::MousePosition>(mousePosition.Current());
+      pipe->SetUniform<Rate::Tick, Traits::MouseScroll>(mouseScroll.Current());
       pipe->UpdateUniformBuffers();
    }
 

@@ -7,11 +7,13 @@
 ///                                                                           
 #include "VulkanRenderer.hpp"
 
-/// Create camera                                                             
-///   @param producer - the camera producer                                   
-VulkanCamera::VulkanCamera(VulkanLayer* producer)
-   : ACamera {MetaData::Of<VulkanCamera>()}
-   , TProducedFrom {producer} { }
+
+/// Descriptor constructor                                                    
+///   @param descriptor - the camera descriptor                               
+VulkanCamera::VulkanCamera(const Any& descriptor)
+   : GraphicsUnit {MetaOf<VulkanCamera>(), descriptor} {
+   TODO();
+}
 
 /// Compile the camera                                                        
 void VulkanCamera::Compile() {

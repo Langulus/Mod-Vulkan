@@ -10,15 +10,12 @@
 
 #define PC_VERBOSE_RENDERABLE(a) a
 
-/// Construct the renderable                                                  
-///   @param producer - the renderable's producer                             
-VulkanRenderable::VulkanRenderable(VulkanLayer* producer)
-   : ARenderable {MetaData::Of<CVulkanRenderable>()}
-   , TProducedFrom {producer} { }
 
-/// Cleanup content and pipelines referenced by the renderable                
-VulkanRenderable::~VulkanRenderable() {
-   ResetRenderable();
+/// Descriptor constructor                                                    
+///   @param descriptor - the renderable descriptor                           
+VulkanRenderable::VulkanRenderable(const Any& descriptor)
+   : GraphicsUnit {MetaOf<VulkanRenderable>(), descriptor} {
+   TODO();
 }
 
 /// Get the renderer for the renderable                                       

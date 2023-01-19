@@ -12,8 +12,10 @@
 ///                                                                           
 ///   Light source unit                                                       
 ///                                                                           
-class VulkanLight : public Unit {
+class VulkanLight : public A::GraphicsUnit {
+   LANGULUS(ABSTRACT) false;
    LANGULUS(PRODUCER) VulkanLayer;
+   LANGULUS_BASES(A::GraphicsUnit);
 private:
    VulkanLight(VulkanLayer*);
 };

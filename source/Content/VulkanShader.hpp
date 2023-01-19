@@ -38,20 +38,17 @@ private:
 
 public:
    VulkanShader(VulkanRenderer*);
-   VulkanShader(VulkanShader&&) noexcept = default;
-   VulkanShader& operator = (VulkanShader&&) noexcept = default;
    ~VulkanShader();
 
    bool operator == (const VulkanShader&) const;
 
    NOD() Hash GetHash() const;
-
-   NOD() bool IsCompiled() const noexcept { return mCompiled; }
-   NOD() auto& GetShader() const noexcept { return mStageDescription; }
-   NOD() auto& GetBindings() const noexcept { return mBindings; }
-   NOD() auto& GetAttributes() const noexcept { return mAttributes; }
-   NOD() auto& GetCode() const noexcept { return mCode; }
-   NOD() RRate GetRate() const noexcept { return mStage + RRate::StagesBegin; }
+   NOD() bool IsCompiled() const noexcept;
+   NOD() auto& GetShader() const noexcept;
+   NOD() auto& GetBindings() const noexcept;
+   NOD() auto& GetAttributes() const noexcept;
+   NOD() auto& GetCode() const noexcept;
+   NOD() Rate GetRate() const noexcept;
 
    bool InitializeFromMaterial(ShaderStage::Enum, const Unit*);
    void Uninitialize();

@@ -84,7 +84,7 @@ bool VulkanMemory::CheckFormatSupport(VkFormat f, VkImageTiling t, VkFormatFeatu
 ///   @param view - image view                                                
 ///   @param flags - image usage flags                                        
 ///   @return an image buffer instance                                        
-VulkanImage VulkanMemory::CreateImage(const PixelView& view, VkImageUsageFlags flags) const {
+VulkanImage VulkanMemory::CreateImage(const TextureView& view, VkImageUsageFlags flags) const {
    // Precheck some simple constraints                                  
    if (!view.mFormat || (view.mWidth * view.mHeight * view.mDepth * view.mFrames == 0))
       LANGULUS_THROW(Graphics, "Wrong texture descriptor");
@@ -221,7 +221,7 @@ void VulkanMemory::DestroyImage(VulkanImage& buffer) const {
 ///   @param view - pc image view                                             
 ///   @param aspectFlags - image aspect                                       
 ///   @return the image view                                                  
-VkImageView VulkanMemory::CreateImageView(const VkImage& image, const PixelView& view, VkImageAspectFlags flags) {
+VkImageView VulkanMemory::CreateImageView(const VkImage& image, const TextureView& view, VkImageAspectFlags flags) {
    VkImageViewCreateInfo viewInfo {};
    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
    viewInfo.image = image;
@@ -258,7 +258,7 @@ VkImageView VulkanMemory::CreateImageView(const VkImage& image, const PixelView&
 ///   @param image - image to create view for                                 
 ///   @param view - pc image view                                             
 ///   @return the image view                                                  
-VkImageView VulkanMemory::CreateImageView(const VkImage& image, const PixelView& view) {
+VkImageView VulkanMemory::CreateImageView(const VkImage& image, const TextureView& view) {
    const VkFormat fmt = AsVkFormat(view.mFormat);
    const bool depthusage =
          fmt == VK_FORMAT_D32_SFLOAT
