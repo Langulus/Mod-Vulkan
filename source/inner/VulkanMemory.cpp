@@ -5,7 +5,8 @@
 /// Distributed under GNU General Public License v3+                          
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
-#include "VulkanMemory.hpp"
+#include "../Vulkan.hpp"
+
 
 /// Initialize the vulkan memory interface                                    
 ///   @param adapter - the physical device                                    
@@ -152,7 +153,8 @@ VulkanImage VulkanMemory::CreateImage(const TextureView& view, VkImageUsageFlags
 
          [[maybe_unused]] bool unusedReversed = false;
          meta = VkFormatToDMeta(imageFormat, unusedReversed);
-         Logger::Warning("Texture format automatically changed from ", view.mFormat, " to ", meta);
+         Logger::Warning("Texture format automatically changed from ",
+            view.mFormat, " to ", meta);
       }
       else usingOptimalTiling = false;
    }
@@ -164,12 +166,12 @@ VulkanImage VulkanMemory::CreateImage(const TextureView& view, VkImageUsageFlags
    image.mDevice = mDevice;
    image.mInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
    image.mInfo.imageType = static_cast<VkImageType>(
-      VK_IMAGE_TYPE_1D + view.CountDimensions() - 1);
-   image.mInfo.extent.width = static_cast<uint32_t>(view.mWidth);
-   image.mInfo.extent.height = static_cast<uint32_t>(view.mHeight);
-   image.mInfo.extent.depth = static_cast<uint32_t>(view.mDepth);
+      VK_IMAGE_TYPE_1D + view.GetDimensionCount() - 1);
+   image.mInfo.extent.width = view.mWidth;
+   image.mInfo.extent.height = view.mHeight;
+   image.mInfo.extent.depth = view.mDepth;
    image.mInfo.mipLevels = 1;
-   image.mInfo.arrayLayers = static_cast<uint32_t>(view.mFrames);
+   image.mInfo.arrayLayers = view.mFrames;
    image.mInfo.format = imageFormat;
    image.mInfo.tiling = usingOptimalTiling
       ? VK_IMAGE_TILING_OPTIMAL
@@ -225,7 +227,7 @@ VkImageView VulkanMemory::CreateImageView(const VkImage& image, const TextureVie
    VkImageViewCreateInfo viewInfo {};
    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
    viewInfo.image = image;
-   switch (view.CountDimensions()) {
+   switch (view.GetDimensionCount()) {
    case 1:
       viewInfo.viewType = view.mFrames > 1
          ? VK_IMAGE_VIEW_TYPE_1D_ARRAY

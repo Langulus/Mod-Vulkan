@@ -21,7 +21,6 @@
 
 #if LANGULUS_OS(WINDOWS)
    bool CreateNativeVulkanSurfaceKHR(const VkInstance& instance, const void* window, VkSurfaceKHR& surface) {
-      // Create surface                                                 
       VkWin32SurfaceCreateInfoKHR createInfo;
       memset(&createInfo, 0, sizeof(VkWin32SurfaceCreateInfoKHR));
       createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
@@ -36,7 +35,6 @@
    }
 #elif LANGULUS_OS(LINUX)
    bool CreateNativeVulkanSurfaceKHR(const VkInstance& instance, const AWindow* window, VkSurfaceKHR& surface) {
-      // Create surface                                                 
       VkXlibSurfaceCreateInfoKHR createInfo;
       memset(&createInfo, 0, sizeof(VkXlibSurfaceCreateInfoKHR));
       createInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
@@ -51,3 +49,19 @@
 #else 
    #error "You need to specify the pcCreateNativeVulkanSurfaceKHR function for your OS"
 #endif
+
+/// Get required extension layers                                             
+///   @return a set of all the required extensions                            
+TokenSet GetRequiredExtensions() {
+   std::vector<const char*> extensions;
+   #if LANGULUS_DEBUG()
+      extensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+   #endif
+
+   extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
+
+   #if LANGULUS_OS(WINDOWS)
+      extensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+   #endif
+   return extensions;
+}

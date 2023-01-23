@@ -7,21 +7,21 @@
 ///                                                                           
 #pragma once
 #include "VulkanBuffer.hpp"
-#include "../GLSL.hpp"
 
 
 ///                                                                           
 ///   Vulkan shader                                                           
 ///                                                                           
-class VulkanShader {
-   LANGULUS(PRODUCER) VulkanRenderer;
+struct VulkanShader : A::GraphicsUnit, ProducedFrom<VulkanRenderer> {
+   LANGULUS(ABSTRACT) false;
+   LANGULUS_BASES(A::GraphicsUnit);
 
 private:
    std::vector<VertexBinding> mBindings;
    std::vector<VertexAttribute> mAttributes;
 
    // Shader code                                                       
-   GLSL mCode;
+   Text mCode;
 
    // Shader stage                                                      
    Shader mStageDescription {};
@@ -37,7 +37,7 @@ private:
    bool mCompleted {};
 
 public:
-   VulkanShader(VulkanRenderer*);
+   VulkanShader(VulkanRenderer*, const Any&);
    ~VulkanShader();
 
    bool operator == (const VulkanShader&) const;

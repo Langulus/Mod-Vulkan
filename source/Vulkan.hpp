@@ -8,20 +8,21 @@
 #pragma once
 #include "VulkanRenderer.hpp"
 
-using TokenSet = ::std::vector<const char*>;
-
 
 ///                                                                           
 ///   Vulkan graphics module                                                  
 ///                                                                           
 /// Manages and produces renderers. By default, the module itself can convey  
-/// GPU computations, if hardware allows it                                   
+/// GPU computations, if your hardware has the required capabilities          
 ///                                                                           
-class Vulkan : public A::Graphics {
+struct Vulkan final : A::Graphics {
    LANGULUS(ABSTRACT) false;
    LANGULUS_BASES(A::Graphics);
    LANGULUS_VERBS(Verbs::Create);
-private:
+
+protected:
+   friend struct VulkanRenderer;
+
    // The vulkan instance                                               
    Own<VkInstance> mInstance;
    // The physical device                                               
@@ -31,32 +32,32 @@ private:
    // The computation queue, should work without renderers              
    Own<VkQueue> mComputer;
    // True if hardware has GPU compute                                  
-   bool mSupportsComputation = false;
+   bool mSupportsComputation {};
    // True if hardware has dedicated transfer queue                     
-   bool mSupportsTransfer = false;
+   bool mSupportsTransfer {};
    // True if hardware has sparse binding support                       
-   bool mSupportsSparseBinding = false;
+   bool mSupportsSparseBinding {};
    // List of renderer components                                       
    TFactory<VulkanRenderer> mRenderers;
 
-   #if LANGULUS_DEBUG()
+   #if LANGULUS(DEBUG)
+      // Set of validation layers                                       
       TokenSet mValidationLayers;
-      VkDebugReportCallbackEXT mLogRelay;   // Relays debug messages    
+      // Relays debug messages                                          
+      VkDebugReportCallbackEXT mLogRelay;
    #endif
 
 public:
    Vulkan(Runtime*, const Any&);
    ~Vulkan();
 
-   void Update(Time) final;
+   void Update(Time);
    void Create(Verb&);
 
-   // Helpers                                                           
-   TokenSet GetRequiredExtensions() const;
    unsigned RateDevice(const VkPhysicalDevice&) const;
    VkPhysicalDevice PickAdapter() const;
 
-   #if LANGULUS_DEBUG()
+   #if LANGULUS(DEBUG)
       auto& GetValidationLayers() const noexcept;
       void CheckValidationLayerSupport(const TokenSet&) const;
    #endif

@@ -5,13 +5,14 @@
 /// Distributed under GNU General Public License v3+                          
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
-#include "VulkanRenderer.hpp"
-
+#include "Vulkan.hpp"
 
 /// Descriptor constructor                                                    
+///   @param producer - the camera producer                                   
 ///   @param descriptor - the camera descriptor                               
-VulkanCamera::VulkanCamera(const Any& descriptor)
-   : GraphicsUnit {MetaOf<VulkanCamera>(), descriptor} {
+VulkanCamera::VulkanCamera(VulkanLayer* producer, const Any& descriptor)
+   : GraphicsUnit {MetaOf<VulkanCamera>(), descriptor} 
+   , ProducedFrom {producer, descriptor} {
    TODO();
 }
 
@@ -27,7 +28,7 @@ void VulkanCamera::Compile() {
    mAspectRatio = mResolution[0] / mResolution[1];
    mViewport.mMax.xy() = mResolution;
 
-   if (GetPerspective()) {
+   if (mPerspective) {
       // Perspective is enabled, so use FOV, aspect ratio, and viewport 
       // Also, Vulkan uses a flipped coordinate system                  
       // The final projection coordinates should look like that:        

@@ -32,13 +32,13 @@ inline bool VRAM::Upload(Offset offset, Size bytes, const void* data) const {
 /// Lock VRAM                                                                 
 inline Byte* VRAM::Lock(Offset offset, Size bytes) const {
    void* raw;
-   vkMapMemory(mDevice.Get(), mMemory.Get(), offset, bytes, 0, &raw);
+   vkMapMemory(mDevice, mMemory, offset, bytes, 0, &raw);
    return static_cast<Byte*>(raw);
 }
 
 /// Unlock VRAM                                                               
 inline void VRAM::Unlock() const {
-   vkUnmapMemory(mDevice.Get(), mMemory.Get());
+   vkUnmapMemory(mDevice, mMemory);
 }
 
 /// Check if buffer contains valid VRAM allocation                            

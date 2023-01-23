@@ -6,16 +6,14 @@
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
 #include "UBO.hpp"
-#include "VulkanRenderer.hpp"
-#include "Content/VulkanTexture.hpp"
-#include "Content/VulkanGeometry.hpp"
+#include "../Vulkan.hpp"
 
-/// Free VRAM                                                                 
+/// Free uniform buffer                                                       
 UBO::~UBO() {
    Destroy();
 }
 
-/// Free VRAM                                                                 
+/// Free uniform buffer                                                       
 void UBO::Destroy() {
    if (!mBuffer.IsValid())
       return;
@@ -93,15 +91,14 @@ void UBO::Reallocate(Count elements) {
    mAllocated = elements;
    const auto byteSize = mStride * mAllocated;
    mBuffer = mRenderer->mVRAM.CreateBuffer(
-      nullptr, 
-      VkDeviceSize(byteSize),
+      nullptr, VkDeviceSize(byteSize),
       VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
    );
    mDescriptor.buffer = mBuffer.mBuffer;
 
    // Resize the RAM data, retaining contained data                     
-   mRAM.Allocate(byteSize, false, true);
+   mRAM.Reserve(byteSize);
 }
 
 /// Initialize a dynamic uniform buffer object                                
@@ -143,7 +140,7 @@ void DataUBO<true>::Update(uint32_t binding, const VkDescriptorSet& set, BufferU
    if (!IsValid() || !mUsedCount)
       return;
 
-   output.New(1);
+   output.New();
 
    auto& write = output.Last();
    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -164,7 +161,7 @@ void DataUBO<false>::Update(uint32_t binding, const VkDescriptorSet& set, Buffer
    if (!IsValid())
       return;
 
-   output.New(1);
+   output.New();
 
    auto& write = output.Last();
    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -200,7 +197,7 @@ void SamplerUBO::Update(BufferUpdates& output) const {
       if (!mSamplers[i].sampler)
          continue;
 
-      output.New(1);
+      output.New();
 
       auto& write = output.Last();
       write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -217,7 +214,7 @@ void SamplerUBO::Update(BufferUpdates& output) const {
 /// Free up a sampler set                                                     
 SamplerUBO::~SamplerUBO() {
    if (mSamplersUBOSet) {
-      vkFreeDescriptorSets(mRenderer->GetDevice(), mPool, 1, &mSamplersUBOSet.Get());
+      vkFreeDescriptorSets(mRenderer->mDevice, mPool, 1, &mSamplersUBOSet.Get());
       mSamplersUBOSet.Reset();
    }
 }

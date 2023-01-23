@@ -6,6 +6,7 @@
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
 #include "Vulkan.hpp"
+#include <set>
 
 LANGULUS_DEFINE_MODULE(
    Vulkan, 11, "Vulkan",
@@ -76,7 +77,7 @@ LANGULUS_DEFINE_MODULE(
 ///   @param system - the system that owns the module instance                
 ///   @param handle - the library handle                                      
 Vulkan::Vulkan(Runtime* runtime, const Any&)
-   : Module {MetaOf<Vulkan>(), runtime}
+   : A::Graphics {MetaOf<Vulkan>(), runtime}
    , mRenderers {this} {
    Logger::Verbose(Self(), "Initializing...");
 
@@ -370,25 +371,11 @@ VkPhysicalDevice Vulkan::PickAdapter() const {
    return result;
 }
 
-/// Get required extension layers                                             
-TokenSet Vulkan::GetRequiredExtensions() const {
-   std::vector<const char*> extensions;
-   #if LANGULUS_DEBUG()
-      extensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
-   #endif
-   
-   extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
-   #if LANGULUS_OS(WINDOWS)
-      extensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
-   #endif
-   return extensions;
-}
-
 /// Module update routine                                                     
 ///   @param dt - time from last update                                       
 void Vulkan::Update(Time) {
    for (auto& renderer : mRenderers)
-      renderer.Update();
+      renderer.Draw();
 }
 
 /// Create/destroy renderers                                                  

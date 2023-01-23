@@ -5,11 +5,13 @@
 /// Distributed under GNU General Public License v3+                          
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
-#include "VulkanRenderer.hpp"
+#include "Vulkan.hpp"
 
-
-/// Create light                                                              
-///   @param producer - the producer of the light                             
-VulkanLight::VulkanLight(VulkanLayer* producer)
-   : ALight {MetaData::Of<VulkanLight>()}
-   , TProducedFrom {producer} { }
+/// Descriptor constructor                                                    
+///   @param producer - the light producer                                    
+///   @param descriptor - the light descriptor                                
+VulkanLight::VulkanLight(VulkanLayer* producer, const Any& descriptor)
+   : GraphicsUnit {MetaOf<VulkanLight>(), descriptor}
+   , ProducedFrom {producer, descriptor} {
+   TODO();
+}

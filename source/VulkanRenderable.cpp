@@ -5,22 +5,24 @@
 /// Distributed under GNU General Public License v3+                          
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
-#include "VulkanRenderable.hpp"
-#include "VulkanRenderer.hpp"
+#include "Vulkan.hpp"
+#include "GLSL.hpp"
 
 #define PC_VERBOSE_RENDERABLE(a) a
 
 
 /// Descriptor constructor                                                    
+///   @param producer - the renderable producer                               
 ///   @param descriptor - the renderable descriptor                           
-VulkanRenderable::VulkanRenderable(const Any& descriptor)
-   : GraphicsUnit {MetaOf<VulkanRenderable>(), descriptor} {
+VulkanRenderable::VulkanRenderable(VulkanLayer* producer, const Any& descriptor)
+   : GraphicsUnit {MetaOf<VulkanRenderable>(), descriptor} 
+   , ProducedFrom {producer, descriptor} {
    TODO();
 }
 
-/// Get the renderer for the renderable                                       
+/// Get the renderer                                                          
 ///   @return a pointer to the renderer                                       
-auto VulkanRenderable::GetRenderer() noexcept {
+VulkanRenderer* VulkanRenderable::GetRenderer() const noexcept {
    return GetProducer()->GetProducer();
 }
 
@@ -28,7 +30,7 @@ auto VulkanRenderable::GetRenderer() noexcept {
 /// This is the point where content might be generated upon request           
 ///   @param lod - information used to extract the best LOD                   
 ///   @return the VRAM geometry or nullptr if content is not available        
-VulkanGeometry* VulkanRenderable::GetGeometry(const LodState& lod) {
+VulkanGeometry* VulkanRenderable::GetGeometry(const LodState& lod) const {
    const auto i = lod.GetAbsoluteIndex();
    if (!mLOD[i].mGeometry && mGeometryContent)
       mLOD[i].mGeometry = GetRenderer()->Cache(mGeometryContent->GetLOD(lod));
@@ -39,10 +41,10 @@ VulkanGeometry* VulkanRenderable::GetGeometry(const LodState& lod) {
 /// This is the point where content might be generated upon request           
 ///   @param lod - information used to extract the best LOD                   
 ///   @return the VRAM texture or nullptr if content is not available         
-VulkanTexture* VulkanRenderable::GetTextures(const LodState& lod) {
+VulkanTexture* VulkanRenderable::GetTextures(const LodState& lod) const {
    const auto i = lod.GetAbsoluteIndex();
    if (!mLOD[i].mTexture && mTextureContent)
-      mLOD[i].mTexture = GetRenderer()->Cache(mTextureContent.Get()); //TODO texture lod?
+      mLOD[i].mTexture = GetRenderer()->Cache(mTextureContent); //TODO texture lod?
    return mLOD[i].mTexture;
 }
 
@@ -50,7 +52,7 @@ VulkanTexture* VulkanRenderable::GetTextures(const LodState& lod) {
 ///   @param lod - information used to extract the best LOD                   
 ///   @param layer - additional settings might be provided by the used layer  
 ///   @return the pipeline                                                    
-VulkanPipeline* VulkanRenderable::GetOrCreatePipeline(const LodState& lod, const VulkanLayer* layer) {
+VulkanPipeline* VulkanRenderable::GetOrCreatePipeline(const LodState& lod, const VulkanLayer* layer) const {
    // Always return the predefined pipeline if available                
    if (mPredefinedPipeline)
       return mPredefinedPipeline;
@@ -61,7 +63,7 @@ VulkanPipeline* VulkanRenderable::GetOrCreatePipeline(const LodState& lod, const
       return mLOD[i].mPipeline;
 
    // Construct a pipeline                                              
-   bool usingGlobalPipeline = false;
+   bool usingGlobalPipeline {};
    auto construct = Construct::From<VulkanPipeline>();
    if (mMaterialContent) {
       construct << mMaterialContent;
@@ -158,18 +160,18 @@ void VulkanRenderable::Refresh() {
          }
 
          // Then check for predefined material                          
-         auto material = dynamic_cast<AMaterial*>(unit);
+         auto material = dynamic_cast<A::Material*>(unit);
          if (material) {
             mMaterialContent = material;
             return;
          }
 
          // If no material or pipe, check for geometries and textures   
-         auto geometry = dynamic_cast<AGeometry*>(unit);
+         auto geometry = dynamic_cast<A::Geometry*>(unit);
          if (geometry)
             mGeometryContent = geometry;
 
-         auto texture = dynamic_cast<ATexture*>(unit);
+         auto texture = dynamic_cast<A::Texture*>(unit);
          if (texture)
             mTextureContent = texture;
       }

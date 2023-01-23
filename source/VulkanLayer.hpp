@@ -6,14 +6,31 @@
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
 #pragma once
-#include "VulkanMemory.hpp"
 #include "VulkanCamera.hpp"
 #include "VulkanRenderable.hpp"
 #include "VulkanLight.hpp"
+#include "inner/VulkanMemory.hpp"
 
 struct LayerSubscriber {
    const VulkanPipeline* pipeline {};
    PipeSubscriber sub {};
+};
+
+struct RenderConfig {
+   // Command buffer to render to                                       
+   VkCommandBuffer mCommands;
+   // Render pass to render to                                          
+   const VkRenderPass& mPass;
+   // Framebuffer to render to                                          
+   const VkFramebuffer& mFrame;
+   // Color clear values                                                
+   VkClearValue mColorClear {};
+   // Depth clear values                                                
+   VkClearValue mDepthClear {};
+   // Depth sweep                                                       
+   VkClearAttachment mDepthSweep {};
+   // Pass begin info                                                   
+   VkRenderPassBeginInfo mPassBeginInfo {};
 };
 
 using LevelSet = TOrderedSet<Level>;
@@ -27,12 +44,16 @@ using PipelineSet = TUnorderedSet<VulkanPipeline*>;
 /// A logical group of cameras, renderables, and lights, isolated from other  
 /// layers. Useful for capsulating a GUI, for example.                        
 ///                                                                           
-class VulkanLayer : public A::GraphicsUnit {
+struct VulkanLayer : A::GraphicsUnit, ProducedFrom<VulkanRenderer> {
    LANGULUS(ABSTRACT) false;
-   LANGULUS(PRODUCER) VulkanRenderer;
    LANGULUS_BASES(A::GraphicsUnit);
    LANGULUS_VERBS(Verbs::Create);
-private:
+
+protected:
+   friend struct VulkanCamera;
+   friend struct VulkanRenderable;
+   friend struct VulkanLight;
+
    // List of cameras                                                   
    TFactory<VulkanCamera> mCameras;
    // List of rendererables                                             
@@ -47,7 +68,7 @@ private:
    CameraSet mRelevantCameras;
 
    // Subscribers, used only for hierarchical styled layers             
-   // Otherwise, CVulkanPipeline::Subscriber is used                    
+   // Otherwise, VulkanPipeline::Subscriber is used                     
    TAny<LayerSubscriber> mSubscribers;
    TAny<Count> mSubscriberCountPerLevel;
    TAny<Count> mSubscriberCountPerCamera;
@@ -94,13 +115,12 @@ private:
    Style mStyle = Style::Default;
 
 public:
-   VulkanLayer(const Any&);
+   VulkanLayer(VulkanRenderer*, const Any&);
 
    void Create(Verb&);
 
    bool Generate(PipelineSet&);
-   void Render(VkCommandBuffer, const VkRenderPass&, const VkFramebuffer&) const;
-   const Unit* GetWindow() const;
+   void Render(const RenderConfig&) const;
 
 private:
    void CompileCameras();
@@ -108,9 +128,9 @@ private:
    Count CompileLevelBatched(const Matrix4&, const Matrix4&, Level, PipelineSet&);
    Count CompileLevelHierarchical(const Matrix4&, const Matrix4&, Level, PipelineSet&);
    Count CompileThing(const Thing*, LodState&, PipelineSet&);
-   VulkanPipeline* CompileInstance(VulkanRenderable*, const Unit*, LodState&);
+   VulkanPipeline* CompileInstance(const VulkanRenderable*, const Unit*, LodState&);
    Count CompileLevels();
 
-   void RenderBatched(VkCommandBuffer, const VkRenderPass&, const VkFramebuffer&) const;
-   void RenderHierarchical(VkCommandBuffer, const VkRenderPass&, const VkFramebuffer&) const;
+   void RenderBatched(const RenderConfig&) const;
+   void RenderHierarchical(const RenderConfig&) const;
 };

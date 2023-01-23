@@ -14,7 +14,7 @@
 ///                                                                           
 class VRAM {
 protected:
-   friend class VulkanMemory;
+   friend struct VulkanMemory;
 
    // Memory associated with buffer                                     
    Own<VkDeviceMemory> mMemory;
@@ -35,7 +35,7 @@ public:
 ///                                                                           
 class VulkanBuffer : public VRAM {
 protected:
-   friend class VulkanMemory;
+   friend struct VulkanMemory;
 
    // Meta                                                              
    DMeta mMeta {};
@@ -53,7 +53,7 @@ public:
 ///                                                                           
 class VulkanImage : public VRAM {
 protected:
-   friend class VulkanMemory;
+   friend struct VulkanMemory;
 
    // Meta                                                              
    TextureView mView;

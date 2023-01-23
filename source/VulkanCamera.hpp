@@ -12,12 +12,12 @@
 ///                                                                           
 ///   Camera unit                                                             
 ///                                                                           
-class VulkanCamera : public A::GraphicsUnit {
+struct VulkanCamera final : A::GraphicsUnit, ProducedFrom<VulkanLayer> {
    LANGULUS(ABSTRACT) false;
-   LANGULUS(PRODUCER) VulkanLayer;
    LANGULUS_BASES(A::GraphicsUnit);
+
 protected:
-   friend class VulkanLayer;
+   friend struct VulkanLayer;
 
    // Whether or not a perspective projection is used                   
    bool mPerspective {true};
@@ -42,9 +42,9 @@ protected:
    Vec2u32 mResolution {640, 480};
 
 public:
-   VulkanCamera(const Any&);
+   VulkanCamera(VulkanLayer*, const Any&);
 
-   void Refresh() override;
+   void Refresh();
    void Compile();
    NOD() Matrix4 GetViewTransform(Level) const;
 };

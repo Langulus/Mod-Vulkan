@@ -15,8 +15,9 @@
 /// Can convert RAM content to VRAM vertex/index buffers, by copying the      
 /// contents to the GPU                                                       
 ///                                                                           
-class VulkanGeometry : public ContentVRAM {
-   LANGULUS(PRODUCER) VulkanRenderer;
+struct VulkanGeometry : ContentVRAM, ProducedFrom<VulkanRenderer> {
+   LANGULUS(ABSTRACT) false;
+   LANGULUS_BASES(ContentVRAM);
    LANGULUS_VERBS(Verbs::Create);
 
 private:
@@ -33,9 +34,7 @@ private:
    std::vector<VkDeviceSize> mIOffsets;
 
 public:
-   VulkanGeometry(VulkanRenderer*);
-   VulkanGeometry(VulkanGeometry&&) noexcept = default;
-   VulkanGeometry& operator = (VulkanGeometry&&) noexcept = default;
+   VulkanGeometry(VulkanRenderer*, const Any&);
    ~VulkanGeometry();
 
    void Initialize();

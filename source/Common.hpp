@@ -27,115 +27,135 @@ LANGULUS_DEFINE_TRAIT(Viewport, "Viewport and depth clipping, usually a Range4")
 LANGULUS_DEFINE_TRAIT(Projection, "Camera projection matrix");
 LANGULUS_DEFINE_TRAIT(View, "Camera view matrix");
 
-namespace Langulus::A
+namespace Langulus
 {
+   namespace A
+   {
 
-   ///                                                                        
-   ///   Abstract graphics module                                             
-   ///                                                                        
-   class Graphics : public Entity::Module {
-      LANGULUS_BASES(Entity::Module);
-   public:
-      using Entity::Module::Module;
-   };
+      ///                                                                     
+      ///   Abstract graphics module                                          
+      ///                                                                     
+      struct Graphics : Entity::Module {
+         LANGULUS_BASES(Entity::Module);
+         using Entity::Module::Module;
+      };
 
-   ///                                                                        
-   ///   Abstract graphics units                                              
-   ///                                                                        
-   class GraphicsUnit : public Entity::Unit {
-      LANGULUS_BASES(Entity::Unit);
-   public:
-      using Entity::Unit::Unit;
-   };
+      ///                                                                     
+      ///   Abstract graphics units                                           
+      ///                                                                     
+      struct GraphicsUnit : Entity::Unit {
+         LANGULUS_BASES(Entity::Unit);
+         using Entity::Unit::Unit;
+      };
 
-   ///                                                                        
-   ///   Abstract graphics renderer                                           
-   ///                                                                        
-   class Renderer : public GraphicsUnit {
-      LANGULUS(PRODUCER) Graphics;
-      LANGULUS_BASES(GraphicsUnit);
-   public:
-      using GraphicsUnit::GraphicsUnit;
-   };
+      ///                                                                     
+      ///   Abstract graphics renderer                                        
+      ///                                                                     
+      struct Renderer : GraphicsUnit {
+         LANGULUS(PRODUCER) Graphics;
+         LANGULUS_BASES(GraphicsUnit);
+         using GraphicsUnit::GraphicsUnit;
+      };
 
-   ///                                                                        
-   ///   Abstract graphics layer                                              
-   ///                                                                        
-   class Layer : public GraphicsUnit {
-      LANGULUS(PRODUCER) Renderer;
-      LANGULUS_BASES(GraphicsUnit);
-   public:
-      using GraphicsUnit::GraphicsUnit;
-   };
+      ///                                                                     
+      ///   Abstract graphics layer                                           
+      ///                                                                     
+      struct Layer : GraphicsUnit {
+         LANGULUS(PRODUCER) Renderer;
+         LANGULUS_BASES(GraphicsUnit);
+         using GraphicsUnit::GraphicsUnit;
+      };
 
-   ///                                                                        
-   ///   Abstract graphics camera                                             
-   ///                                                                        
-   class Camera : public GraphicsUnit {
-      LANGULUS(PRODUCER) Layer;
-      LANGULUS_BASES(GraphicsUnit);
-   public:
-      using GraphicsUnit::GraphicsUnit;
-   };
+      ///                                                                     
+      ///   Abstract graphics camera                                          
+      ///                                                                     
+      struct Camera : GraphicsUnit {
+         LANGULUS(PRODUCER) Layer;
+         LANGULUS_BASES(GraphicsUnit);
+         using GraphicsUnit::GraphicsUnit;
+      };
 
-   ///                                                                        
-   ///   Abstract graphics renderable                                         
-   ///                                                                        
-   class Renderable : public GraphicsUnit {
-      LANGULUS(PRODUCER) Layer;
-      LANGULUS_BASES(GraphicsUnit);
-   public:
-      using GraphicsUnit::GraphicsUnit;
-   };
+      ///                                                                     
+      ///   Abstract graphics renderable                                      
+      ///                                                                     
+      struct Renderable : GraphicsUnit {
+         LANGULUS(PRODUCER) Layer;
+         LANGULUS_BASES(GraphicsUnit);
+         using GraphicsUnit::GraphicsUnit;
+      };
 
-   ///                                                                        
-   ///   Abstract graphics light                                              
-   ///                                                                        
-   class Light : public GraphicsUnit {
-      LANGULUS(PRODUCER) Layer;
-      LANGULUS_BASES(GraphicsUnit);
-   public:
-      using GraphicsUnit::GraphicsUnit;
-   };
+      ///                                                                     
+      ///   Abstract graphics light                                           
+      ///                                                                     
+      struct Light : GraphicsUnit {
+         LANGULUS(PRODUCER) Layer;
+         LANGULUS_BASES(GraphicsUnit);
+         using GraphicsUnit::GraphicsUnit;
+      };
 
-   ///                                                                        
-   ///   Abstract content module                                              
-   ///                                                                        
-   class Content : public Entity::Module {
-      LANGULUS_BASES(Entity::Module);
-   public:
-      using Entity::Module::Module;
-   };
+      ///                                                                     
+      ///   Abstract content module                                           
+      ///                                                                     
+      struct Content : Entity::Module {
+         LANGULUS_BASES(Entity::Module);
+         using Entity::Module::Module;
+      };
 
-   ///                                                                        
-   ///   Abstract content unit                                                
-   ///                                                                        
-   class ContentUnit : public Entity::Unit {
-      LANGULUS_BASES(Entity::Unit);
-   public:
-      using Entity::Unit::Unit;
-   };
+      ///                                                                     
+      ///   Abstract content unit                                             
+      ///                                                                     
+      struct ContentUnit : Entity::Unit {
+         LANGULUS_BASES(Entity::Unit);
+         using Entity::Unit::Unit;
+      };
 
-   ///                                                                        
-   ///   Abstract geometry content                                            
-   ///                                                                        
-   class Geometry : public ContentUnit {
-      LANGULUS(PRODUCER) Content;
-      LANGULUS_BASES(ContentUnit);
-   public:
-      using ContentUnit::ContentUnit;
-   };
+      ///                                                                     
+      ///   Abstract geometry content                                         
+      ///                                                                     
+      struct Geometry : ContentUnit {
+         LANGULUS(PRODUCER) Content;
+         LANGULUS_BASES(ContentUnit);
+         using ContentUnit::ContentUnit;
+      };
 
-   ///                                                                        
-   ///   Abstract texture content                                             
-   ///                                                                        
-   class Texture : public ContentUnit {
-      LANGULUS(PRODUCER) Content;
-      LANGULUS_BASES(ContentUnit);
-   public:
-      using ContentUnit::ContentUnit;
-   };
-}
+      ///                                                                     
+      ///   Abstract material content                                         
+      ///                                                                     
+      struct Material : ContentUnit {
+         LANGULUS(PRODUCER) Content;
+         LANGULUS_BASES(ContentUnit);
+         using ContentUnit::ContentUnit;
+      };
+
+      ///                                                                     
+      ///   Abstract texture content                                          
+      ///                                                                     
+      struct Texture : ContentUnit {
+         LANGULUS(PRODUCER) Content;
+         LANGULUS_BASES(ContentUnit);
+         using ContentUnit::ContentUnit;
+      };
+
+   } // namespace Langulus::A
+
+   namespace CT
+   {
+
+      template<class T>
+      concept Graphics = DerivedFrom<T, A::GraphicsUnit>;
+
+      template<class T>
+      concept Content = DerivedFrom<T, A::ContentUnit>;
+
+      template<class T>
+      concept Texture = DerivedFrom<T, A::Texture>;
+
+      template<class T>
+      concept Geometry = DerivedFrom<T, A::Geometry>;
+
+   } // namespace Langulus::CT
+
+} // namespace Langulus
 
 using namespace Langulus;
 using namespace Langulus::Flow;
@@ -143,17 +163,17 @@ using namespace Langulus::Anyness;
 using namespace Langulus::Entity;
 using namespace Langulus::Math;
 
-class Vulkan;
-class VulkanMemory;
-class VulkanRenderer;
-class VulkanLayer;
-class VulkanCamera;
-class VulkanLight;
-class VulkanRenderable;
-class VulkanPipeline;
-class VulkanGeometry;
-class VulkanTexture;
-class VulkanShader;
+struct Vulkan;
+struct VulkanMemory;
+struct VulkanRenderer;
+struct VulkanLayer;
+struct VulkanCamera;
+struct VulkanLight;
+struct VulkanRenderable;
+struct VulkanPipeline;
+struct VulkanGeometry;
+struct VulkanTexture;
+struct VulkanShader;
 
 
 ///                                                                           
@@ -322,35 +342,17 @@ namespace ShaderStage
 ///                                                                           
 namespace ShaderToken
 {
-   enum Enum {
-      Version = 0,         // Version token                             
-      Defines,             // Defines token                             
-      Input,               // Input token                               
-      Output,              // Output token                              
-      Dependencies,        // Dependencies token                        
-      Colorize,            // Colors token                              
-      Transform,           // Transform token                           
-      Position,            // Vertex position                           
-      Uniform,             // Uniform variables                         
-      Texturize,           // For utilizing samplers                    
-      Functions,           // Function code token                       
-
-      Counter              // Shader token counter                      
-   };
-
-   constexpr Token Names[Enum::Counter] = {
-      "//#VERSION\n",
-      "//#DEFINES\n",
-      "//#INPUT\n",
-      "//#OUTPUT\n",
-      "//#DEPENDENCY\n",
-      "//#COLORIZE\n",
-      "//#TRANSFORM\n",
-      "//#POSITION\n",
-      "//#UNIFORM\n",
-      "//#TEXTURIZE\n",
-      "//#FUNCTIONS\n"
-   };
+   constexpr Token Version       = "//#VERSION\n";
+   constexpr Token Defines       = "//#DEFINES\n";
+   constexpr Token Input         = "//#INPUT\n";
+   constexpr Token Output        = "//#OUTPUT\n";
+   constexpr Token Dependencies  = "//#DEPENDENCY\n";
+   constexpr Token Colorize      = "//#COLORIZE\n";
+   constexpr Token Transform     = "//#TRANSFORM\n";
+   constexpr Token Position      = "//#POSITION\n";
+   constexpr Token Uniform       = "//#UNIFORM\n";
+   constexpr Token Texturize     = "//#TEXTURIZE\n";
+   constexpr Token Functions     = "//#FUNCTIONS\n";
 }
 
 ///                                                                           
@@ -480,14 +482,16 @@ using Topology = VkPrimitiveTopology;
 using UBOLayout = VkDescriptorSetLayout;
 using TextureList = TUnorderedMap<TMeta, const VulkanTexture*>;
 using Frames = TAny<VkImageView>;
-using FrameBuffers = TAny<VkFramebuffer>;
-using CmdBuffers = TAny<VkCommandBuffer>;
+using FrameBuffers = ::std::vector<VkFramebuffer>;
+using CmdBuffers = ::std::vector<VkCommandBuffer>;
+using TokenSet = ::std::vector<const char*>;
 
 constexpr uint32_t VK_INDEFINITELY = ::std::numeric_limits<uint32_t>::max();
 
-/// This call must be implemented for each OS individually                    
-/// It is the only platform dependent call                                    
+/// These calls must be implemented for each OS individually                  
 bool CreateNativeVulkanSurfaceKHR(const VkInstance&, const void*, VkSurfaceKHR&);
+TokenSet GetRequiredExtensions();
+
 
 
 ///                                                                           
@@ -495,13 +499,13 @@ bool CreateNativeVulkanSurfaceKHR(const VkInstance&, const void*, VkSurfaceKHR&)
 ///                                                                           
 struct GeometryView {
    // Number of primitives                                              
-   Count mPrimitiveCount {};
+   uint32_t mPrimitiveCount {};
    // Starting primitive                                                
-   Offset mPrimitiveStart {};
+   uint32_t mPrimitiveStart {};
    // Number of indices                                                 
-   Count mIndexCount {};
+   uint32_t mIndexCount {};
    // Starting index                                                    
-   Offset mIndexStart {};
+   uint32_t mIndexStart {};
    // Data topology                                                     
    DMeta mPrimitiveType {};
    // Double-sidedness                                                  
@@ -516,10 +520,10 @@ struct GeometryView {
 ///   Universal pixel buffer view                                             
 ///                                                                           
 struct TextureView {
-   Count mWidth {1};
-   Count mHeight {1};
-   Count mDepth {1};
-   Count mFrames {1};
+   uint32_t mWidth {1};
+   uint32_t mHeight {1};
+   uint32_t mDepth {1};
+   uint32_t mFrames {1};
    DMeta mFormat {};
    // Reverse RGBA to BGRA                                              
    // This is not a scalable solution and would eventually fail         
@@ -527,11 +531,11 @@ struct TextureView {
 
    bool operator == (const TextureView&) const noexcept;
 
-   NOD() constexpr Count GetPixelCount() const noexcept;
-   NOD() constexpr Count GetDimensionCount() const noexcept;
+   NOD() constexpr uint32_t GetPixelCount() const noexcept;
+   NOD() constexpr uint32_t GetDimensionCount() const noexcept;
    NOD() Size GetPixelBytesize() const noexcept;
    NOD() Size GetBytesize() const noexcept;
-   NOD() Count GetChannelCount() const noexcept;
+   NOD() uint32_t GetChannelCount() const noexcept;
 };
 
 using LodIndex = int32_t;
@@ -580,6 +584,8 @@ protected:
    bool mContentMirrored = false;
 
 public:
+   using Unit::Unit;
+
    NOD() Hash GetHash() const;
    bool operator == (const ContentVRAM&) const noexcept;
 };

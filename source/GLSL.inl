@@ -1,6 +1,6 @@
 #pragma once
 #include "GLSL.hpp"
-
+#include "Vulkan.hpp"
 
 /// Convert a block to GLSL code                                              
 ///   @param block - the block to convert to GLSL                             

@@ -2,6 +2,7 @@
 
 #define GLSL_VERBOSE(a)
 
+
 /// Clone the GLSL container, retaining type                                  
 ///   @return the cloned GLSL container                                       
 GLSL GLSL::Clone() const {
@@ -14,20 +15,6 @@ GLSL GLSL::Clone() const {
 GLSL GLSL::From(ShaderStage::Enum stage) {
    return Templates[stage];
 }
-
-/// Select shader token                                                       
-///   @param token - the token to select                                      
-///   @return the text selection                                              
-/*Text::Selection GLSL::Select(ShaderToken::Enum token) {
-   return Text::Select(ShaderToken::Names[token]);
-}
-
-/// Standard select, relayed
-///   @param token - pattern to select
-///   @return the text selection
-Text::Selection GLSL::Select(const Text& token) {
-   return Text::Select(token);
-}*/
 
 /// Check if a #define exists for a symbol                                    
 ///   @param symbol - the definition to search for                            

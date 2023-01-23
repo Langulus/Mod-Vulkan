@@ -14,8 +14,9 @@
 ///                                                                           
 /// Handles hardware pixel/voxel buffers                                      
 ///                                                                           
-class VulkanTexture : public ContentVRAM {
-   LANGULUS(PRODUCER) VulkanRenderer;
+struct VulkanTexture : ContentVRAM, ProducedFrom<VulkanRenderer> {
+   LANGULUS(ABSTRACT) false;
+   LANGULUS_BASES(ContentVRAM);
    LANGULUS_VERBS(Verbs::Create);
 
 private:
@@ -29,9 +30,7 @@ private:
    Own<VkSampler> mSampler;
 
 public:
-   VulkanTexture(VulkanRenderer*);
-   VulkanTexture(VulkanTexture&&) noexcept = default;
-   VulkanTexture& operator = (VulkanTexture&&) noexcept = default;
+   VulkanTexture(VulkanRenderer*, const Any&);
    ~VulkanTexture();
 
    void Initialize();

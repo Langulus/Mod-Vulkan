@@ -4,6 +4,7 @@ find_package(Vulkan REQUIRED)
 
 # Build the module                                                          
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/source LANGULUS_MOD_VULKAN_SOURCES)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/source/inner LANGULUS_MOD_VULKAN_SOURCES)
 add_library(Mod.Vulkan SHARED ${LANGULUS_MOD_VULKAN_SOURCES})
 
 target_link_libraries(Mod.Vulkan

@@ -5,18 +5,53 @@
 /// Distributed under GNU General Public License v3+                          
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
-#include "VulkanRenderer.hpp"
+#include "Vulkan.hpp"
+#include "GLSL.hpp"
 
-#define VERBOSE_PIPELINE(a) Logger::Verbose(Self(), a)
+#define VERBOSE_PIPELINE(...) Logger::Verbose(Self(), __VA_ARGS__)
 
 
-/// Pipeline construction                                                     
+/// Descriptor constructor                                                    
 ///   @param producer - the pipeline producer                                 
-VulkanPipeline::VulkanPipeline(VulkanRenderer* producer)
-   : AUnitGraphics {MetaData::Of<VulkanPipeline>()}
-   , TProducedFrom {producer} {
-   mSubscribers.emplace_back();
-   mGeometries.emplace_back();
+///   @param descriptor - the pipeline descriptor                             
+VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, const Any& descriptor)
+   : GraphicsUnit {MetaOf<VulkanPipeline>(), descriptor}
+   , ProducedFrom {producer, descriptor} {
+
+   VERBOSE_PIPELINE("Initializing graphics pipeline from ", descriptor);
+   mSubscribers.New();
+   mGeometries.New();
+
+   descriptor.ForEachDeep(
+      [this](AFile& file) {
+         // Create from shader file interface                           
+         auto glslCode = file.ReadAs<GLSL>();
+         return glslCode.IsEmpty() || !PrepareFromCode(glslCode);
+      },
+      [this](const Path& path) {
+         // Create from shader file path                                
+         auto file = GetProducer()->GetRuntime()->GetFile(path);
+         if (file) {
+            auto glslCode = file->ReadAs<GLSL>();
+            return glslCode.IsEmpty() || !PrepareFromCode(glslCode);
+         }
+         return true;
+      },
+      [this](const A::Material* material) {
+         // Create from predefined material generator                   
+         return !PrepareFromMaterial(material);
+      },
+      [this](const Construct& construct) {
+         // Create from any construct                                   
+         return !PrepareFromConstruct(construct);
+      }
+   );
+
+   if (!mHash) {
+      // Still not initialized, try wrapping the entire argument        
+      // inside a construct                                             
+      PrepareFromConstruct(Construct::From<VulkanPipeline>(descriptor));
+   }
 }
 
 /// Pipeline destruction                                                      
@@ -37,62 +72,14 @@ bool VulkanPipeline::operator == (const VulkanPipeline& rhs) const noexcept {
    return GetHash() == rhs.GetHash() && mStages == rhs.mStages;
 }
 
-/// Create/destroy stuff inside this pipeline context                         
-///   @param verb - creation/destruction verb                                 
-void VulkanPipeline::Create(Verb& verb) {
-   if (verb.IsEmpty())
-      return;
-
-   Logger::Verbose(Self(), 
-      "Initializing graphics pipeline from ", verb.GetArgument());
-
-   verb.ForEachDeep([&](Block& group) {
-      group.ForEach(
-         [this](AFile& file) {
-            // Create from shader file interface                        
-            auto glslCode = file.ReadAs<GLSL>();
-            return glslCode.IsEmpty() || !PrepareFromCode(glslCode);
-         },
-         [this](const Path& path) {
-            // Create from shader file path                             
-            auto file = GetProducer()->GetRuntime()->GetFile(path);
-            if (file) {
-               auto glslCode = file->ReadAs<GLSL>();
-               return glslCode.IsEmpty() || !PrepareFromCode(glslCode);
-            }
-            return true;
-         },
-         [this](const AMaterial* material) {
-            // Create from predefined material generator                
-            return !PrepareFromMaterial(material);
-         },
-         [this](const Construct& construct) {
-            // Create from any construct                                
-            return !PrepareFromConstruct(construct);
-         }
-      );
-
-      return !mHash;
-   });
-
-   if (!mHash) {
-      // Still not initialized, try wrapping the entire argument        
-      // inside a construct                                             
-      PrepareFromConstruct(Construct::From<VulkanPipeline>(verb.GetArgument()));
-   }
-
-   if (mHash)
-      verb.Done();
-}
 
 /// Initialize the pipeline from the accumulated construct                    
-///   @return true on success                                                 
 void VulkanPipeline::Initialize() {
    if (mGenerated)
       return;
-
    mGenerated = true;
-   auto device = mProducer->GetDevice().Get();
+
+   const auto device = mProducer->mDevice;
 
    // Copy the viewport state                                           
    VkViewport viewport {};
@@ -228,11 +215,9 @@ void VulkanPipeline::Initialize() {
 
    // Create the pipeline                                               
    TAny<Shader> stages;
-   for (int i = 0; i < ShaderStage::Counter; ++i) {
-      if (!mStages[i])
-         continue;
-      mStages[i]->Compile();
-      stages << mStages[i]->GetShader();
+   for (auto stage : mStages) {
+      stage.mValue->Compile();
+      stages << stage.mValue->GetShader();
    }
 
    VkGraphicsPipelineCreateInfo pipelineInfo {};
@@ -248,7 +233,7 @@ void VulkanPipeline::Initialize() {
    pipelineInfo.pInputAssemblyState = &mAssembly;
    pipelineInfo.pTessellationState = nullptr;
    pipelineInfo.layout = mPipeLayout;
-   pipelineInfo.renderPass = mProducer->GetPass();
+   pipelineInfo.renderPass = mProducer->mPass;
    pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
    pipelineInfo.pDynamicState = &dynamicState;
 
@@ -268,7 +253,7 @@ bool VulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
    Any material;
    Offset textureId {};
    stuff.ForEachDeep([&](const Block& group) {
-      group.ForEach([&](const AGeometry& geometry) {
+      group.ForEach([&](const A::Geometry& geometry) {
          // Create from geometry                                        
          // Make sure the geometry is generated, so that we have the    
          // input bindings                                              
@@ -278,29 +263,29 @@ bool VulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
          
          // Scan the input attributes (inside geometry data)            
          for (auto& trait : geometry.GetDataList()) {
-            if (trait.TraitIs<Traits::Index>())
+            if (trait.template TraitIs<Traits::Index>())
                // Skip indices                                          
                continue;
 
-            if (trait.TraitIs<Traits::Place>()) {
+            if (trait.template TraitIs<Traits::Place>()) {
                // Create a position input and project it in vertex      
                // shader                                                
                Code code =
-                  "Create^PerVertex(Input("_code + trait.GetTraitID() + '(' + trait.GetToken() + ")))"
+                  "Create^PerVertex(Input(Place("_code + trait.GetType() + ")))"
                   ".Project^PerVertex(ViewProjectTransform, ModelTransform)";
                VERBOSE_PIPELINE("Incorporating: ", code);
                material << Abandon(code);
             }
-            else if (trait.TraitIs<Traits::Aim>()) {
+            else if (trait.template TraitIs<Traits::Aim>()) {
                // Create a normal/tangent/bitangent input and           
                // project it in vertex   shader                         
                Code code =
-                  "Create^PerVertex(Input("_code + trait.GetTraitID() + '(' + trait.GetToken() + ")))"
+                  "Create^PerVertex(Input(Aim("_code + trait.GetType() + ")))"
                   ".Project^PerVertex(ModelTransform)";
                VERBOSE_PIPELINE("Incorporating: ", code);
                material << Abandon(code);
             }
-            else if (trait.TraitIs<Traits::Sampler>()) {
+            else if (trait.template TraitIs<Traits::Sampler>()) {
                // Create a texture coord input and project it in        
                // vertex shader if required                             
                Code code = "Create^PerVertex(Input("_code + trait.GetTraitID() + '(' + trait.GetToken() + ")))";
@@ -311,7 +296,7 @@ bool VulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
                VERBOSE_PIPELINE("Incorporating: ", code);
                material << Abandon(code);
             }
-            else if (trait.TraitIs<Traits::ModelTransform>()) {
+            else if (trait.template TraitIs<Traits::Transformation>()) {
                // Create hardware instancing inside geometry shader     
                TODO();
             }
@@ -325,7 +310,7 @@ bool VulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
 
          // Geometry can contain textures (inside geometry descriptor)  
          geometry.GetConstruct().ForEachDeep([&](const Trait& t) {
-            if (t.TraitIs<Traits::Texture>()) {
+            if (t.template TraitIs<Traits::Texture>()) {
                // Add a texture uniform                                 
                //TODO check texture format
                Code code = "Texturize^PerPixel("_code + textureId + ')';
@@ -333,7 +318,7 @@ bool VulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
                material << Abandon(code);
                ++textureId;
             }
-            else if (t.TraitIs<Traits::Color>()) {
+            else if (t.template TraitIs<Traits::Color>()) {
                // Add constant colorization                             
                Code code = "Texturize^PerPixel("_code + t.AsCast<RGBA>() + ')';
                VERBOSE_PIPELINE("Incorporating: ", code);
@@ -347,7 +332,7 @@ bool VulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
          // Only one geometry definition allowed                        
          return false;
       },
-      [&](const ATexture& texture) {
+      [&](const A::Texture& texture) {
          // Add texturization, if construct contains any textures       
          Code code1 = "Create^PerPixel(Input(Texture(" + texture.GetFormat() + ")))";
          Code code2 = "Texturize^PerPixel("_code + Code {textureId} + ')';
@@ -358,14 +343,14 @@ bool VulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
       },
       [&](const Trait& t) {
          // Add various global traits, such as texture/color            
-         if (t.TraitIs<Traits::Texture>()) {
+         if (t.template TraitIs<Traits::Texture>()) {
             // Add a texture uniform                                    
             Code code = "Texturize^PerPixel("_code + textureId + ')';
             VERBOSE_PIPELINE("Incorporating: ", code);
             material << Abandon(code);
             ++textureId;
          }
-         else if (t.TraitIs<Traits::Color>()) {
+         else if (t.template TraitIs<Traits::Color>()) {
             // Add constant colorization                                
             Code code = "Texturize^PerPixel("_code + t.AsCast<RGBA>() + ')';
             VERBOSE_PIPELINE("Incorporating: ", code);
@@ -391,7 +376,7 @@ bool VulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
 
    // Create the pixel shader output according to the rendering pass    
    // attachment format requirements                                    
-   for (const auto& attachment : mProducer->GetPassAttachments()) {
+   for (const auto& attachment : mProducer->mPassAttachments) {
       switch (attachment.format) {
       case VK_FORMAT_B8G8R8A8_UNORM: {
          Code outputCode = "Create^PerPixel(Output(Color(RGBA)))";
@@ -409,7 +394,7 @@ bool VulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
    }
 
    // Now create generator and pipeline from it                         
-   auto generator = mProducer->GetOwners()[0]->CreateUnit<AMaterial>(pcMove(material));
+   auto generator = mProducer->GetOwners()[0]->CreateUnit<AMaterial>(Move(material));
    return PrepareFromMaterial(generator);
 }
 
@@ -426,15 +411,12 @@ bool VulkanPipeline::PrepareFromCode(const GLSL& code) {
 }
 
 /// Initialize the pipeline from material content                             
-///   @param contentRAM - the content to use                                  
+///   @param material - the content to use                                    
 ///   @return true on success                                                 
 bool VulkanPipeline::PrepareFromMaterial(const Unit* material) {
    // Generate the shader stages via the material content               
    // No way around this, unfortunately (it's cached, though)           
    material->Generate();
-
-   if (!mStages.IsAllocated())
-      mStages.Allocate(ShaderStage::Counter, true);
 
    // Iterate all stages and create vulkan shaders for them             
    for (Count i = 0; i < ShaderStage::Counter; ++i) {
@@ -447,7 +429,7 @@ bool VulkanPipeline::PrepareFromMaterial(const Unit* material) {
       if (!shader.InitializeFromMaterial(stage, material))
          return false;
 
-      mStages[stage] = mProducer->Cache(pcMove(shader));
+      mStages[stage] = mProducer->Cache(Move(shader));
       mStages[stage]->Reference(1);
    }
 
@@ -458,11 +440,8 @@ bool VulkanPipeline::PrepareFromMaterial(const Unit* material) {
 
 /// Uninitialize the pipeline                                                 
 void VulkanPipeline::Uninitialize() {
-   // Dereference valid shaders                                         
-   for (auto& shader : mStages) {
-      if (shader)
-         shader->Reference(-1);
-   }
+   // Remove shaders                                                    
+   mStages.Clear();
 
    // Destroy the uniform buffer objects                                
    mRelevantDynamicDescriptors.Clear();
@@ -475,7 +454,7 @@ void VulkanPipeline::Uninitialize() {
    mSamplerUBO.Reset();
 
    // Destroy uniform buffer object pool                                
-   auto device = mProducer->GetDevice();
+   const auto device = mProducer->mDevice;
    if (mUBOPool) {
       vkDestroyDescriptorPool(device, mUBOPool, nullptr);
       mUBOPool = 0;
@@ -513,11 +492,9 @@ void VulkanPipeline::Uninitialize() {
 ///   @param layout - [out] the resulting layout                              
 ///   @param set - [out] the resulting set                                    
 void VulkanPipeline::CreateDescriptorLayoutAndSet(
-   const Bindings& bindings, 
-   UBOLayout* layout, 
-   VkDescriptorSet* set
+   const Bindings& bindings, UBOLayout* layout, VkDescriptorSet* set
 ) {
-   auto device = mProducer->GetDevice().Get();
+   const auto device = mProducer->mDevice;
 
    // Combine all bindings in a single layout                           
    VkDescriptorSetLayoutCreateInfo layoutInfo {};
@@ -562,7 +539,7 @@ void VulkanPipeline::CreateNewSamplerSet() {
    allocInfo.descriptorSetCount = 1;
    allocInfo.pSetLayouts = &mSamplersUBOLayout.Get();
 
-   if (vkAllocateDescriptorSets(mProducer->GetDevice(), &allocInfo, &ubo.mSamplersUBOSet.Get())) {
+   if (vkAllocateDescriptorSets(mProducer->mDevice, &allocInfo, &ubo.mSamplersUBOSet.Get())) {
       LANGULUS_THROW(Graphics,
          "vkAllocateDescriptorSets failed - either reserve more "
          "items in descriptor pool, or make more pools on demand"
@@ -588,7 +565,7 @@ void VulkanPipeline::CreateNewGeometrySet() {
 
 /// Create uniform buffers                                                    
 void VulkanPipeline::CreateUniformBuffers() {
-   auto device = mProducer->GetDevice();
+   const auto device = mProducer->mDevice;
    const auto uniforms = mOriginalContent->GetData<Traits::Trait>();
    if (!uniforms || uniforms->IsEmpty())
       LANGULUS_THROW(Graphics, "No uniforms/inputs provided by generator");
@@ -610,8 +587,10 @@ void VulkanPipeline::CreateUniformBuffers() {
    pool.maxSets = 8;
    pool.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
-   if (vkCreateDescriptorPool(device, &pool, nullptr, &mUBOPool.Get()))
-      LANGULUS_THROW(Graphics, "Can't create UBO pool, so creation of vulkan material fails");
+   if (vkCreateDescriptorPool(device, &pool, nullptr, &mUBOPool.Get())) {
+      LANGULUS_THROW(Graphics,
+         "Can't create UBO pool, so creation of vulkan material fails");
+   }
 
    // Create the static sets (0)                                        
    {
@@ -624,7 +603,7 @@ void VulkanPipeline::CreateUniformBuffers() {
          const auto index = Rate(Rate::StaticUniformBegin + rate).GetInputIndex();
          auto& inputs = uniforms->As<TAny<Trait>>(index);
          for (auto& trait : inputs) {
-            if (trait.TraitIs<Traits::Texture>())
+            if (trait.template TraitIs<Traits::Texture>())
                continue;
             ubo.mUniforms.Emplace(0, trait);
          }
@@ -635,8 +614,6 @@ void VulkanPipeline::CreateUniformBuffers() {
          // Find out where the UBO is used                              
          for (auto& uniform : ubo.mUniforms) {
             for (const auto stage : mStages) {
-               if (!stage)
-                  continue;
                if (stage->GetCode().Find(GLSL {uniform.mTrait.GetTrait()}))
                   ubo.mStages |= stage->GetStageFlagBit();
             }
@@ -667,7 +644,7 @@ void VulkanPipeline::CreateUniformBuffers() {
          const auto index = Rate(Rate::DynamicUniformBegin + rate).GetInputIndex();
          auto& inputs = uniforms->As<TAny<Trait>>(index);
          for (auto& trait : inputs) {
-            if (trait.TraitIs<Traits::Texture>())
+            if (trait.template TraitIs<Traits::Texture>())
                continue;
             ubo.mUniforms.Emplace(0, trait);
          }
@@ -678,8 +655,6 @@ void VulkanPipeline::CreateUniformBuffers() {
          // Find out where the UBO is used                              
          for (auto& uniform : ubo.mUniforms) {
             for (const auto stage : mStages) {
-               if (!stage)
-                  continue;
                if (stage->GetCode().Find(GLSL {uniform.mTrait.GetTrait()}))
                   ubo.mStages |= stage->GetStageFlagBit();
             }
@@ -708,7 +683,7 @@ void VulkanPipeline::CreateUniformBuffers() {
       const auto index = Rate(Rate::Renderable).GetInputIndex();
       auto& inputs = uniforms->As<TAny<Trait>>(index);
       for (auto& trait : inputs) {
-         if (!trait.TraitIs<Traits::Texture>())
+         if (!trait.template TraitIs<Traits::Texture>())
             continue;
          ubo.mUniforms << Uniform {0, trait};
       }
@@ -720,11 +695,8 @@ void VulkanPipeline::CreateUniformBuffers() {
 
          for (auto& uniform : ubo.mUniforms) {
             // Find out where the UBO is used                           
-            VkShaderStageFlags mask = {};
+            VkShaderStageFlags mask {};
             for (const auto stage : mStages) {
-               if (!stage)
-                  continue;
-
                const auto token = 
                   GLSL {uniform.mTrait.GetTrait()}
                 + GLSL {bindings.GetCount()};
@@ -734,7 +706,7 @@ void VulkanPipeline::CreateUniformBuffers() {
             }
 
             // Create the bindings for each texture                     
-            VkDescriptorSetLayoutBinding binding = {};
+            VkDescriptorSetLayoutBinding binding {};
             binding.binding = static_cast<uint32_t>(bindings.GetCount());
             binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
             binding.descriptorCount = 1;
@@ -780,7 +752,7 @@ void VulkanPipeline::UpdateUniformBuffers() const {
    if (!writes.IsEmpty()) {
       // Commit all gathered updates to VRAM                            
       vkUpdateDescriptorSets(
-         mProducer->GetDevice(),
+         mProducer->mDevice,
          static_cast<uint32_t>(writes.GetCount()),
          writes.GetRaw(), 0, nullptr
       );

@@ -5,21 +5,25 @@
 /// Distributed under GNU General Public License v3+                          
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
-#include "VulkanRenderer.hpp"
+#include "Vulkan.hpp"
 #include <set>
 
-//#define PC_REPORT_RENDER_STATISTICS
 
-/// Vulkan renderer construction                                              
-///   @param producer - producer of the renderer                              
-VulkanRenderer::VulkanRenderer(Vulkan* producer)
-   : ARenderer {MetaData::Of<VulkanRenderer>()}
-   , TProducedFrom {producer}
+/// Descriptor constructor                                                    
+///   @param producer - the renderer producer                                 
+///   @param descriptor - the renderer descriptor                             
+VulkanRenderer::VulkanRenderer(Vulkan* producer, const Any& descriptor)
+   : GraphicsUnit {MetaOf<VulkanRenderer>(), descriptor}
+   , ProducedFrom {producer, descriptor}
    , mLayers {this}
    , mPipelines {this}
    , mShaders {this}
    , mGeometries {this}
-   , mTextures {this} { }
+   , mTextures {this} {
+   // Seek a window in the descriptor & hierarchy                       
+   mWindow = mOwners.SeekUnit("Window", descriptor);
+   LANGULUS_ASSERT(mWindow, Construct, "No window available for UI");
+}
 
 /// Renderer destruction                                                      
 VulkanRenderer::~VulkanRenderer() {
@@ -36,28 +40,25 @@ void VulkanRenderer::Initialize(Unit* window) {
 
    if (!mWindow && !mWindow->GetNativeWindowHandle()) {
       Uninitialize();
-      throw Except::Graphics(pcLogSelfError
-         << "Provided window handle is invalid");
+      LANGULUS_THROW(Graphics, "Provided window handle is invalid");
    }
 
    // Copy resolution                                                   
    mResolution = mWindow->GetSize();
 
    // Create surface                                                    
-   if (!pcCreateNativeVulkanSurfaceKHR(mProducer->GetInstance(), mWindow, mSurface)) {
+   if (!CreateNativeVulkanSurfaceKHR(mProducer->mInstance, mWindow, mSurface)) {
       Uninitialize();
-      throw Except::Graphics(pcLogSelfError
-         << "Error creating window surface. Aborting...");
+      LANGULUS_THROW(Graphics, "Error creating window surface");
    }
 
    // Check adapter functionality                                       
-   auto adapter = mProducer->GetAdapter();
+   const auto adapter = mProducer->mAdapter;
    uint32_t queueCount;
    vkGetPhysicalDeviceQueueFamilyProperties(adapter, &queueCount, nullptr);
    if (queueCount == 0) {
       Uninitialize();
-      throw Except::Graphics(pcLogSelfError
-         << "Your adapter is broken... i think. Aborting...");
+      LANGULUS_THROW(Graphics, "No queue families");
    }
 
    std::vector<VkQueueFamilyProperties> queueProperties(queueCount);
@@ -68,8 +69,7 @@ void VulkanRenderer::Initialize(Unit* window) {
    for (uint32_t i = 0; i < queueCount; i++) {
       if (vkGetPhysicalDeviceSurfaceSupportKHR(adapter, i, mSurface, &supportsPresent[i])) {
          Uninitialize();
-         throw Except::Graphics(pcLogSelfError
-            << "vkGetPhysicalDeviceSurfaceSupportKHR failed. Aborting...");
+         LANGULUS_THROW(Graphics, "vkGetPhysicalDeviceSurfaceSupportKHR failed");
       }
    }
 
@@ -94,35 +94,32 @@ void VulkanRenderer::Initialize(Unit* window) {
 
    if (mGraphicIndex == UINT32_MAX || mPresentIndex == UINT32_MAX) {
       Uninitialize();
-      throw Except::Graphics(pcLogSelfError
-         << "Your graphical adapter doesn't support rendering or presenting to screen. "
-         << "Are you using it only for mining BitCoin? Aborting, because we can't render with it...");
+      LANGULUS_THROW(Graphics,
+         "Your graphical adapter doesn't support rendering or presenting to screen");
    }
 
    if (mGraphicIndex != mPresentIndex) {
-      pcLogSelfWarning
-         << "Performance warning: graphics and present queues are on separate devices. "
-         << "This means that one device might need to wait for the other to complete buffer copy operations";
+      Logger::Warning(Self(),
+         "Performance warning: graphics and present queues are on separate devices. "
+         "This means that one device might need to wait for the other to complete buffer copy operations");
    }
 
    if (mTransferIndex == UINT32_MAX) {
       Uninitialize();
-      throw Except::Graphics(pcLogSelfError
-         << "Your graphical adapter doesn't support memory transfer operations. "
-         << "Is this even possible? Aborting just in case, because you can't use your VRAM...");
+      LANGULUS_THROW(Graphics,
+         "Your graphical adapter doesn't support memory transfer operations. "
+         "Is this even possible? Aborting just in case, because you can't use your VRAM...");
    }
    else if (mTransferIndex == mGraphicIndex || mTransferIndex == mPresentIndex) {
-      pcLogSelfWarning
-         << "Performance warning: you do not have a dedicated memory transfer queue. "
-         << "This means that VRAM copy operations might wait for other GPU operations to finish first";
+      Logger::Warning(Self(),
+         "Performance warning: you do not have a dedicated memory transfer queue. "
+         "This means that VRAM copy operations might wait for other GPU operations to finish first");
    }
 
    // Create queues for rendering & presenting                          
    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
    std::set<uint32_t> uniqueQueueFamilies {
-      mGraphicIndex,
-      mPresentIndex,
-      mTransferIndex
+      mGraphicIndex, mPresentIndex, mTransferIndex
    };
 
    float queuePriority = 1.0f;
@@ -271,10 +268,10 @@ void VulkanRenderer::Initialize(Unit* window) {
    }
 
    // Get device properties                                             
-   vkGetPhysicalDeviceProperties(mProducer->GetAdapter(), &mPhysicalProperties);
+   vkGetPhysicalDeviceProperties(adapter, &mPhysicalProperties);
 
    // Get device features                                               
-   vkGetPhysicalDeviceFeatures(mProducer->GetAdapter(), &mPhysicalFeatures);
+   vkGetPhysicalDeviceFeatures(adapter, &mPhysicalFeatures);
    mRendererInitialized = true;
 }
 
@@ -282,11 +279,6 @@ void VulkanRenderer::Initialize(Unit* window) {
 /// Also initialized the renderer if a window is provided                     
 ///   @param verb - creation verb                                             
 void VulkanRenderer::Create(Verb& verb) {
-   verb.ForEachDeep([&](AWindow* window) {
-      Initialize(window);
-      verb.Done();
-   });
-
    mLayers.Create(verb);
    mPipelines.Create(verb);
    mShaders.Create(verb);
@@ -328,7 +320,7 @@ void VulkanRenderer::Uninitialize() {
    }
 
    if (mSurface) {
-      vkDestroySurfaceKHR(mProducer->GetInstance(), mSurface, nullptr);
+      vkDestroySurfaceKHR(mProducer->mInstance, mSurface, nullptr);
       mSurface.Reset();
    }
 }
@@ -341,18 +333,20 @@ VkSurfaceFormatKHR VulkanRenderer::GetSurfaceFormat() const noexcept {
       VK_FORMAT_MAX_ENUM, VK_COLOR_SPACE_MAX_ENUM_KHR
    };
 
-   auto adapter = mProducer->GetAdapter();
+   auto adapter = mProducer->mAdapter;
    std::vector<VkSurfaceFormatKHR> surface_formats;
    uint32_t formatCount;
    if (vkGetPhysicalDeviceSurfaceFormatsKHR(adapter, mSurface, &formatCount, nullptr)) {
-      Logger::Error(Self(), "vkGetPhysicalDeviceSurfaceFormatsKHR failed");
+      Logger::Error(Self(), 
+         "vkGetPhysicalDeviceSurfaceFormatsKHR failed");
       return error;
    }
 
    if (formatCount != 0) {
       surface_formats.resize(formatCount);
       if (vkGetPhysicalDeviceSurfaceFormatsKHR(adapter, mSurface, &formatCount, surface_formats.data())) {
-         Logger::Error(Self(), "vkGetPhysicalDeviceSurfaceFormatsKHR failed");
+         Logger::Error(Self(), 
+            "vkGetPhysicalDeviceSurfaceFormatsKHR failed");
          return error;
       }
    }
@@ -382,7 +376,8 @@ VkSurfaceFormatKHR VulkanRenderer::GetSurfaceFormat() const noexcept {
    }
 
    if (surfaceFormat.colorSpace == VK_COLOR_SPACE_MAX_ENUM_KHR) {
-      Logger::Error(Self(), "Incompatible surface format and color space for swap chain");
+      Logger::Error(Self(), 
+         "Incompatible surface format and color space for swap chain");
       return error;
    }
 
@@ -394,7 +389,7 @@ VkSurfaceFormatKHR VulkanRenderer::GetSurfaceFormat() const noexcept {
 ///   @return true on success                                                 
 bool VulkanRenderer::CreateSwapchain(const VkSurfaceFormatKHR& format) {
    // Resolution                                                        
-   auto adapter = mProducer->GetAdapter();
+   const auto adapter = mProducer->mAdapter;
    const Real resx = mResolution[0];
    const Real resy = mResolution[1];
    const auto resxuint = uint32_t(resx);
@@ -407,21 +402,24 @@ bool VulkanRenderer::CreateSwapchain(const VkSurfaceFormatKHR& format) {
    memset(&surface_caps, 0, sizeof(VkSurfaceCapabilitiesKHR));
    std::vector<VkPresentModeKHR> surface_presentModes;
    if (vkGetPhysicalDeviceSurfaceCapabilitiesKHR(adapter, mSurface, &surface_caps)) {
-      Logger::Error(Self(), "vkGetPhysicalDeviceSurfaceCapabilitiesKHR failed");
+      Logger::Error(Self(),
+         "vkGetPhysicalDeviceSurfaceCapabilitiesKHR failed");
       return false;
    }
 
    // Check supported present modes                                     
    uint32_t presentModeCount;
    if (vkGetPhysicalDeviceSurfacePresentModesKHR(adapter, mSurface, &presentModeCount, nullptr)) {
-      Logger::Error(Self(), "vkGetPhysicalDeviceSurfacePresentModesKHR failed");
+      Logger::Error(Self(),
+         "vkGetPhysicalDeviceSurfacePresentModesKHR failed");
       return false;
    }
 
    if (presentModeCount != 0) {
       surface_presentModes.resize(presentModeCount);
       if (vkGetPhysicalDeviceSurfacePresentModesKHR(adapter, mSurface, &presentModeCount, surface_presentModes.data())) {
-         Logger::Error(Self(), "vkGetPhysicalDeviceSurfacePresentModesKHR failed");
+         Logger::Error(Self(),
+            "vkGetPhysicalDeviceSurfacePresentModesKHR failed");
          return false;
       }
    }
@@ -457,6 +455,13 @@ bool VulkanRenderer::CreateSwapchain(const VkSurfaceFormatKHR& format) {
       imageCount = surface_caps.maxImageCount;
 
    // Setup the swapchain                                               
+   const ::std::set<uint32_t> families {
+      mGraphicIndex, mPresentIndex, mTransferIndex
+   };
+
+   std::vector<uint32_t> familiesvec;
+   std::copy(families.begin(), families.end(), ::std::back_inserter(familiesvec));
+
    VkSwapchainCreateInfoKHR swapInfo {};
    swapInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
    swapInfo.surface = mSurface;
@@ -464,18 +469,11 @@ bool VulkanRenderer::CreateSwapchain(const VkSurfaceFormatKHR& format) {
    swapInfo.imageFormat = format.format;
    swapInfo.imageColorSpace = format.colorSpace;
    swapInfo.imageExtent = extent;
-   swapInfo.imageArrayLayers = 1;   // 2 if stereoscopic                  
+   swapInfo.imageArrayLayers = 1;   // 2 if stereoscopic                
    swapInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-
-   const ::std::set<uint32_t> families {
-      mGraphicIndex,
-      mPresentIndex,
-      mTransferIndex
-   };
-
-   std::vector<uint32_t> familiesvec;
-   std::copy(families.begin(), families.end(), ::std::back_inserter(familiesvec));
-   swapInfo.imageSharingMode = familiesvec.size() == 1 ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT;
+   swapInfo.imageSharingMode = familiesvec.size() == 1 
+      ? VK_SHARING_MODE_EXCLUSIVE 
+      : VK_SHARING_MODE_CONCURRENT;
    swapInfo.queueFamilyIndexCount = uint32_t(familiesvec.size());
    swapInfo.pQueueFamilyIndices = familiesvec.data();
    swapInfo.preTransform = surface_caps.currentTransform;
@@ -507,7 +505,7 @@ bool VulkanRenderer::CreateSwapchain(const VkSurfaceFormatKHR& format) {
    const auto viewf = VkFormatToDMeta(format.format, reverseFormat);
    TextureView colorview(extent.width, extent.height, 1, 1, viewf, reverseFormat);
    mFrame.resize(mSwapChainImages.size());
-   for (uint32_t i = 0; i < mSwapChainImages.GetCount(); i++) {
+   for (uint32_t i = 0; i < mSwapChainImages.size(); i++) {
       auto& image = mSwapChainImages[i];
       mVRAM.ImageTransfer(image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
       mVRAM.ImageTransfer(image, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
@@ -515,20 +513,23 @@ bool VulkanRenderer::CreateSwapchain(const VkSurfaceFormatKHR& format) {
    }
    
    // Create the depth buffer image and view                            
-   TextureView depthview(extent.width, extent.height, 1, 1, DataID::Reflect<depth32>());
+   TextureView depthview(extent.width, extent.height, 1, 1, MetaOf<Depth32>());
    mDepthImage = mVRAM.CreateImage(depthview, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
    mDepthImageView = mVRAM.CreateImageView(mDepthImage.mBuffer, depthview);
-   mVRAM.ImageTransfer(mDepthImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+   mVRAM.ImageTransfer(mDepthImage, 
+      VK_IMAGE_LAYOUT_UNDEFINED, 
+      VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+   );
       
    // Create framebuffers                                               
-   mFramebuffer.resize(mFrame.size());
-   for (uint32_t i = 0; i < mFrame.size(); ++i) {
-      VkImageView attachments[2] { mFrame[i], mDepthImageView };
+   mFramebuffer.resize(mFrame.GetCount());
+   for (Offset i = 0; i < mFrame.GetCount(); ++i) {
+      VkImageView attachments[] {mFrame[i], mDepthImageView};
       VkFramebufferCreateInfo framebufferInfo {};
       framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
       framebufferInfo.renderPass = mPass;
       framebufferInfo.attachmentCount = 2;
-      framebufferInfo.pAttachments = static_cast<const VkImageView*>(attachments);
+      framebufferInfo.pAttachments = attachments;
       framebufferInfo.width = resxuint;
       framebufferInfo.height = resyuint;
       framebufferInfo.layers = 1;
@@ -555,8 +556,8 @@ bool VulkanRenderer::CreateSwapchain(const VkSurfaceFormatKHR& format) {
    // Create command buffer fences                                      
    if (mNewBufferFence.IsEmpty()) {
       TAny<VkFenceCreateInfo> fenceInfo;
-      fenceInfo.New(mFramebuffer.GetCount());
-      mNewBufferFence.Reserve(mFramebuffer.GetCount());
+      fenceInfo.New(mFramebuffer.size());
+      mNewBufferFence.Reserve(mFramebuffer.size());
 
       for (auto& it : fenceInfo) {
          it.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
@@ -599,11 +600,11 @@ void VulkanRenderer::DestroySwapchain() {
    // Destroy framebuffers                                              
    for (auto &it : mFramebuffer)
       vkDestroyFramebuffer(mDevice, it, nullptr);
-   mFramebuffer.Clear();
+   mFramebuffer.clear();
    
    // Destroy command buffers. The command pool remains intact          
    vkFreeCommandBuffers(mDevice, mCommandPool, uint32_t(mCommandBuffer.size()), mCommandBuffer.data());
-   mCommandBuffer.Clear();
+   mCommandBuffer.clear();
    
    // Destroy image views                                               
    for (auto &it : mFrame)
@@ -613,7 +614,7 @@ void VulkanRenderer::DestroySwapchain() {
    // Destroy swapchain                                                 
    vkDestroySwapchainKHR(mDevice, mSwapChain, nullptr);
    mSwapChain = 0;
-   mSwapChainImages.Clear();
+   mSwapChainImages.clear();
 }
 
 /// Pick a back buffer and start writing the command buffer                   
@@ -656,36 +657,34 @@ bool VulkanRenderer::EndRendering() {
       Logger::Error(Self(), "Can't end command buffer");
 
    // Submit command buffer to GPU                                      
-   VkSubmitInfo submitInfo = {};
-   submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-   VkSemaphore waitSemaphores[] = { mFrameFinished };
-
-   VkPipelineStageFlags waitStages[] = {
+   VkSemaphore waitSemaphores[] {mFrameFinished};
+   VkSemaphore signalSemaphores[] {mNewFrameFence};
+   VkPipelineStageFlags waitStages[] {
       VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
    };
+
+   VkSubmitInfo submitInfo {};
+   submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
    submitInfo.waitSemaphoreCount = 1;
-   submitInfo.pWaitSemaphores = static_cast<const VkSemaphore*>(waitSemaphores);
-   submitInfo.pWaitDstStageMask = static_cast<const VkPipelineStageFlags*>(waitStages);
+   submitInfo.pWaitSemaphores = waitSemaphores;
+   submitInfo.pWaitDstStageMask = waitStages;
    submitInfo.commandBufferCount = 1;
    submitInfo.pCommandBuffers = &mCommandBuffer[mCurrentFrame];
-
-   VkSemaphore signalSemaphores[] = { mNewFrameFence };
    submitInfo.signalSemaphoreCount = 1;
-   submitInfo.pSignalSemaphores = static_cast<const VkSemaphore*>(signalSemaphores);
+   submitInfo.pSignalSemaphores = signalSemaphores;
    if (vkQueueSubmit(mRenderQueue, 1, &submitInfo, VK_NULL_HANDLE)) {
       Logger::Error(Self(), "Vulkan failed to submit render buffer");
       return false;
    }
 
    // Present and return                                                
-   VkPresentInfoKHR presentInfo = {};
+   VkSwapchainKHR swapChains[] {mSwapChain};
+   VkPresentInfoKHR presentInfo {};
    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
    presentInfo.waitSemaphoreCount = 1;
-   presentInfo.pWaitSemaphores = static_cast<const VkSemaphore*>(signalSemaphores);
-
-   VkSwapchainKHR swapChains[] = { mSwapChain };
+   presentInfo.pWaitSemaphores = signalSemaphores;
    presentInfo.swapchainCount = 1;
-   presentInfo.pSwapchains = static_cast<const VkSwapchainKHR*>(swapChains);
+   presentInfo.pSwapchains = swapChains;
    presentInfo.pImageIndices = &mCurrentFrame;
 
    mVRAM.ImageTransfer(
@@ -761,9 +760,29 @@ void VulkanRenderer::Draw() {
    if (!StartRendering())
       return;
 
+   RenderConfig config {
+      mCommandBuffer[mCurrentFrame],
+      mPass,
+      mFramebuffer[mCurrentFrame]
+   };
+
+   config.mColorClear.color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+   config.mDepthClear.depthStencil = {1.0f, 0};
+   config.mDepthSweep.colorAttachment = VK_ATTACHMENT_UNUSED;
+   config.mDepthSweep.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+   config.mDepthSweep.clearValue.depthStencil = config.mDepthClear.depthStencil;
+   config.mPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+   config.mPassBeginInfo.renderPass = config.mPass;
+   config.mPassBeginInfo.framebuffer = config.mFrame;
+   config.mPassBeginInfo.renderArea.offset = {0, 0};
+   config.mPassBeginInfo.renderArea.extent.width = uint32_t(GetProducer()->GetResolution()[0]);
+   config.mPassBeginInfo.renderArea.extent.height = uint32_t(GetProducer()->GetResolution()[1]);
+   config.mPassBeginInfo.clearValueCount = 2;
+   config.mPassBeginInfo.pClearValues = &config.mColorClear;
+
    // Render all layers                                                 
    for (const auto& layer : mLayers)
-      layer.Render(mCommandBuffer[mCurrentFrame], mPass, mFramebuffer[mCurrentFrame]);
+      layer.Render(config);
 
    // Swap buffers and conclude this frame                              
    EndRendering();

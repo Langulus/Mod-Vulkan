@@ -115,14 +115,14 @@ bool TextureView::operator == (const TextureView& rhs) const noexcept {
 /// Get the number of pixels across all dimensions                            
 ///   @return the pixel count                                                 
 LANGULUS(ALWAYSINLINE)
-constexpr Count TextureView::GetPixelCount() const noexcept {
+constexpr uint32_t TextureView::GetPixelCount() const noexcept {
    return mWidth * mHeight * mDepth * mFrames;
 }
 
 /// Get the number of dimensions                                              
 ///   @return the number of used dimensions                                   
 LANGULUS(ALWAYSINLINE)
-constexpr Count TextureView::GetDimensionCount() const noexcept {
+constexpr uint32_t TextureView::GetDimensionCount() const noexcept {
    return  Count {mWidth > 1}
          + Count {mHeight > 1}
          + Count {mDepth > 1}
@@ -146,7 +146,7 @@ Size TextureView::GetBytesize() const noexcept {
 /// Return the number of channels inside the texture format                   
 ///   @return the number of channels                                          
 LANGULUS(ALWAYSINLINE)
-Count TextureView::GetChannelCount() const noexcept {
+uint32_t TextureView::GetChannelCount() const noexcept {
    return mFormat->GetMemberCount();
 }
 
@@ -434,10 +434,10 @@ VkPrimitiveTopology AsVkPrimitive(DMeta meta) {
    LANGULUS_THROW(Graphics, "Unsupported topology");
 }
 
-/// Recalculate LOD index for identity model matrix                        
+/// Recalculate LOD index for identity model matrix                           
 LANGULUS(ALWAYSINLINE)
 void LodState::Transform() {
-   mModel = Matrix4::Identity();
+   mModel = {};
    mModelView = mViewInverted;
    mOrigin = {};
    mRadius = {};
@@ -445,8 +445,8 @@ void LodState::Transform() {
    mLODIndex = 0;
 }
 
-/// Recalculate LOD index by specifying the model matrix                   
-///   @param model - the model transformation                              
+/// Recalculate LOD index by specifying the model matrix                      
+///   @param model - the model transformation                                 
 LANGULUS(ALWAYSINLINE)
 void LodState::Transform(const Matrix4& model) {
    mModel = model;
@@ -456,53 +456,53 @@ void LodState::Transform(const Matrix4& model) {
    mDistanceToSurface = mOrigin.Length() - mRadius;
    mLODIndex = 0;
    if (mDistanceToSurface > 0 && mRadius > 0) {
-      // View is outside the sphere                                  
+      // View is outside the sphere                                     
       const Real near = ::std::log10(mRadius / mDistanceToSurface);
       const Real far = ::std::log10(mDistanceToSurface / mRadius);
-      mLODIndex = Math::Clamp(near - far, Real(MinIndex), Real(MaxIndex));
+      mLODIndex = Math::Clamp(near - far, Real {MinIndex}, Real {MaxIndex});
    }
    else if (mDistanceToSurface < 0) {
-      // Being inside the sphere always gives the most detail        
-      mLODIndex = Real(MaxIndex);
+      // Being inside the sphere always gives the most detail           
+      mLODIndex = Real {MaxIndex};
    }
 }
 
-/// Get the distance from the camera to the model's bounding sphere        
-/// surface, divided by the bounding sphere size                           
-///   @return the distance                                                 
+/// Get the distance from the camera to the model's bounding sphere           
+/// surface, divided by the bounding sphere size                              
+///   @return the distance                                                    
 LANGULUS(ALWAYSINLINE)
 Real LodState::GetNormalizedDistance() const noexcept {
    return mDistanceToSurface / mRadius;
 }
 
-/// Return the LOD index, which is a real number in the range              
-/// [MinIndex;MaxIndex]                                                    
-/// Calculate the LOD index via log10 distance from a sphere to            
-/// the camera view. You can imagine it as the number of zeroes behind     
-/// or in front of the distance                                            
-/// If index is below zero, then we're observing from afar                 
-/// If index is above zero, then we're observing too close                 
-/// At zero we're observing the default quality asset                      
-///   @return the LOD index                                                
+/// Return the LOD index, which is a real number in the range                 
+/// [MinIndex;MaxIndex]                                                       
+/// Calculate the LOD index via log10 distance from a sphere to               
+/// the camera view. You can imagine it as the number of zeroes behind        
+/// or in front of the distance                                               
+/// If index is below zero, then we're observing from afar                    
+/// If index is above zero, then we're observing too close                    
+/// At zero we're observing the default quality asset                         
+///   @return the LOD index                                                   
 LANGULUS(ALWAYSINLINE)
 Real LodState::GetIndex() const noexcept {
    return mLODIndex;
 }
 
-/// Get LOD index in the range [0;IndexCount)                              
-///   @return the absolute index                                           
+/// Get LOD index in the range [0;IndexCount)                                 
+///   @return the absolute index                                              
 LANGULUS(ALWAYSINLINE)
 AbsoluteLodIndex LodState::GetAbsoluteIndex() const noexcept {
    return AbsoluteLodIndex(LodIndex(mLODIndex) - MinIndex);
 }
 
-/// VRAM content hash is the same as the original content                  
+/// VRAM content hash is the same as the original content                     
 LANGULUS(ALWAYSINLINE)
 Hash ContentVRAM::GetHash() const {
    return mOriginalContent.GetHash();
 }
 
-/// Compare VRAM by comparing original contents                            
+/// Compare VRAM by comparing original contents                               
 LANGULUS(ALWAYSINLINE)
 bool ContentVRAM::operator == (const ContentVRAM& other) const noexcept {
    return mOriginalContent == other.mOriginalContent;
@@ -516,10 +516,10 @@ bool ContentVRAM::operator == (const ContentVRAM& other) const noexcept {
 LANGULUS(ALWAYSINLINE)
 RGBAf AnyColorToVector(const Any& color) {
    // Inspect the data pack, what color components does it contain?     
-   const auto redChannel = color.GetMember(MetaTrait::Of<Traits::R>());
-   const auto greenChannel = color.GetMember(MetaTrait::Of<Traits::G>());
-   const auto blueChannel = color.GetMember(MetaTrait::Of<Traits::B>());
-   const auto alphaChannel = color.GetMember(MetaTrait::Of<Traits::A>());
+   const auto redChannel = color.GetMember<Traits::R>();
+   const auto greenChannel = color.GetMember<Traits::G>();
+   const auto blueChannel = color.GetMember<Traits::B>();
+   const auto alphaChannel = color.GetMember<Traits::A>();
 
    // Get the values (and normalize them if we have to)                 
    RGBAf result;

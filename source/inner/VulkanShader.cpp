@@ -6,13 +6,19 @@
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
 #include <shaderc/shaderc.hpp>
-#include "../VulkanRenderer.hpp"
+#include "../Vulkan.hpp"
 
-/// Shader passive construction                                               
-///   @param producer - the producer of the shader                            
-VulkanShader::VulkanShader(VulkanRenderer* producer)
-   : AUnitGraphics {MetaData::Of<VulkanShader>()}
-   , TProducedFrom {producer} { }
+#define VERBOSE_SHADER(...) //Logger::Verbose(Self(), __VA_ARGS__)
+
+
+/// Descriptor constructor                                                    
+///   @param producer - the shader producer                                   
+///   @param descriptor - the shader descriptor                               
+VulkanShader::VulkanShader(VulkanRenderer* producer, const Any& descriptor)
+   : GraphicsUnit {MetaOf<VulkanShader>(), descriptor} 
+   , ProducedFrom {producer, descriptor} {
+   TODO();
+}
 
 /// Component destruction                                                     
 VulkanShader::~VulkanShader() {
@@ -22,7 +28,7 @@ VulkanShader::~VulkanShader() {
 /// Compare two shaders for equality                                          
 ///   @param other - the shader to compare against                            
 ///   @return true if shaders are functionally the same                       
-bool VulkanShader::operator == (const ME& other) const {
+bool VulkanShader::operator == (const VulkanShader& other) const {
    return CompareHash(other) && mCode == other.mCode && mStage == other.mStage;
 }
 
@@ -38,9 +44,9 @@ Hash VulkanShader::GetHash() const {
 ///   @param stage - the kind of shader                                       
 ///   @param material - the material generator                                
 ///   @return true if shader was generated successfully                       
-bool VulkanShader::InitializeFromMaterial(ShaderStage::Enum stage, const AMaterial* material) {
+bool VulkanShader::InitializeFromMaterial(ShaderStage::Enum stage, const A::Material* material) {
    if (!mCode.IsEmpty()) {
-      pcLogSelfWarning << "Overwriting shader stage";
+      Logger::Warning(Self(), "Overwriting shader stage");
       Uninitialize();
    }
 
@@ -54,7 +60,7 @@ bool VulkanShader::InitializeFromMaterial(ShaderStage::Enum stage, const AMateri
    // Access input mappings                                             
    const auto uniforms = material->GetData<Traits::Trait>();
    if (!uniforms || uniforms->IsEmpty())
-      throw Except::Graphics(pcLogSelfError << "No uniforms/inputs provided by generator");
+      LANGULUS_THROW(Graphics, "No uniforms/inputs provided by generator");
 
    // Add relevant inputs                                               
    const auto index = Rate(Rate::StagesBegin + stage).GetInputIndex();
@@ -63,7 +69,6 @@ bool VulkanShader::InitializeFromMaterial(ShaderStage::Enum stage, const AMateri
       AddInput(attribute);
 
    ResetHash();
-   ClassValidate();
    return true;
 }
 
@@ -73,14 +78,13 @@ void VulkanShader::Uninitialize() {
       return;
 
    if (mStageDescription.module) {
-      vkDestroyShaderModule(mProducer->GetDevice(), mStageDescription.module, nullptr);
+      vkDestroyShaderModule(mProducer->mDevice, mStageDescription.module, nullptr);
       mStageDescription = {};
    }
 
    mCompiled = false;
    mCode.Reset();
    ResetHash();
-   ClassInvalidate();
 }
 
 /// Compile the shader code                                                   
@@ -89,16 +93,15 @@ bool VulkanShader::Compile() {
    if (mCompiled)
       return true;
 
-   auto device = mProducer->GetDevice().Get();
-   PCTimer loadTime;
-   loadTime.Start();
+   const auto device = mProducer->mDevice;
+   const auto startTime = SteadyClock::now();
 
    // Compiling with optimizing                                         
    shaderc::Compiler compiler;
    shaderc::CompileOptions options;
 
    static constexpr decltype(shaderc_glsl_infer_from_source) 
-   ShadercStageMap[ShaderStage::Counter] = {
+   ShadercStageMap[ShaderStage::Counter] {
       shaderc_glsl_vertex_shader,
       shaderc_glsl_geometry_shader,
       shaderc_glsl_tess_control_shader,
@@ -120,9 +123,9 @@ bool VulkanShader::Compile() {
    // Compile to binary                                                 
    auto assembly = compiler.CompileGlslToSpv(mCode.Terminate().GetRaw(), kind, "whatever", options);
    if (assembly.GetCompilationStatus() != shaderc_compilation_status_success) {
-      pcLogSelfError << "Shader Compilation Error: " << assembly.GetErrorMessage().c_str();
-      pcLogSelfError << "For shader:";
-      pcLogSelfError << mCode.Pretty();
+      Logger::Error(Self(), "Shader Compilation Error: ", assembly.GetErrorMessage());
+      Logger::Error(Self(), "For shader:");
+      Logger::Error(Self(), mCode.Pretty());
       Uninitialize();
       return false;
    }
@@ -134,7 +137,7 @@ bool VulkanShader::Compile() {
    createInfo.pCode = assembly.cbegin();
    VkShaderModule shaderModule;
    if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
-      pcLogSelfError << "Error creating shader module";
+      Logger::Error(Self(), "Error creating shader module");
       Uninitialize();
       return false;
    }
@@ -142,14 +145,13 @@ bool VulkanShader::Compile() {
    // Create the shader stage                                           
    mStageDescription = {};
    mStageDescription.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-   mStageDescription.stage = pcShaderToVkStage(mStage);
+   mStageDescription.stage = AsVkStage(mStage);
    mStageDescription.module = shaderModule;
    mStageDescription.pName = "main";
    mCompiled = true;
    
-   auto accumulated_time = loadTime.Stop();
-   pcLogSelfVerbose << ccGreen << "Compiled shader in " << accumulated_time;
-   pcLogSelfVerbose << ccGreen << mCode.Pretty();
+   VERBOSE_SHADER(Logger::Green, "Compiled shader in ", SteadyClock::now() - startTime);
+   VERBOSE_SHADER(Logger::Green, mCode.Pretty());
    return true;
 }
 
@@ -160,13 +162,13 @@ void VulkanShader::AddInput(const Trait& input) {
    // generating code                                                   
    switch (mStage) {
    case ShaderStage::Pixel:
-      mInputs[Rate(Rate::PerPixel).GetStageIndex()] << input;
+      mInputs[Rate(Rate::Pixel).GetStageIndex()] << input;
       return;
    case ShaderStage::Geometry:
-      mInputs[Rate(Rate::PerPrimitive).GetStageIndex()] << input;
+      mInputs[Rate(Rate::Primitive).GetStageIndex()] << input;
       return;
    case ShaderStage::Vertex:
-      mInputs[Rate(Rate::PerVertex).GetStageIndex()] << input;
+      mInputs[Rate(Rate::Vertex).GetStageIndex()] << input;
       // Note this is the only case where we continue   after the switch
       break;
    default:
@@ -174,46 +176,42 @@ void VulkanShader::AddInput(const Trait& input) {
    }
 
    const auto uidx = static_cast<uint32_t>(mBindings.size());
+   const auto meta = input.GetType();
+   RTTI::Base inputBase;
    VkFormat vkt = VK_FORMAT_UNDEFINED;
-   LinkedBase inputBase;
+
    // Single precision                                                  
-   if (input.GetMeta()->GetBase<vec4f>(0, inputBase) && inputBase.mStaticBase.mMapping)
-      vkt = pcTypeToVkFormat(inputBase.mBase);
-   else if (input.GetMeta()->GetBase<vec3f>(0, inputBase) && inputBase.mStaticBase.mMapping)
-      vkt = pcTypeToVkFormat(inputBase.mBase);
-   else if (input.GetMeta()->GetBase<vec2f>(0, inputBase) && inputBase.mStaticBase.mMapping)
-      vkt = pcTypeToVkFormat(inputBase.mBase);
-   else if (input.GetMeta()->GetBase<pcr32>(0, inputBase) && inputBase.mStaticBase.mMapping)
-      vkt = pcTypeToVkFormat(inputBase.mBase);
+   if (meta->GetBase<Vec4f>(0, inputBase) && inputBase.mBinaryCompatible)
+      vkt = AsVkFormat(inputBase.mType);
+   else if (meta->GetBase<Vec3f>(0, inputBase) && inputBase.mBinaryCompatible)
+      vkt = AsVkFormat(inputBase.mType);
+   else if (meta->GetBase<Vec2f>(0, inputBase) && inputBase.mBinaryCompatible)
+      vkt = AsVkFormat(inputBase.mType);
+   else if (meta->GetBase<Float>(0, inputBase) && inputBase.mBinaryCompatible)
+      vkt = AsVkFormat(inputBase.mType);
    // Double precision                                                  
-   else if (input.GetMeta()->GetBase<vec4d>(0, inputBase) && inputBase.mStaticBase.mMapping)
-      vkt = pcTypeToVkFormat(inputBase.mBase);
-   else if (input.GetMeta()->GetBase<vec3d>(0, inputBase) && inputBase.mStaticBase.mMapping)
-      vkt = pcTypeToVkFormat(inputBase.mBase);
-   else if (input.GetMeta()->GetBase<vec2d>(0, inputBase) && inputBase.mStaticBase.mMapping)
-      vkt = pcTypeToVkFormat(inputBase.mBase);
-   else if (input.GetMeta()->GetBase<pcr64>(0, inputBase) && inputBase.mStaticBase.mMapping)
-      vkt = pcTypeToVkFormat(inputBase.mBase);
+   else if (meta->GetBase<Vec4d>(0, inputBase) && inputBase.mBinaryCompatible)
+      vkt = AsVkFormat(inputBase.mType);
+   else if (meta->GetBase<Vec3d>(0, inputBase) && inputBase.mBinaryCompatible)
+      vkt = AsVkFormat(inputBase.mType);
+   else if (meta->GetBase<Vec2d>(0, inputBase) && inputBase.mBinaryCompatible)
+      vkt = AsVkFormat(inputBase.mType);
+   else if (meta->GetBase<Double>(0, inputBase) && inputBase.mBinaryCompatible)
+      vkt = AsVkFormat(inputBase.mType);
    
-   if (vkt == VK_FORMAT_UNDEFINED) {
-      throw Except::Graphics(pcLogSelfError
-         << "Unsupported base for shader attribute " << input.GetTraitMeta()->GetToken()
-         << ": " << inputBase.mStaticBase.mCount
-         << " elements of " << inputBase.mBase->GetToken()
-         << " (decayed from " << input.GetMeta()->GetToken() << ")");
-   }
+   if (vkt == VK_FORMAT_UNDEFINED)
+      LANGULUS_THROW(Graphics, "Unsupported base for shader attribute");
 
    // Then create the input bindings and attributes                     
-   VertexBinding bindingDescription = {};
+   VertexBinding bindingDescription {};
    bindingDescription.binding = uidx;
    bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-   bindingDescription.stride = static_cast<uint32_t>(inputBase.mBase->GetStride());
+   bindingDescription.stride = static_cast<uint32_t>(inputBase.mType->mSize);
    mBindings.push_back(bindingDescription);
 
-   VertexAttribute attributeDescription = {};
+   VertexAttribute attributeDescription {};
    attributeDescription.binding = uidx;
    attributeDescription.location = uidx;
-   attributeDescription.offset = 0;
    attributeDescription.format = vkt;
    mAttributes.push_back(attributeDescription);
 }
@@ -222,7 +220,7 @@ void VulkanShader::AddInput(const Trait& input) {
 ///   @return the flag                                                        
 LANGULUS(ALWAYSINLINE)
 VkShaderStageFlagBits VulkanShader::GetStageFlagBit() const noexcept {
-   static constexpr VkShaderStageFlagBits StageMap[ShaderStage::Counter] = {
+   static constexpr VkShaderStageFlagBits StageMap[ShaderStage::Counter] {
       VK_SHADER_STAGE_VERTEX_BIT,
       VK_SHADER_STAGE_GEOMETRY_BIT,
       VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,

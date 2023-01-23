@@ -6,11 +6,11 @@
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
 #pragma once
-#include "UBO.hpp"
+#include "inner/UBO.hpp"
 
 
 ///                                                                           
-/// Pipeline subscriber                                                       
+///   Pipeline subscriber                                                     
 ///                                                                           
 struct PipeSubscriber {
    uint32_t offsets[Rate::DynamicUniformCount] {};
@@ -22,11 +22,10 @@ struct PipeSubscriber {
 ///                                                                           
 ///   Vulkan pipeline                                                         
 ///                                                                           
-class VulkanPipeline : public A::GraphicsUnit {
+struct VulkanPipeline : A::GraphicsUnit, ProducedFrom<VulkanRenderer> {
    LANGULUS(ABSTRACT) false;
-   LANGULUS(PRODUCER) VulkanRenderer;
    LANGULUS_BASES(A::GraphicsUnit);
-   LANGULUS_VERBS(Verbs::Create);
+
 private:
    using Bindings = TAny<VkDescriptorSetLayoutBinding>;
 
@@ -36,7 +35,7 @@ private:
    void CreateNewGeometrySet();
 
    // Shaders                                                           
-   TAny<VulkanShader*> mStages;
+   TUnorderedMap<ShaderStage::Enum, VulkanShader*> mStages;
    // The graphics pipeline                                             
    Own<VkPipeline> mPipeline;
    // The rendering pipeline layout                                     
@@ -82,21 +81,16 @@ private:
    Ptr<const Unit> mOriginalContent;
 
 public:
-   VulkanPipeline(VulkanRenderer*);
-   VulkanPipeline(VulkanPipeline&&) noexcept = default;
+   VulkanPipeline(VulkanRenderer*, const Any&);
    ~VulkanPipeline();
-
-   VulkanPipeline& operator = (VulkanPipeline&&) noexcept = default;
 
    NOD() const Hash& GetHash() const noexcept;
 
    bool operator == (const VulkanPipeline&) const noexcept;
 
-   void Create(Verb&);
-
    bool PrepareFromConstruct(const Construct&);
    bool PrepareFromMaterial(const Unit*);
-   bool PrepareFromCode(const GLSL&);
+   bool PrepareFromCode(const Text&);
 
    void Initialize();
    void Uninitialize();

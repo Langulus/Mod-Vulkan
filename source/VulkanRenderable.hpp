@@ -16,11 +16,13 @@
 /// graphical resources from the context, and generates a graphical pipeline  
 /// capable of visualizing it on Refresh()                                    
 ///                                                                           
-class VulkanRenderable : public A::GraphicsUnit {
+struct VulkanRenderable final : A::GraphicsUnit, ProducedFrom<VulkanLayer> {
    LANGULUS(ABSTRACT) false;
-   LANGULUS(PRODUCER) VulkanLayer;
    LANGULUS_BASES(A::GraphicsUnit);
-private:
+
+protected:
+   friend struct VulkanLayer;
+
    // Precompiled instances and levels, updated on Refresh()            
    TAny<const Unit*> mInstances;
    TRange<Level> mLevelRange;
@@ -39,12 +41,12 @@ private:
    void ResetRenderable();
 
 public:
-   VulkanRenderable(const Any&);
+   VulkanRenderable(VulkanLayer*, const Any&);
 
-   NOD() auto GetRenderer() noexcept;
-   NOD() VulkanGeometry* GetGeometry(const LodState&);
-   NOD() VulkanTexture*  GetTextures(const LodState&);
-   NOD() VulkanPipeline* GetOrCreatePipeline(const LodState&, const VulkanLayer*);
+   NOD() VulkanRenderer* GetRenderer() const noexcept;
+   NOD() VulkanGeometry* GetGeometry(const LodState&) const;
+   NOD() VulkanTexture*  GetTextures(const LodState&) const;
+   NOD() VulkanPipeline* GetOrCreatePipeline(const LodState&, const VulkanLayer*) const;
 
-   void Refresh() override;
+   void Refresh();
 };

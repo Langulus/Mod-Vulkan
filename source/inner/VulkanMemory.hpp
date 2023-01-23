@@ -6,7 +6,7 @@
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
 #pragma once
-#include "Content/VulkanBuffer.hpp"
+#include "VulkanBuffer.hpp"
 
 using PCCmdBuffer = VkCommandBuffer;
 
@@ -16,8 +16,7 @@ using PCCmdBuffer = VkCommandBuffer;
 ///                                                                           
 /// Has tools to manage the VRAM, and produce VRAM buffers                    
 ///                                                                           
-class VulkanMemory {
-public:
+struct VulkanMemory {
    VkPhysicalDeviceMemoryProperties mVRAM {};
    VkPhysicalDevice mAdapter {};
    VkDevice mDevice {};

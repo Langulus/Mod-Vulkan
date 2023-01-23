@@ -6,12 +6,12 @@
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
 #pragma once
-#include "VulkanMemory.hpp"
 #include "VulkanPipeline.hpp"
 #include "VulkanLayer.hpp"
-#include "Content/VulkanGeometry.hpp"
-#include "Content/VulkanTexture.hpp"
-#include "Content/VulkanShader.hpp"
+#include "inner/VulkanMemory.hpp"
+#include "inner/VulkanGeometry.hpp"
+#include "inner/VulkanTexture.hpp"
+#include "inner/VulkanShader.hpp"
 
 
 ///                                                                           
@@ -20,14 +20,20 @@
 /// Binds with a window and renders to it. Manages framebuffers, VRAM         
 /// contents, and layers                                                      
 ///                                                                           
-class VulkanRenderer : public A::GraphicsUnit {
+struct VulkanRenderer : A::GraphicsUnit, ProducedFrom<Vulkan> {
    LANGULUS(ABSTRACT) false;
-   LANGULUS(PRODUCER) Vulkan;
    LANGULUS_BASES(A::GraphicsUnit);
    LANGULUS_VERBS(Verbs::Create);
+
 protected:
    friend struct UBO;
+   friend struct SamplerUBO;
+   friend struct VulkanPipeline;
+   friend struct VulkanShader;
+   friend struct VulkanGeometry;
+   friend struct VulkanTexture;
 
+   // The platform window, where the renderer is created                
    Ptr<const Unit> mWindow;
 
    // The logical device                                                
@@ -43,7 +49,7 @@ protected:
    Own<VkSurfaceKHR> mSurface;
    // Swap chain                                                        
    Own<VkSwapchainKHR> mSwapChain;
-   TAny<VkImage> mSwapChainImages;
+   ::std::vector<VkImage> mSwapChainImages;
    // Swap chain frames                                                 
    Frames mFrame;
    // Framebuffers                                                      
@@ -99,7 +105,7 @@ protected:
    TFactoryUnique<VulkanTexture> mTextures;
 
 public:
-   VulkanRenderer(Vulkan*);
+   VulkanRenderer(Vulkan*, const Any&);
    ~VulkanRenderer();
 
    void Create(Verb&);
@@ -108,7 +114,6 @@ public:
    void Initialize(Unit*);
    void Resize(const Vec2&);
    void Uninitialize();
-
 
    /// Get the current command buffer                                         
    ///   @return the command buffer                                           
@@ -129,14 +134,14 @@ public:
    /// Cache RAM content                                                      
    ///   @param content - the RAM content to cache                            
    ///   @return VRAM content, or nullptr if can't cache it                   
-   template<CT::Unit T>
+   /*template<CT::Content T>
    NOD() auto Cache(const T* content) requires CT::Dense<T> {
-      if constexpr (CT::DerivedFrom<T, ATexture>)
+      if constexpr (CT::Texture<T>)
          return mTextures.CreateInner(content);
-      else if constexpr (CT::DerivedFrom<T, AGeometry>)
+      else if constexpr (CT::Geometry<T>)
          return mGeometries.CreateInner(content);
       else
-         LANGULUS_ERROR("Can't cache RAM content in VRAM");
+         LANGULUS_ERROR("Can't cache RAM content to VRAM");
    }
 
    /// Merge VRAM content                                                     
@@ -148,7 +153,7 @@ public:
          return mShaders.Merge(Forward<T>(content));
       else
          LANGULUS_ERROR("Can't merge content in VRAM");
-   }
+   }*/
 
 private:
    bool StartRendering();
