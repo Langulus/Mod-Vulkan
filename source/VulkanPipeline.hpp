@@ -22,9 +22,9 @@ struct PipeSubscriber {
 ///                                                                           
 ///   Vulkan pipeline                                                         
 ///                                                                           
-struct VulkanPipeline : A::GraphicsUnit, ProducedFrom<VulkanRenderer> {
+struct VulkanPipeline : A::Graphics, ProducedFrom<VulkanRenderer> {
    LANGULUS(ABSTRACT) false;
-   LANGULUS_BASES(A::GraphicsUnit);
+   LANGULUS_BASES(A::Graphics);
 
 private:
    using Bindings = TAny<VkDescriptorSetLayoutBinding>;
@@ -78,19 +78,17 @@ private:
 
    Hash mHash;
    bool mGenerated {false};
-   Ptr<const Unit> mOriginalContent;
+   Ptr<A::Content> mOriginalContent;
 
 public:
    VulkanPipeline(VulkanRenderer*, const Any&);
    ~VulkanPipeline();
 
-   NOD() const Hash& GetHash() const noexcept;
-
-   bool operator == (const VulkanPipeline&) const noexcept;
-
-   bool PrepareFromConstruct(const Construct&);
-   bool PrepareFromMaterial(const Unit*);
-   bool PrepareFromCode(const Text&);
+   void PrepareFromFile(const A::File&);
+   void PrepareFromConstruct(const Construct&);
+   void PrepareFromMaterial(const A::Material&);
+   void PrepareFromGeometry(const A::Geometry&);
+   void PrepareFromCode(const Text&);
 
    void Initialize();
    void Uninitialize();
@@ -105,34 +103,32 @@ public:
    ///   @param value - the value to use                                      
    ///   @param index - the index of the uniform of this kind                 
    ///                  used as ID only when setting a texture                
-   template<Rate::Enum RATE, CT::Trait TRAIT, CT::Data DATA>
+   template<Rate RATE, CT::Trait TRAIT, CT::Data DATA>
    void SetUniform(const DATA& value, Offset index = 0) {
-      constexpr Rate RATED = RATE;
-
-      if constexpr (Same<DATA, VulkanTexture>) {
+      if constexpr (CT::Texture<DATA>) {
          static_assert(RATE == Rate::Renderable,
-            "Setting a texture requires Rate::PerRenderable");
+            "Setting a texture requires Rate::Renderable");
          // Set the sampler with the given index                        
          mSamplerUBO[mSubscribers.Last().samplerSet]
             .template Set<DATA>(value, index);
       }
-      else if constexpr (Same<DATA, VulkanGeometry>) {
+      else if constexpr (CT::Geometry<DATA>) {
          static_assert(RATE == Rate::Renderable,
-            "Setting a geometry stream requires Rate::PerRenderable");
+            "Setting a geometry stream requires Rate::Renderable");
          // Set the geometry stream, make sure VRAM is initialized      
          value->Initialize();
          mGeometries[mSubscribers.Last().geometrySet] = value;
       }
-      else if constexpr (RATED.IsStaticUniform()) {
+      else if constexpr (RATE.IsStaticUniform()) {
          // Set a static uniform                                        
          (index);
-         constexpr auto rate = RATED.GetStaticUniformIndex();
+         constexpr auto rate = RATE.GetStaticUniformIndex();
          mStaticUBO[rate].template Set<TRAIT, DATA>(value);
       }
-      else if constexpr (RATED.IsDynamicUniform()) {
+      else if constexpr (RATE.IsDynamicUniform()) {
          // Set a dynamic uniform                                       
          (index);
-         constexpr auto rate = RATED.GetDynamicUniformIndex();
+         constexpr auto rate = RATE.GetDynamicUniformIndex();
          mDynamicUBO[rate].template Set<TRAIT, DATA>(value);
       }
       else LANGULUS_ERROR("Unsupported uniform rate");
@@ -141,32 +137,30 @@ public:
    /// Push the current samplers and dynamic uniforms, advancing indices      
    ///   @tparam RATE - the rate to push                                      
    ///   @tparam SUBSCRIBE - whether or not to subscribe for batched draw     
-   ///   @return the subscriber, if SUBSCRIBE is true, and RATE is dynamic    
-   template<Rate::Enum RATE, bool SUBSCRIBE = true>
+   ///   @return the subscriber, if SUBSCRIBE is true and RATE is dynamic     
+   template<Rate RATE, bool SUBSCRIBE = true>
    NOD() auto PushUniforms() {
-      constexpr Rate RATED = RATE;
-
-      if constexpr (RATED.IsStaticUniform()) {
+      if constexpr (RATE.IsStaticUniform()) {
          // Pushing static uniforms does nothing                        
          SAFETY(Logger::Warning(
             "Trying to push a static uniform block"
             " - although not fatal, it's suboptimal doing that"
          ));
       }
-      else if constexpr (RATED.IsDynamicUniform()) {
+      else if constexpr (RATE.IsDynamicUniform()) {
          // Push a dynamic rate                                         
-         constexpr auto rate = RATED.GetDynamicUniformIndex();
+         constexpr auto rate = RATE.GetDynamicUniformIndex();
 
          mDynamicUBO[rate].Push();
 
-         if constexpr (RATE == Rate::Renderable) {
+         if constexpr (RATE == PerRenderable) {
             // When pushing PerRenderable state, create new sampler set 
             // and a new geometry set for next SetUniform calls         
             CreateNewSamplerSet();
             CreateNewGeometrySet();
          }
 
-         if constexpr (RATE == Rate::Instance) {
+         if constexpr (RATE == PerInstance) {
             // Push a new subscriber only on new instance               
             PipeSubscriber newSubscriber = mSubscribers.Last();
             Offset i {};
@@ -187,10 +181,9 @@ public:
    /// Convert a rate to the corresponding UBO index                          
    ///   @param RATE - the rate to convert                                    
    ///   @return the relevant UBO index                                       
-   template<Rate::Enum RATE>
+   template<Rate RATE>
    NOD() auto GetRelevantDynamicUBOIndexOfRate() const noexcept {
-      constexpr Rate RATED {Rate::Level};
-      constexpr auto r = RATED.GetDynamicUniformIndex();
+      constexpr auto r = RATE.GetDynamicUniformIndex();
       Offset rtoi {};
       for (Offset s = 0; s < r; ++s) {
          // Unused dynamic UBOs do not participate in offsets!          

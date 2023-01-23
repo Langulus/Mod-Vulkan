@@ -17,18 +17,47 @@
 VulkanShader::VulkanShader(VulkanRenderer* producer, const Any& descriptor)
    : GraphicsUnit {MetaOf<VulkanShader>(), descriptor} 
    , ProducedFrom {producer, descriptor} {
-   TODO();
+   // Configure the shader, but don't compile it yet                    
+   descriptor.ForEachDeep(
+      [this](const ShaderStage::Enum& stage) {
+         mStage = stage;
+      },
+      [this](const A::File* file) {
+         //TODO load a shader file (text/binary/etc.)
+         TODO();
+      },
+      [this](const Text& code) {
+         mCode = code;
+      },
+      [this](const A::Material* material) {
+         // Access input mappings                                       
+         const auto uniforms = material->template GetData<Traits::Trait>();
+         if (uniforms && uniforms->IsEmpty()) {
+            // Add relevant inputs                                      
+            const auto index = Rate(Rate::StagesBegin + mStage).GetInputIndex();
+            auto& inputs = uniforms->template As<TAny<Trait>>(index);
+            for (auto& attribute : inputs)
+               AddInput(attribute);
+         }
+      }
+   );
 }
 
 /// Component destruction                                                     
 VulkanShader::~VulkanShader() {
-   Uninitialize();
+   if (mStageDescription.module) {
+      vkDestroyShaderModule(
+         mProducer->mDevice, 
+         mStageDescription.module, 
+         nullptr
+      );
+   }
 }
 
 /// Compare two shaders for equality                                          
 ///   @param other - the shader to compare against                            
 ///   @return true if shaders are functionally the same                       
-bool VulkanShader::operator == (const VulkanShader& other) const {
+/*bool VulkanShader::operator == (const VulkanShader& other) const {
    return CompareHash(other) && mCode == other.mCode && mStage == other.mStage;
 }
 
@@ -37,61 +66,44 @@ Hash VulkanShader::GetHash() const {
    if (mHashed)
       return mHash;
    return Hashed::SetHash(mCode.GetHash() | pcHash(mStage));
-}
+}*/
 
 /// Initialize the shader via a stage and code. This does not immediately     
 /// compile the shader, so you can add uniforms and inputs                    
 ///   @param stage - the kind of shader                                       
 ///   @param material - the material generator                                
 ///   @return true if shader was generated successfully                       
-bool VulkanShader::InitializeFromMaterial(ShaderStage::Enum stage, const A::Material* material) {
+/*bool VulkanShader::InitializeFromMaterial(ShaderStage::Enum stage, const A::Material* material) {
    if (!mCode.IsEmpty()) {
       Logger::Warning(Self(), "Overwriting shader stage");
       Uninitialize();
    }
 
-   if (!mInputs.IsAllocated())
-      mInputs.Allocate(RefreshRate::StagesCount, true);
-
    // Copy code from the correct stage                                  
    mStage = stage;
    mCode += material->GetDataAs<Traits::Code, GLSL>(pcptr(stage));
 
-   // Access input mappings                                             
-   const auto uniforms = material->GetData<Traits::Trait>();
-   if (!uniforms || uniforms->IsEmpty())
-      LANGULUS_THROW(Graphics, "No uniforms/inputs provided by generator");
-
-   // Add relevant inputs                                               
-   const auto index = Rate(Rate::StagesBegin + stage).GetInputIndex();
-   auto& inputs = uniforms->As<TAny<Trait>>(index);
-   for (auto& attribute : inputs)
-      AddInput(attribute);
 
    ResetHash();
    return true;
-}
+}*/
 
 /// Reset the shader                                                          
-void VulkanShader::Uninitialize() {
+/*void VulkanShader::Uninitialize() {
    if (!mProducer)
       return;
 
-   if (mStageDescription.module) {
-      vkDestroyShaderModule(mProducer->mDevice, mStageDescription.module, nullptr);
-      mStageDescription = {};
-   }
 
    mCompiled = false;
    mCode.Reset();
    ResetHash();
-}
+}*/
 
 /// Compile the shader code                                                   
 ///   @return true on success                                                 
-bool VulkanShader::Compile() {
+void VulkanShader::Compile() {
    if (mCompiled)
-      return true;
+      return;
 
    const auto device = mProducer->mDevice;
    const auto startTime = SteadyClock::now();
@@ -121,25 +133,26 @@ bool VulkanShader::Compile() {
       options.SetOptimizationLevel(shaderc_optimization_level_size);
 
    // Compile to binary                                                 
-   auto assembly = compiler.CompileGlslToSpv(mCode.Terminate().GetRaw(), kind, "whatever", options);
+   const auto assembly = compiler.CompileGlslToSpv(
+      mCode.Terminate().GetRaw(), kind, "whatever", options
+   );
+
    if (assembly.GetCompilationStatus() != shaderc_compilation_status_success) {
       Logger::Error(Self(), "Shader Compilation Error: ", assembly.GetErrorMessage());
       Logger::Error(Self(), "For shader:");
       Logger::Error(Self(), mCode.Pretty());
-      Uninitialize();
-      return false;
+      LANGULUS_THROW(Graphics, "Shader compilation failed");
    }
 
    // Create the vulkan shader module                                   
-   VkShaderModuleCreateInfo createInfo = {};
+   VkShaderModuleCreateInfo createInfo {};
    createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-   createInfo.codeSize = pcP2N(assembly.cend()) - pcP2N(assembly.cbegin());
+   createInfo.codeSize = (assembly.cend() - assembly.cbegin()) * sizeof(Decay<decltype(assembly.cbegin())>);
    createInfo.pCode = assembly.cbegin();
    VkShaderModule shaderModule;
    if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
       Logger::Error(Self(), "Error creating shader module");
-      Uninitialize();
-      return false;
+      LANGULUS_THROW(Graphics, "vkCreateShaderModule failed");
    }
 
    // Create the shader stage                                           
@@ -152,7 +165,6 @@ bool VulkanShader::Compile() {
    
    VERBOSE_SHADER(Logger::Green, "Compiled shader in ", SteadyClock::now() - startTime);
    VERBOSE_SHADER(Logger::Green, mCode.Pretty());
-   return true;
 }
 
 /// Bind vertex input                                                         
@@ -162,13 +174,13 @@ void VulkanShader::AddInput(const Trait& input) {
    // generating code                                                   
    switch (mStage) {
    case ShaderStage::Pixel:
-      mInputs[Rate(Rate::Pixel).GetStageIndex()] << input;
+      mInputs[PerPixel.GetStageIndex()] << input;
       return;
    case ShaderStage::Geometry:
-      mInputs[Rate(Rate::Primitive).GetStageIndex()] << input;
+      mInputs[PerPrimitive.GetStageIndex()] << input;
       return;
    case ShaderStage::Vertex:
-      mInputs[Rate(Rate::Vertex).GetStageIndex()] << input;
+      mInputs[PerVertex.GetStageIndex()] << input;
       // Note this is the only case where we continue   after the switch
       break;
    default:

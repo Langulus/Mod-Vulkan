@@ -11,7 +11,7 @@
 ///   @param producer - the light producer                                    
 ///   @param descriptor - the light descriptor                                
 VulkanLight::VulkanLight(VulkanLayer* producer, const Any& descriptor)
-   : GraphicsUnit {MetaOf<VulkanLight>(), descriptor}
+   : Graphics {MetaOf<VulkanLight>(), descriptor}
    , ProducedFrom {producer, descriptor} {
    TODO();
 }

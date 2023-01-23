@@ -27,136 +27,6 @@ LANGULUS_DEFINE_TRAIT(Viewport, "Viewport and depth clipping, usually a Range4")
 LANGULUS_DEFINE_TRAIT(Projection, "Camera projection matrix");
 LANGULUS_DEFINE_TRAIT(View, "Camera view matrix");
 
-namespace Langulus
-{
-   namespace A
-   {
-
-      ///                                                                     
-      ///   Abstract graphics module                                          
-      ///                                                                     
-      struct Graphics : Entity::Module {
-         LANGULUS_BASES(Entity::Module);
-         using Entity::Module::Module;
-      };
-
-      ///                                                                     
-      ///   Abstract graphics units                                           
-      ///                                                                     
-      struct GraphicsUnit : Entity::Unit {
-         LANGULUS_BASES(Entity::Unit);
-         using Entity::Unit::Unit;
-      };
-
-      ///                                                                     
-      ///   Abstract graphics renderer                                        
-      ///                                                                     
-      struct Renderer : GraphicsUnit {
-         LANGULUS(PRODUCER) Graphics;
-         LANGULUS_BASES(GraphicsUnit);
-         using GraphicsUnit::GraphicsUnit;
-      };
-
-      ///                                                                     
-      ///   Abstract graphics layer                                           
-      ///                                                                     
-      struct Layer : GraphicsUnit {
-         LANGULUS(PRODUCER) Renderer;
-         LANGULUS_BASES(GraphicsUnit);
-         using GraphicsUnit::GraphicsUnit;
-      };
-
-      ///                                                                     
-      ///   Abstract graphics camera                                          
-      ///                                                                     
-      struct Camera : GraphicsUnit {
-         LANGULUS(PRODUCER) Layer;
-         LANGULUS_BASES(GraphicsUnit);
-         using GraphicsUnit::GraphicsUnit;
-      };
-
-      ///                                                                     
-      ///   Abstract graphics renderable                                      
-      ///                                                                     
-      struct Renderable : GraphicsUnit {
-         LANGULUS(PRODUCER) Layer;
-         LANGULUS_BASES(GraphicsUnit);
-         using GraphicsUnit::GraphicsUnit;
-      };
-
-      ///                                                                     
-      ///   Abstract graphics light                                           
-      ///                                                                     
-      struct Light : GraphicsUnit {
-         LANGULUS(PRODUCER) Layer;
-         LANGULUS_BASES(GraphicsUnit);
-         using GraphicsUnit::GraphicsUnit;
-      };
-
-      ///                                                                     
-      ///   Abstract content module                                           
-      ///                                                                     
-      struct Content : Entity::Module {
-         LANGULUS_BASES(Entity::Module);
-         using Entity::Module::Module;
-      };
-
-      ///                                                                     
-      ///   Abstract content unit                                             
-      ///                                                                     
-      struct ContentUnit : Entity::Unit {
-         LANGULUS_BASES(Entity::Unit);
-         using Entity::Unit::Unit;
-      };
-
-      ///                                                                     
-      ///   Abstract geometry content                                         
-      ///                                                                     
-      struct Geometry : ContentUnit {
-         LANGULUS(PRODUCER) Content;
-         LANGULUS_BASES(ContentUnit);
-         using ContentUnit::ContentUnit;
-      };
-
-      ///                                                                     
-      ///   Abstract material content                                         
-      ///                                                                     
-      struct Material : ContentUnit {
-         LANGULUS(PRODUCER) Content;
-         LANGULUS_BASES(ContentUnit);
-         using ContentUnit::ContentUnit;
-      };
-
-      ///                                                                     
-      ///   Abstract texture content                                          
-      ///                                                                     
-      struct Texture : ContentUnit {
-         LANGULUS(PRODUCER) Content;
-         LANGULUS_BASES(ContentUnit);
-         using ContentUnit::ContentUnit;
-      };
-
-   } // namespace Langulus::A
-
-   namespace CT
-   {
-
-      template<class T>
-      concept Graphics = DerivedFrom<T, A::GraphicsUnit>;
-
-      template<class T>
-      concept Content = DerivedFrom<T, A::ContentUnit>;
-
-      template<class T>
-      concept Texture = DerivedFrom<T, A::Texture>;
-
-      template<class T>
-      concept Geometry = DerivedFrom<T, A::Geometry>;
-
-   } // namespace Langulus::CT
-
-} // namespace Langulus
-
 using namespace Langulus;
 using namespace Langulus::Flow;
 using namespace Langulus::Anyness;
@@ -389,7 +259,6 @@ struct RefreshRate {
       Counter,
    };
 
-protected:
    Type mMode {Enum::Auto};
 
    LANGULUS_NAMED_VALUES(Enum) {
@@ -463,6 +332,10 @@ public:
    NOD() constexpr Offset GetStaticUniformIndex() const;
    NOD() constexpr Offset GetDynamicUniformIndex() const;
    NOD() constexpr ShaderStage::Enum GetStageIndex() const;
+
+   constexpr operator Enum () const noexcept {
+      return static_cast<Enum>(mMode);
+   }
 };
 
 using Rate = RefreshRate;

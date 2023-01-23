@@ -13,7 +13,7 @@
 ///   @param producer - the renderer producer                                 
 ///   @param descriptor - the renderer descriptor                             
 VulkanRenderer::VulkanRenderer(Vulkan* producer, const Any& descriptor)
-   : GraphicsUnit {MetaOf<VulkanRenderer>(), descriptor}
+   : Graphics {MetaOf<VulkanRenderer>(), descriptor}
    , ProducedFrom {producer, descriptor}
    , mLayers {this}
    , mPipelines {this}

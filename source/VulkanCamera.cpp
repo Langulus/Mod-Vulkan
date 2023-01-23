@@ -11,7 +11,7 @@
 ///   @param producer - the camera producer                                   
 ///   @param descriptor - the camera descriptor                               
 VulkanCamera::VulkanCamera(VulkanLayer* producer, const Any& descriptor)
-   : GraphicsUnit {MetaOf<VulkanCamera>(), descriptor} 
+   : Graphics {MetaOf<VulkanCamera>(), descriptor} 
    , ProducedFrom {producer, descriptor} {
    TODO();
 }

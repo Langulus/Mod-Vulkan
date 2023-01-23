@@ -20,9 +20,9 @@
 /// Binds with a window and renders to it. Manages framebuffers, VRAM         
 /// contents, and layers                                                      
 ///                                                                           
-struct VulkanRenderer : A::GraphicsUnit, ProducedFrom<Vulkan> {
+struct VulkanRenderer : A::Graphics, ProducedFrom<Vulkan> {
    LANGULUS(ABSTRACT) false;
-   LANGULUS_BASES(A::GraphicsUnit);
+   LANGULUS_BASES(A::Graphics);
    LANGULUS_VERBS(Verbs::Create);
 
 protected:

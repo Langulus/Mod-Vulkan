@@ -12,9 +12,9 @@
 ///                                                                           
 ///   Camera unit                                                             
 ///                                                                           
-struct VulkanCamera final : A::GraphicsUnit, ProducedFrom<VulkanLayer> {
+struct VulkanCamera final : A::Graphics, ProducedFrom<VulkanLayer> {
    LANGULUS(ABSTRACT) false;
-   LANGULUS_BASES(A::GraphicsUnit);
+   LANGULUS_BASES(A::Graphics);
 
 protected:
    friend struct VulkanLayer;

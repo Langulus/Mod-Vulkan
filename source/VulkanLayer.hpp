@@ -30,7 +30,7 @@ struct RenderConfig {
    // Depth sweep                                                       
    VkClearAttachment mDepthSweep {};
    // Pass begin info                                                   
-   VkRenderPassBeginInfo mPassBeginInfo {};
+   mutable VkRenderPassBeginInfo mPassBeginInfo {};
 };
 
 using LevelSet = TOrderedSet<Level>;
@@ -44,9 +44,9 @@ using PipelineSet = TUnorderedSet<VulkanPipeline*>;
 /// A logical group of cameras, renderables, and lights, isolated from other  
 /// layers. Useful for capsulating a GUI, for example.                        
 ///                                                                           
-struct VulkanLayer : A::GraphicsUnit, ProducedFrom<VulkanRenderer> {
+struct VulkanLayer : A::Graphics, ProducedFrom<VulkanRenderer> {
    LANGULUS(ABSTRACT) false;
-   LANGULUS_BASES(A::GraphicsUnit);
+   LANGULUS_BASES(A::Graphics);
    LANGULUS_VERBS(Verbs::Create);
 
 protected:

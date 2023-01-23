@@ -80,7 +80,7 @@ GLSL& GLSL::Define(const Text& definition) {
    if (Text::Find(defined))
       return *this;
 
-   Select(ShaderToken::Defines) >> defined >> "\n";
+   Edit(this).Select(ShaderToken::Defines) >> defined >> "\n";
    return *this;
 }
 
@@ -91,6 +91,6 @@ GLSL& GLSL::SetVersion(const Text& version) {
    if (Text::Find("#version"))
       return *this;
 
-   Select(ShaderToken::Version) >> "#version " >> version >> "\n";
+   Edit(this).Select(ShaderToken::Version) >> "#version " >> version >> "\n";
    return *this;
 }

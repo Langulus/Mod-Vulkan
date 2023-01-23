@@ -156,7 +156,7 @@ inline GLSL GLSL::Type(DMeta meta) {
             return "bool";    // Scalar                                 
          prefix = 'b';
       }
-      else LANGULUS_THROW(GLSL, "Unsupported type");
+      else LANGULUS_THROW(GLSL, "Unsupported GLSL type");
 
       // If this is reached, then we have a vector/matrix/quaternion    
       Text token {prefix};
@@ -195,7 +195,7 @@ inline GLSL GLSL::Type(DMeta meta) {
          token += "vec";
          token += Text {base.mCount};
       }
-      else LANGULUS_THROW(GLSL, "Unsupported type");
+      else LANGULUS_THROW(GLSL, "Unsupported GLSL type");
 
       return token;
    }
@@ -215,7 +215,7 @@ inline GLSL GLSL::Type(DMeta meta) {
       //gsampler2DMSArray   GL_TEXTURE_2D_MULTISAMPLE_ARRAY   Multisample Array Texture
    }
 
-   LANGULUS_THROW(GLSL, "Unsupported type");
+   LANGULUS_THROW(GLSL, "Unsupported GLSL type");
 }
 
 /// Concatenate GLSL with GLSL                                                
@@ -255,17 +255,17 @@ GLSL operator + (const GLSL& lhs, const Text& rhs) {
 /// Attempts to serialize right operand to GLSL, or GASM as an alternative    
 ///   @param rhs - right operand                                              
 ///   @return a reference to lhs                                              
-template<class ANYTHING>
+template<class T>
 LANGULUS(ALWAYSINLINE)
-GLSL& GLSL::operator += (const ANYTHING& rhs) {
-   if constexpr (CT::Text<ANYTHING>) {
+GLSL& GLSL::operator += (const T& rhs) {
+   if constexpr (CT::Text<T>) {
       Text::operator += (rhs);
    }
-   else if constexpr (CT::Convertible<ANYTHING, GLSL>) {
+   else if constexpr (CT::Convertible<T, GLSL>) {
       // First attempt conversion to GLSL                               
       operator += (GLSL {rhs});
    }
-   else if constexpr (CT::Convertible<ANYTHING, Code>) {
+   else if constexpr (CT::Convertible<T, Code>) {
       // Otherwise rely on GASM converters                              
       operator += (Code {rhs});
    }

@@ -16,9 +16,9 @@
 /// graphical resources from the context, and generates a graphical pipeline  
 /// capable of visualizing it on Refresh()                                    
 ///                                                                           
-struct VulkanRenderable final : A::GraphicsUnit, ProducedFrom<VulkanLayer> {
+struct VulkanRenderable final : A::Graphics, ProducedFrom<VulkanLayer> {
    LANGULUS(ABSTRACT) false;
-   LANGULUS_BASES(A::GraphicsUnit);
+   LANGULUS_BASES(A::Graphics);
 
 protected:
    friend struct VulkanLayer;

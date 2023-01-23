@@ -15,9 +15,9 @@
 /// Manages and produces renderers. By default, the module itself can convey  
 /// GPU computations, if your hardware has the required capabilities          
 ///                                                                           
-struct Vulkan final : A::Graphics {
+struct Vulkan final : A::GraphicsModule {
    LANGULUS(ABSTRACT) false;
-   LANGULUS_BASES(A::Graphics);
+   LANGULUS_BASES(A::GraphicsModule);
    LANGULUS_VERBS(Verbs::Create);
 
 protected:

@@ -15,7 +15,7 @@
 ///   @param producer - the pipeline producer                                 
 ///   @param descriptor - the pipeline descriptor                             
 VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, const Any& descriptor)
-   : GraphicsUnit {MetaOf<VulkanPipeline>(), descriptor}
+   : Graphics {MetaOf<VulkanPipeline>(), descriptor}
    , ProducedFrom {producer, descriptor} {
 
    VERBOSE_PIPELINE("Initializing graphics pipeline from ", descriptor);
@@ -23,27 +23,27 @@ VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, const Any& descriptor)
    mGeometries.New();
 
    descriptor.ForEachDeep(
-      [this](AFile& file) {
-         // Create from shader file interface                           
-         auto glslCode = file.ReadAs<GLSL>();
-         return glslCode.IsEmpty() || !PrepareFromCode(glslCode);
+      [this](A::File& file) {
+         // Create from file                                            
+         PrepareFromFile(file);
       },
       [this](const Path& path) {
-         // Create from shader file path                                
-         auto file = GetProducer()->GetRuntime()->GetFile(path);
-         if (file) {
-            auto glslCode = file->ReadAs<GLSL>();
-            return glslCode.IsEmpty() || !PrepareFromCode(glslCode);
-         }
-         return true;
+         // Create from file path                                       
+         const auto file = GetRuntime()->GetFile(path);
+         if (file)
+            PrepareFromFile(*file);
       },
-      [this](const A::Material* material) {
+      [this](const A::Material& material) {
          // Create from predefined material generator                   
-         return !PrepareFromMaterial(material);
+         PrepareFromMaterial(material);
+      },
+      [this](const A::Geometry& geometry) {
+         // Create from predefined material generator                   
+         PrepareFromGeometry(geometry);
       },
       [this](const Construct& construct) {
          // Create from any construct                                   
-         return !PrepareFromConstruct(construct);
+         PrepareFromConstruct(construct);
       }
    );
 
@@ -59,19 +59,107 @@ VulkanPipeline::~VulkanPipeline() {
    Uninitialize();
 }
 
-/// Get hash                                                                  
-///   @return the hash of the pipeline                                        
-const Hash& VulkanPipeline::GetHash() const noexcept {
-   return mHash;
+/// Create a pipeline from a file                                             
+///   @param file - the file interface                                        
+void VulkanPipeline::PrepareFromFile(const A::File& file) {
+   try {
+      // Check if file is a GLSL code file, and attempt using it        
+      PrepareFromCode(file.ReadAs<GLSL>());
+   }
+   catch (...) {
+      throw;
+   }
+
+   //TODO handle other kinds of files
 }
 
-/// Compare pipelines for equality                                            
-///   @param rhs - the pipeline to compare with                               
-///   @return true if pipelines are functioanlly the same                     
-bool VulkanPipeline::operator == (const VulkanPipeline& rhs) const noexcept {
-   return GetHash() == rhs.GetHash() && mStages == rhs.mStages;
-}
+/// Create a pipeline from geometry content generator                         
+///   @param geometry - the geometry content interface                        
+void VulkanPipeline::PrepareFromGeometry(const A::Geometry& geometry) {
+   // We use the geometry's properties to define a material             
+   // generator descriptor, which we use to initialize this pipeline    
+   Any material;
+   mPrimitive = AsVkPrimitive(geometry.GetTopology());
+         
+   // Scan the input attributes (inside geometry data)                  
+   for (auto data : geometry.GetData()) {
+      const auto trait = data.mKey;
+      const auto type = data.mValue.GetType();
 
+      if (trait->template Is<Traits::Index>()) {
+         // Skip indices, they are irrelevant for the material          
+         continue;
+      }
+
+      Code code;
+      if (trait->template Is<Traits::Place>()) {
+         // Create a vertex position input and project it               
+         code +=
+            "Create^PerVertex(Input(Place("_code + type + ")))"
+            ".Multiply^PerVertex(ModelTransform * ViewTransform * ProjectTransform)";
+      }
+      else if (trait->template Is<Traits::Aim>()) {
+         // Create a normal/tangent/bitangent vertex input and project  
+         code +=
+            "Create^PerVertex(Input(Aim("_code + type + ")))"
+            ".Multiply^PerVertex(ModelTransform)";
+      }
+      else if (trait->template Is<Traits::Sampler>()) {
+         // Create a texture coordinate input                           
+         code +=
+            "Create^PerVertex(Input(Sampler("_code + type + ")))";
+      }
+      else if (trait->template Is<Traits::ModelTransform>()) {
+         // Create hardware instancing inside geometry shader, by       
+         // streaming the model transformation                          
+         code +=
+            "Create^PerPrimitive(Input(ModelTransform("_code + type + ")))";
+      }
+      else if (trait->template Is<Traits::ViewTransform>()) {
+         // Create hardware instancing inside geometry shader, by       
+         // streaming the view transformation                           
+         code +=
+            "Create^PerPrimitive(Input(ViewTransform("_code + type + ")))";
+      }
+      else if (trait->template Is<Traits::ProjectTransform>()) {
+         // Create hardware instancing inside geometry shader, by       
+         // streaming the projection transformation                     
+         code +=
+            "Create^PerPrimitive(Input(ProjectTransform("_code + type + ")))";
+      }
+      else {
+         // Just forward custom inputs, starting from the vertex stage  
+         code +=
+            "Create^PerVertex(Input("_code + trait + '(' + data + ")))";
+      }
+
+      VERBOSE_PIPELINE("Incorporating: ", code);
+      material << Abandon(code);
+   }
+
+   // Geometry can contain 'baked-in' textures in its descriptor        
+   // Make sure we utilize them all in the fragment shader              
+   Offset textureId {};
+   for (auto texture : geometry.GetDescriptor().mTraits[MetaOf<Traits::Texture>()]) {
+      // Add a texture input to the fragment shader                     
+      Code code = "Texturize^PerPixel("_code + textureId + ')';
+      VERBOSE_PIPELINE("Incorporating: ", code);
+      material << Abandon(code);
+      ++textureId;
+   }
+
+   // Geometry can contain 'baked-in' solid color in its descriptor     
+   // Make sure we utilize it in the fragment shader                    
+   for (auto color : geometry.GetDescriptor().mTraits[MetaOf<Traits::Color>()]) {
+      Code code = "Texturize^PerPixel("_code + color.AsCast<RGBA>() + ')';
+      VERBOSE_PIPELINE("Incorporating: ", code);
+      material << Abandon(code);
+   }
+
+   // Rasterize the geometry, using standard rasterizer                 
+   // i.e. the built-in rasterizer GPUs are notoriously good with       
+   material << "Rasterize^PerPrimitive()"_code;
+}
 
 /// Initialize the pipeline from the accumulated construct                    
 void VulkanPipeline::Initialize() {
@@ -254,80 +342,7 @@ bool VulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
    Offset textureId {};
    stuff.ForEachDeep([&](const Block& group) {
       group.ForEach([&](const A::Geometry& geometry) {
-         // Create from geometry                                        
-         // Make sure the geometry is generated, so that we have the    
-         // input bindings                                              
-         geometry.Generate();
-
-         mPrimitive = AsVkPrimitive(geometry.GetTopology());
-         
-         // Scan the input attributes (inside geometry data)            
-         for (auto& trait : geometry.GetDataList()) {
-            if (trait.template TraitIs<Traits::Index>())
-               // Skip indices                                          
-               continue;
-
-            if (trait.template TraitIs<Traits::Place>()) {
-               // Create a position input and project it in vertex      
-               // shader                                                
-               Code code =
-                  "Create^PerVertex(Input(Place("_code + trait.GetType() + ")))"
-                  ".Project^PerVertex(ViewProjectTransform, ModelTransform)";
-               VERBOSE_PIPELINE("Incorporating: ", code);
-               material << Abandon(code);
-            }
-            else if (trait.template TraitIs<Traits::Aim>()) {
-               // Create a normal/tangent/bitangent input and           
-               // project it in vertex   shader                         
-               Code code =
-                  "Create^PerVertex(Input(Aim("_code + trait.GetType() + ")))"
-                  ".Project^PerVertex(ModelTransform)";
-               VERBOSE_PIPELINE("Incorporating: ", code);
-               material << Abandon(code);
-            }
-            else if (trait.template TraitIs<Traits::Sampler>()) {
-               // Create a texture coord input and project it in        
-               // vertex shader if required                             
-               Code code = "Create^PerVertex(Input("_code + trait.GetTraitID() + '(' + trait.GetToken() + ")))";
-               if (geometry.GetTextureMapper() == MapMode::World)
-                  code += ".Project^PerVertex(ModelTransform)";
-               else if (geometry.GetTextureMapper() == MapMode::Screen)
-                  code += ".Project^PerVertex(ModelTransform)";
-               VERBOSE_PIPELINE("Incorporating: ", code);
-               material << Abandon(code);
-            }
-            else if (trait.template TraitIs<Traits::Transformation>()) {
-               // Create hardware instancing inside geometry shader     
-               TODO();
-            }
-            else {
-               // Just declare input and forward it                     
-               Code code = "Create^PerVertex(Input("_code + trait.GetTraitID() + '(' + trait.GetToken() + ")))";
-               VERBOSE_PIPELINE("Incorporating: ", code);
-               material << Abandon(code);
-            }
-         }
-
-         // Geometry can contain textures (inside geometry descriptor)  
-         geometry.GetConstruct().ForEachDeep([&](const Trait& t) {
-            if (t.template TraitIs<Traits::Texture>()) {
-               // Add a texture uniform                                 
-               //TODO check texture format
-               Code code = "Texturize^PerPixel("_code + textureId + ')';
-               VERBOSE_PIPELINE("Incorporating: ", code);
-               material << Abandon(code);
-               ++textureId;
-            }
-            else if (t.template TraitIs<Traits::Color>()) {
-               // Add constant colorization                             
-               Code code = "Texturize^PerPixel("_code + t.AsCast<RGBA>() + ')';
-               VERBOSE_PIPELINE("Incorporating: ", code);
-               material << Abandon(code);
-            }
-         });
-
-         // Rasterize the geometry, using the standard rasterizer       
-         material << "Rasterize^PerVertex()"_code;
+         PrepareFromGeometry(geometry);
 
          // Only one geometry definition allowed                        
          return false;
@@ -394,7 +409,7 @@ bool VulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
    }
 
    // Now create generator and pipeline from it                         
-   auto generator = mProducer->GetOwners()[0]->CreateUnit<AMaterial>(Move(material));
+   auto generator = mProducer->GetOwners()[0]->CreateUnit<A::Material>(Move(material));
    return PrepareFromMaterial(generator);
 }
 
@@ -406,21 +421,21 @@ bool VulkanPipeline::PrepareFromCode(const GLSL& code) {
    VERBOSE_PIPELINE("Generating material from code snippet: ");
    VERBOSE_PIPELINE(code.Pretty());
    auto owner = mProducer->GetOwners()[0];
-   auto generator = owner->CreateUnit<AMaterial>(code);
+   auto generator = owner->CreateUnit<A::Material>(code);
    return PrepareFromMaterial(generator);
 }
 
 /// Initialize the pipeline from material content                             
 ///   @param material - the content to use                                    
 ///   @return true on success                                                 
-bool VulkanPipeline::PrepareFromMaterial(const Unit* material) {
+bool VulkanPipeline::PrepareFromMaterial(const A::Material& material) {
    // Generate the shader stages via the material content               
    // No way around this, unfortunately (it's cached, though)           
-   material->Generate();
+   material.Generate();
 
    // Iterate all stages and create vulkan shaders for them             
    for (Count i = 0; i < ShaderStage::Counter; ++i) {
-      if (material->GetDataAs<Traits::Code, GLSL>(i).IsEmpty())
+      if (material.GetDataAs<Traits::Code, GLSL>(i).IsEmpty())
          continue;
 
       // Add the stage                                                  
@@ -499,7 +514,7 @@ void VulkanPipeline::CreateDescriptorLayoutAndSet(
    // Combine all bindings in a single layout                           
    VkDescriptorSetLayoutCreateInfo layoutInfo {};
    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-   layoutInfo.bindingCount = uint32_t(bindings.GetCount());
+   layoutInfo.bindingCount = static_cast<uint32_t>(bindings.GetCount());
    layoutInfo.pBindings = bindings.GetRaw();
 
    if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, layout))
@@ -680,8 +695,7 @@ void VulkanPipeline::CreateUniformBuffers() {
    {
       // Add relevant inputs                                            
       SamplerUBO ubo;
-      const auto index = Rate(Rate::Renderable).GetInputIndex();
-      auto& inputs = uniforms->As<TAny<Trait>>(index);
+      auto& inputs = uniforms->As<TAny<Trait>>(PerRenderable.GetInputIndex());
       for (auto& trait : inputs) {
          if (!trait.template TraitIs<Traits::Texture>())
             continue;
@@ -761,6 +775,7 @@ void VulkanPipeline::UpdateUniformBuffers() const {
 
 /// Draw all subscribers of a given level (used in batched rendering)         
 ///   @param offset - the subscriber to start from                            
+///   @return the number of rendered subscribers                              
 Count VulkanPipeline::RenderLevel(const Offset& offset) const {
    // Bind the pipeline                                                 
    vkCmdBindPipeline(mProducer->GetRenderCB(), 
@@ -775,7 +790,7 @@ Count VulkanPipeline::RenderLevel(const Offset& offset) const {
 
    // Get the initial state to check for interrupts                     
    const auto& initial = mSubscribers[offset];
-   const auto r = GetRelevantDynamicUBOIndexOfRate<Rate::Level>();
+   const auto r = GetRelevantDynamicUBOIndexOfRate<PerLevel>();
 
    // And for each subscriber...                                        
    Offset i = offset;

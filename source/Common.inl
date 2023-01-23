@@ -549,3 +549,26 @@ RGBAf AnyColorToVector(const Any& color) {
 
    return result;
 }
+
+/// Updated once per time step                                                
+constexpr Rate PerTick = Rate::Tick;
+/// Updated once per a render pass                                            
+constexpr Rate PerPass = Rate::Pass;
+/// Updated for each camera                                                   
+constexpr Rate PerCamera = Rate::Camera;
+/// Updated for each level                                                    
+constexpr Rate PerLevel = Rate::Level;
+/// Updated for each renderable                                               
+constexpr Rate PerRenderable = Rate::Renderable;
+/// Updated for each instance                                                 
+constexpr Rate PerInstance = Rate::Instance;
+/// Updated in vertex shader                                                  
+constexpr Rate PerVertex = Rate::Vertex;
+/// Updated in geometry shader                                                
+constexpr Rate PerPrimitive = Rate::Primitive;
+/// Updated in tesselation control shader                                     
+constexpr Rate PerTessCtrl = Rate::TessCtrl;
+/// Updated in tesselation evaluation shader                                  
+constexpr Rate PerTessEval = Rate::TessEval;
+/// Updated in pixel shader                                                   
+constexpr Rate PerPixel = Rate::Pixel;

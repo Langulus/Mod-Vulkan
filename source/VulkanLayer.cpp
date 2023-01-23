@@ -13,7 +13,7 @@
 ///   @param producer - the camera producer                                   
 ///   @param descriptor - the camera descriptor                               
 VulkanLayer::VulkanLayer(VulkanRenderer* producer, const Any& descriptor)
-   : GraphicsUnit {MetaOf<VulkanLayer>(), descriptor} 
+   : Graphics {MetaOf<VulkanLayer>(), descriptor} 
    , ProducedFrom {producer, descriptor}
    , mCameras {this}
    , mRenderables {this}
@@ -29,7 +29,7 @@ void VulkanLayer::Create(Verb& verb) {
 
 /// Generate the draw list for the layer                                      
 ///   @param pipelines - [out] a set of all used pipelines                    
-///   @return true if something needs to be rendered                          
+///   @return true if anything renderable was generated                       
 bool VulkanLayer::Generate(PipelineSet& pipelines) {
    CompileCameras();
    auto n = CompileLevels();
@@ -73,15 +73,15 @@ VulkanPipeline* VulkanLayer::CompileInstance(
    // Get relevant geometry                                             
    const auto geometry = renderable->GetGeometry(lod);
    if (geometry)
-      pipeline->SetUniform<Rate::Renderable, Traits::Geometry>(geometry);
+      pipeline->SetUniform<PerRenderable, Traits::Geometry>(geometry);
 
    // Get relevant textures                                             
    const auto textures = renderable->GetTextures(lod);
    if (textures)
-      pipeline->SetUniform<Rate::Renderable, Traits::Texture>(textures);
+      pipeline->SetUniform<PerRenderable, Traits::Texture>(textures);
 
    // Push uniforms                                                     
-   pipeline->SetUniform<Rate::Instance, Traits::Transformation>(lod.mModel);
+   pipeline->SetUniform<PerInstance, Traits::Transformation>(lod.mModel);
    return pipeline;
 }
 
@@ -103,8 +103,8 @@ Count VulkanLayer::CompileThing(const Thing* thing, LodState& lod, PipelineSet& 
          // Imagine a default instance                                  
          auto pipeline = CompileInstance(renderable, nullptr, lod);
          if (pipeline) {
-            const auto sub = pipeline->PushUniforms<Rate::Instance, false>();
-            pipeline->PushUniforms<Rate::Renderable, false>();
+            const auto sub = pipeline->PushUniforms<PerInstance, false>();
+            pipeline->PushUniforms<PerRenderable, false>();
             pipesPerCamera << pipeline;
             mRelevantPipelines << pipeline;
 
@@ -122,8 +122,8 @@ Count VulkanLayer::CompileThing(const Thing* thing, LodState& lod, PipelineSet& 
          // Compile each available instance                             
          auto pipeline = CompileInstance(renderable, instance, lod);
          if (pipeline) {
-            const auto sub = pipeline->PushUniforms<Rate::Instance, false>();
-            pipeline->PushUniforms<Rate::Renderable, false>();
+            const auto sub = pipeline->PushUniforms<PerInstance, false>();
+            pipeline->PushUniforms<PerRenderable, false>();
             pipesPerCamera << pipeline;
             mRelevantPipelines << pipeline;
 
@@ -174,12 +174,12 @@ Count VulkanLayer::CompileLevelHierarchical(
          const auto projectedView = lod.mViewInverted * projection;
          const auto projectedViewInverted = projectedView.Invert();
 
-         pipeline->SetUniform<Rate::Level, Traits::ViewTransform>(lod.mView);
-         pipeline->SetUniform<Rate::Level, Traits::ViewTransformInverted>(lod.mViewInverted);
-         pipeline->SetUniform<Rate::Level, Traits::ViewProjectTransform>(projectedView);
-         pipeline->SetUniform<Rate::Level, Traits::ViewProjectTransformInverted>(projectedViewInverted);
-         pipeline->SetUniform<Rate::Level, Traits::Level>(level);
-         pipeline->PushUniforms<Rate::Level, false>();
+         pipeline->SetUniform<PerLevel, Traits::ViewTransform>(lod.mView);
+         pipeline->SetUniform<PerLevel, Traits::ViewTransformInverted>(lod.mViewInverted);
+         pipeline->SetUniform<PerLevel, Traits::ViewProjectTransform>(projectedView);
+         pipeline->SetUniform<PerLevel, Traits::ViewProjectTransformInverted>(projectedViewInverted);
+         pipeline->SetUniform<PerLevel, Traits::Level>(level);
+         pipeline->PushUniforms<PerLevel, false>();
       }
 
       mSubscriberCountPerLevel.New(1);
@@ -215,8 +215,8 @@ Count VulkanLayer::CompileLevelBatched(
       if (renderable.mInstances.IsEmpty()) {
          auto pipeline = CompileInstance(&renderable, nullptr, lod);
          if (pipeline) {
-            pipeline->PushUniforms<Rate::Instance>();
-            pipeline->PushUniforms<Rate::Renderable>();
+            pipeline->PushUniforms<PerInstance>();
+            pipeline->PushUniforms<PerRenderable>();
             pipesPerCamera << pipeline;
             mRelevantPipelines << pipeline;
             ++renderedInstances;
@@ -225,8 +225,8 @@ Count VulkanLayer::CompileLevelBatched(
       else for (auto instance : renderable.mInstances) {
          auto pipeline = CompileInstance(&renderable, instance, lod);
          if (pipeline) {
-            pipeline->PushUniforms<Rate::Instance>();
-            pipeline->PushUniforms<Rate::Renderable>();
+            pipeline->PushUniforms<PerInstance>();
+            pipeline->PushUniforms<PerRenderable>();
             pipesPerCamera << pipeline;
             mRelevantPipelines << pipeline;
             ++renderedInstances;
@@ -240,12 +240,12 @@ Count VulkanLayer::CompileLevelBatched(
          const auto projectedView = lod.mViewInverted * projection;
          const auto projectedViewInverted = projectedView.Invert();
 
-         pipeline->SetUniform<Rate::Level, Traits::ViewTransform>(lod.mView);
-         pipeline->SetUniform<Rate::Level, Traits::ViewTransformInverted>(lod.mViewInverted);
-         pipeline->SetUniform<Rate::Level, Traits::ViewProjectTransform>(projectedView);
-         pipeline->SetUniform<Rate::Level, Traits::ViewProjectTransformInverted>(projectedViewInverted);
-         pipeline->SetUniform<Rate::Level, Traits::Level>(level);
-         pipeline->PushUniforms<Rate::Level>();
+         pipeline->SetUniform<PerLevel, Traits::ViewTransform>(lod.mView);
+         pipeline->SetUniform<PerLevel, Traits::ViewTransformInverted>(lod.mViewInverted);
+         pipeline->SetUniform<PerLevel, Traits::ViewProjectTransform>(projectedView);
+         pipeline->SetUniform<PerLevel, Traits::ViewProjectTransformInverted>(projectedViewInverted);
+         pipeline->SetUniform<PerLevel, Traits::Level>(level);
+         pipeline->PushUniforms<PerLevel>();
 
          // Store the negative level in the set, so they're always in   
          // a descending order                                          
@@ -285,14 +285,14 @@ Count VulkanLayer::CompileLevels() {
       if (!pipesPerCamera.IsEmpty()) {
          for (auto pipeline : pipesPerCamera) {
             // Push PerCamera uniforms if required                      
-            pipeline->SetUniform<Rate::Camera, Traits::ProjectTransform>(Matrix4 {});
-            pipeline->SetUniform<Rate::Camera, Traits::ProjectTransformInverted>(Matrix4 {});
-            pipeline->SetUniform<Rate::Camera, Traits::FOV>(Radians {});
-            pipeline->SetUniform<Rate::Camera, Traits::Resolution>(GetWindow()->GetSize());
+            pipeline->SetUniform<PerCamera, Traits::ProjectTransform>(Matrix4 {});
+            pipeline->SetUniform<PerCamera, Traits::ProjectTransformInverted>(Matrix4 {});
+            pipeline->SetUniform<PerCamera, Traits::FOV>(Radians {});
+            pipeline->SetUniform<PerCamera, Traits::Resolution>(GetWindow()->GetSize());
             if (mStyle & Style::Hierarchical)
-               pipeline->PushUniforms<Rate::Camera, false>();
+               pipeline->PushUniforms<PerCamera, false>();
             else
-               pipeline->PushUniforms<Rate::Camera>();
+               pipeline->PushUniforms<PerCamera>();
          }
 
          if (mStyle & Style::Hierarchical)
@@ -326,14 +326,14 @@ Count VulkanLayer::CompileLevels() {
       if (!pipesPerCamera.IsEmpty()) {
          for (auto pipeline : pipesPerCamera) {
             // Push PerCamera uniforms if required                      
-            pipeline->SetUniform<Rate::Camera, Traits::ProjectTransform>(camera.mProjection);
-            pipeline->SetUniform<Rate::Camera, Traits::ProjectTransformInverted>(camera.mProjectionInverted);
-            pipeline->SetUniform<Rate::Camera, Traits::FOV>(camera.mFOV);
-            pipeline->SetUniform<Rate::Camera, Traits::Resolution>(camera.mResolution);
+            pipeline->SetUniform<PerCamera, Traits::ProjectTransform>(camera.mProjection);
+            pipeline->SetUniform<PerCamera, Traits::ProjectTransformInverted>(camera.mProjectionInverted);
+            pipeline->SetUniform<PerCamera, Traits::FOV>(camera.mFOV);
+            pipeline->SetUniform<PerCamera, Traits::Resolution>(camera.mResolution);
             if (mStyle & Style::Hierarchical)
-               pipeline->PushUniforms<Rate::Camera, false>();
+               pipeline->PushUniforms<PerCamera, false>();
             else
-               pipeline->PushUniforms<Rate::Camera>();
+               pipeline->PushUniforms<PerCamera>();
          }
 
          if (mStyle & Style::Hierarchical)
@@ -369,10 +369,10 @@ void VulkanLayer::RenderBatched(const RenderConfig& config) const {
       viewport.height = GetProducer()->GetResolution()[1];
 
       VkRect2D scissor {};
-      scissor.extent.width = uint32_t(viewport.width);
-      scissor.extent.height = uint32_t(viewport.height);
+      scissor.extent.width = static_cast<uint32_t>(viewport.width);
+      scissor.extent.height = static_cast<uint32_t>(viewport.height);
 
-      vkCmdBeginRenderPass(config.mCommands, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+      vkCmdBeginRenderPass(config.mCommands, &config.mPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
       vkCmdSetViewport(config.mCommands, 0, 1, &viewport);
       vkCmdSetScissor(config.mCommands, 0, 1, &scissor);
 
@@ -385,7 +385,7 @@ void VulkanLayer::RenderBatched(const RenderConfig& config) const {
          if (level != mRelevantLevels.Last()) {
             // Clear depth after rendering this level (if not last)     
             const VkClearRect rect {scissor, 0, 1};
-            vkCmdClearAttachments(config.mCommands, 1, &depthsweep, 1, &rect);
+            vkCmdClearAttachments(config.mCommands, 1, &config.mDepthSweep, 1, &rect);
          }
       }
 
@@ -393,10 +393,10 @@ void VulkanLayer::RenderBatched(const RenderConfig& config) const {
       vkCmdEndRenderPass(config.mCommands);
    }
    else for (const auto camera : mRelevantCameras) {
-      renderPassInfo.renderArea.extent.width = camera->mResolution[0];
-      renderPassInfo.renderArea.extent.height = camera->mResolution[1];
+      config.mPassBeginInfo.renderArea.extent.width = camera->mResolution[0];
+      config.mPassBeginInfo.renderArea.extent.height = camera->mResolution[1];
 
-      vkCmdBeginRenderPass(config.mCommands, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+      vkCmdBeginRenderPass(config.mCommands, &config.mPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
       vkCmdSetViewport(config.mCommands, 0, 1, &camera->mVulkanViewport);
       vkCmdSetScissor(config.mCommands, 0, 1, &camera->mVulkanScissor);
 
@@ -409,7 +409,7 @@ void VulkanLayer::RenderBatched(const RenderConfig& config) const {
          if (level != mRelevantLevels.Last()) {
             // Clear depth after rendering this level (if not last)     
             const VkClearRect rect {camera->mVulkanScissor, 0, 1};
-            vkCmdClearAttachments(config.mCommands, 1, &depthsweep, 1, &rect);
+            vkCmdClearAttachments(config.mCommands, 1, &config.mDepthSweep, 1, &rect);
          }
       }
 
@@ -436,7 +436,7 @@ void VulkanLayer::RenderHierarchical(const RenderConfig& config) const {
       scissor.extent.width = static_cast<uint32_t>(viewport.width);
       scissor.extent.height = static_cast<uint32_t>(viewport.height);
 
-      vkCmdBeginRenderPass(config.mCommands, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+      vkCmdBeginRenderPass(config.mCommands, &config.mPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
       vkCmdSetViewport(config.mCommands, 0, 1, &viewport);
       vkCmdSetScissor(config.mCommands, 0, 1, &scissor);
 
@@ -451,7 +451,7 @@ void VulkanLayer::RenderHierarchical(const RenderConfig& config) const {
          if (level != mRelevantLevels.Last()) {
             // Clear depth after rendering this level (if not last)     
             const VkClearRect rect {scissor, 0, 1};
-            vkCmdClearAttachments(config.mCommands, 1, &depthsweep, 1, &rect);
+            vkCmdClearAttachments(config.mCommands, 1, &config.mDepthSweep, 1, &rect);
          }
 
          subscribersDone += *subscriberCountPerLevel;
@@ -462,10 +462,10 @@ void VulkanLayer::RenderHierarchical(const RenderConfig& config) const {
       vkCmdEndRenderPass(config.mCommands);
    }
    else for (const auto camera : mRelevantCameras) {
-      renderPassInfo.renderArea.extent.width = camera->mResolution[0];
-      renderPassInfo.renderArea.extent.height = camera->mResolution[1];
+      config.mPassBeginInfo.renderArea.extent.width = camera->mResolution[0];
+      config.mPassBeginInfo.renderArea.extent.height = camera->mResolution[1];
 
-      vkCmdBeginRenderPass(config.mCommands, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+      vkCmdBeginRenderPass(config.mCommands, &config.mPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
       vkCmdSetViewport(config.mCommands, 0, 1, &camera->mVulkanViewport);
       vkCmdSetScissor(config.mCommands, 0, 1, &camera->mVulkanScissor);
 
@@ -481,7 +481,7 @@ void VulkanLayer::RenderHierarchical(const RenderConfig& config) const {
          if (level != mRelevantLevels.Last()) {
             // Clear depth after rendering this level (if not last)     
             const VkClearRect rect {camera->mVulkanScissor, 0, 1};
-            vkCmdClearAttachments(config.mCommands, 1, &depthsweep, 1, &rect);
+            vkCmdClearAttachments(config.mCommands, 1, &config.mDepthSweep, 1, &rect);
          }
 
          subscribersDone += *subscriberCountPerLevel;

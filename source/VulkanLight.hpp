@@ -12,10 +12,9 @@
 ///                                                                           
 ///   Light source unit                                                       
 ///                                                                           
-struct VulkanLight : A::GraphicsUnit, ProducedFrom<VulkanLayer> {
+struct VulkanLight : A::Graphics, ProducedFrom<VulkanLayer> {
    LANGULUS(ABSTRACT) false;
-   LANGULUS_BASES(A::GraphicsUnit);
+   LANGULUS_BASES(A::Graphics);
 
-public:
    VulkanLight(VulkanLayer*, const Any&);
 };
