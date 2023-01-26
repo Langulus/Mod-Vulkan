@@ -37,7 +37,7 @@ void VulkanGeometry::Create(Verb& verb) {
 ///   @param container - container to scan                                    
 ///   @param indexData - [out] whether or not index data is available         
 ///   @return true if container has vectors                                   
-inline bool IsVertexData(const Trait& container, bool& indexData) {
+inline bool IsVertexData(const Block& container, bool& indexData) {
    if (  container.CastsTo<A::Topology>() || container.CastsTo<A::Normal>()
       || container.CastsTo<A::Sampler>()  || container.CastsTo<A::Color>()) {
       indexData = false;
@@ -59,20 +59,17 @@ void VulkanGeometry::Initialize() {
 
    // Generate content if not generated yet                             
    const auto startTime = SteadyClock::now();
-   const auto content = mOriginalContent.As<A::Geometry>();
-   if (!content)
+   const auto geometry = mOriginalContent.As<A::Geometry>();
+   if (!geometry)
       LANGULUS_THROW(Graphics, "Bad content");
-
-   // Generate content if not generated yet                             
-   content->Generate();
 
    // Create a buffer for each provided type, as long as that type can  
    // be reduced to vertices                                            
    auto& vram = mProducer->mVRAM;
-   for (pcptr i = 0; i < content->GetDataList().GetCount(); ++i) {
-      const auto& group = content->GetDataList().Get<Trait>(i);
-      bool is_index_data = false;
-      if (!IsVertexData(group, is_index_data)) {
+   for (auto data : geometry->GetData()) {
+      const auto& group = data.mValue;
+      bool isIndexData = false;
+      if (!IsVertexData(group, isIndexData)) {
          Logger::Warning(Self(),
             "Raw content of type ", group.GetToken(),
             " is not considered vertex data and will not be cloned to VRAM"
@@ -84,14 +81,14 @@ void VulkanGeometry::Initialize() {
       VERBOSE_VKGEOMETRY("Uploading " << group.GetCount()
          << " of " << group.GetToken() << " to VRAM...");
 
-      auto final = vram.Upload(group, is_index_data 
+      auto final = vram.Upload(group, isIndexData 
          ? VK_BUFFER_USAGE_INDEX_BUFFER_BIT 
          : VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
       );
 
       // If everything is in order, we save the buffers                 
       if (final.IsValid()) {
-         if (is_index_data) {
+         if (isIndexData) {
             mIBuffers.push_back(final);
             mIOffsets.push_back(0);
          }
@@ -112,8 +109,8 @@ void VulkanGeometry::Initialize() {
 
    // Make sure mView.mPCount means vertex count, and not               
    // primitive count. Decay in order to do that.                       
-   mTopology = content->GetView().mPrimitive;
-   mView = content->GetView().Decay();
+   mTopology = geometry->GetView().mPrimitive;
+   mView = geometry->GetView().Decay();
    VERBOSE_VKGEOMETRY(Logger::Green, "Data uploaded in VRAM for ",
       SteadyClock::now() - startTime);
    mContentMirrored = true;

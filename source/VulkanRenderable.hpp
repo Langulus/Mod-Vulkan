@@ -14,7 +14,7 @@
 ///                                                                           
 /// Gives things the ability to be drawn to screen. The unit gathers relevant 
 /// graphical resources from the context, and generates a graphical pipeline  
-/// capable of visualizing it on Refresh()                                    
+/// capable of visualizing them                                               
 ///                                                                           
 struct VulkanRenderable final : A::Graphics, ProducedFrom<VulkanLayer> {
    LANGULUS(ABSTRACT) false;
@@ -24,7 +24,7 @@ protected:
    friend struct VulkanLayer;
 
    // Precompiled instances and levels, updated on Refresh()            
-   TAny<const Unit*> mInstances;
+   TAny<const A::Instance*> mInstances;
    TRange<Level> mLevelRange;
    Ptr<Unit> mMaterialContent;
    Ptr<Unit> mGeometryContent;

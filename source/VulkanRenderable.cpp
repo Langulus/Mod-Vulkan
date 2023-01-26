@@ -52,7 +52,9 @@ VulkanTexture* VulkanRenderable::GetTextures(const LodState& lod) const {
 ///   @param lod - information used to extract the best LOD                   
 ///   @param layer - additional settings might be provided by the used layer  
 ///   @return the pipeline                                                    
-VulkanPipeline* VulkanRenderable::GetOrCreatePipeline(const LodState& lod, const VulkanLayer* layer) const {
+VulkanPipeline* VulkanRenderable::GetOrCreatePipeline(
+   const LodState& lod, const VulkanLayer* layer
+) const {
    // Always return the predefined pipeline if available                
    if (mPredefinedPipeline)
       return mPredefinedPipeline;

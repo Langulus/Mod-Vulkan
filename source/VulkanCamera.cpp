@@ -18,7 +18,7 @@ VulkanCamera::VulkanCamera(VulkanLayer* producer, const Any& descriptor)
 
 /// Compile the camera                                                        
 void VulkanCamera::Compile() {
-   mResolution = mProducer->GetWindow()->GetSize();
+   mResolution = mProducer->mProducer->mWindow->GetSize();
 
    if (mResolution[0] <= 1)
       mResolution[0] = 1;
@@ -46,7 +46,9 @@ void VulkanCamera::Compile() {
       //                      v                                         
       //                  -Aspect*Y                                     
       //                                                                
-      constexpr auto vulkanAdapter = Matrix4::Scalar(Vec3(1, -1, -1));
+      constexpr auto vulkanAdapter = Matrix4::Scalar(
+         Vec3 {Real {1}, Real {-1}, Real {-1}}
+      );
       mProjection = vulkanAdapter * Matrix4::PerspectiveFOV(
          mFOV, mAspectRatio, mViewport.mMin[2], mViewport.mMax[2]
       );
@@ -85,7 +87,7 @@ void VulkanCamera::Compile() {
 
 /// Recompile the camera                                                      
 void VulkanCamera::Refresh() {
-   mInstances = GetOwners().GatherUnits<SeekStyle::Here>("Instance");
+   mInstances = GatherUnits<A::Instance, SeekStyle::Here>();
 }
 
 /// Get view transformation for a given level                                 
@@ -93,7 +95,7 @@ void VulkanCamera::Refresh() {
 ///   @return the view transformation for the camera                          
 Matrix4 VulkanCamera::GetViewTransform(Level level) const {
    if (mInstances.IsEmpty())
-      return Matrix4::Identity();
+      return {};
 
    return mInstances[0]->GetViewTransform(level);
 }

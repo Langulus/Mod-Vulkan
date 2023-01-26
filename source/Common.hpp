@@ -453,7 +453,7 @@ struct LodState {
 ///                                                                           
 class ContentVRAM : public Unit {
 protected:
-   Ptr<Unit> mOriginalContent;
+   Ptr<A::Content> mOriginalContent;
    bool mContentMirrored = false;
 
 public:

@@ -32,9 +32,10 @@ protected:
    friend struct VulkanShader;
    friend struct VulkanGeometry;
    friend struct VulkanTexture;
+   friend struct VulkanCamera;
 
    // The platform window, where the renderer is created                
-   Ptr<const Unit> mWindow;
+   Ptr<const A::Window> mWindow;
 
    // The logical device                                                
    Own<VkDevice> mDevice;

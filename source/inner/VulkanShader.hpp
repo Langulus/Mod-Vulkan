@@ -36,9 +36,6 @@ public:
    VulkanShader(VulkanRenderer*, const Any&);
    ~VulkanShader();
 
-   /*bool operator == (const VulkanShader&) const;
-
-   NOD() Hash GetHash() const;*/
    NOD() bool IsCompiled() const noexcept;
    NOD() auto& GetShader() const noexcept;
    NOD() auto& GetBindings() const noexcept;
@@ -46,8 +43,6 @@ public:
    NOD() auto& GetCode() const noexcept;
    NOD() Rate GetRate() const noexcept;
 
-   //bool InitializeFromMaterial(ShaderStage::Enum, const Unit*);
-   //void Uninitialize();
    void Compile();
    void AddInput(const Trait&);
    VkShaderStageFlagBits GetStageFlagBit() const noexcept;

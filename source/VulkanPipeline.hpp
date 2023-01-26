@@ -106,14 +106,14 @@ public:
    template<Rate RATE, CT::Trait TRAIT, CT::Data DATA>
    void SetUniform(const DATA& value, Offset index = 0) {
       if constexpr (CT::Texture<DATA>) {
-         static_assert(RATE == Rate::Renderable,
+         static_assert(RATE == PerRenderable,
             "Setting a texture requires Rate::Renderable");
          // Set the sampler with the given index                        
          mSamplerUBO[mSubscribers.Last().samplerSet]
             .template Set<DATA>(value, index);
       }
       else if constexpr (CT::Geometry<DATA>) {
-         static_assert(RATE == Rate::Renderable,
+         static_assert(RATE == PerRenderable,
             "Setting a geometry stream requires Rate::Renderable");
          // Set the geometry stream, make sure VRAM is initialized      
          value->Initialize();

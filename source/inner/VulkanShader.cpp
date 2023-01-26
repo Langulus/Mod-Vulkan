@@ -15,7 +15,7 @@
 ///   @param producer - the shader producer                                   
 ///   @param descriptor - the shader descriptor                               
 VulkanShader::VulkanShader(VulkanRenderer* producer, const Any& descriptor)
-   : GraphicsUnit {MetaOf<VulkanShader>(), descriptor} 
+   : Graphics {MetaOf<VulkanShader>(), descriptor} 
    , ProducedFrom {producer, descriptor} {
    // Configure the shader, but don't compile it yet                    
    descriptor.ForEachDeep(
@@ -53,51 +53,6 @@ VulkanShader::~VulkanShader() {
       );
    }
 }
-
-/// Compare two shaders for equality                                          
-///   @param other - the shader to compare against                            
-///   @return true if shaders are functionally the same                       
-/*bool VulkanShader::operator == (const VulkanShader& other) const {
-   return CompareHash(other) && mCode == other.mCode && mStage == other.mStage;
-}
-
-/// From Hashable                                                             
-Hash VulkanShader::GetHash() const {
-   if (mHashed)
-      return mHash;
-   return Hashed::SetHash(mCode.GetHash() | pcHash(mStage));
-}*/
-
-/// Initialize the shader via a stage and code. This does not immediately     
-/// compile the shader, so you can add uniforms and inputs                    
-///   @param stage - the kind of shader                                       
-///   @param material - the material generator                                
-///   @return true if shader was generated successfully                       
-/*bool VulkanShader::InitializeFromMaterial(ShaderStage::Enum stage, const A::Material* material) {
-   if (!mCode.IsEmpty()) {
-      Logger::Warning(Self(), "Overwriting shader stage");
-      Uninitialize();
-   }
-
-   // Copy code from the correct stage                                  
-   mStage = stage;
-   mCode += material->GetDataAs<Traits::Code, GLSL>(pcptr(stage));
-
-
-   ResetHash();
-   return true;
-}*/
-
-/// Reset the shader                                                          
-/*void VulkanShader::Uninitialize() {
-   if (!mProducer)
-      return;
-
-
-   mCompiled = false;
-   mCode.Reset();
-   ResetHash();
-}*/
 
 /// Compile the shader code                                                   
 ///   @return true on success                                                 

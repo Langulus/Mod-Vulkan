@@ -672,6 +672,7 @@ bool VulkanRenderer::EndRendering() {
    submitInfo.pCommandBuffers = &mCommandBuffer[mCurrentFrame];
    submitInfo.signalSemaphoreCount = 1;
    submitInfo.pSignalSemaphores = signalSemaphores;
+
    if (vkQueueSubmit(mRenderQueue, 1, &submitInfo, VK_NULL_HANDLE)) {
       Logger::Error(Self(), "Vulkan failed to submit render buffer");
       return false;
@@ -750,9 +751,9 @@ void VulkanRenderer::Draw() {
    // Upload any uniform buffer changes to VRAM                         
    // Once this data is uploaded, we're free to prepare the next frame  
    for (auto pipe : relevantPipes) {
-      pipe->SetUniform<Rate::Tick, Traits::Time>(timeFromInit);
-      pipe->SetUniform<Rate::Tick, Traits::MousePosition>(mousePosition.Current());
-      pipe->SetUniform<Rate::Tick, Traits::MouseScroll>(mouseScroll.Current());
+      pipe->SetUniform<PerTick, Traits::Time>(timeFromInit);
+      pipe->SetUniform<PerTick, Traits::MousePosition>(mousePosition.Current());
+      pipe->SetUniform<PerTick, Traits::MouseScroll>(mouseScroll.Current());
       pipe->UpdateUniformBuffers();
    }
 

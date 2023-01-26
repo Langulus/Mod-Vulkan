@@ -17,7 +17,6 @@
 VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, const Any& descriptor)
    : Graphics {MetaOf<VulkanPipeline>(), descriptor}
    , ProducedFrom {producer, descriptor} {
-
    VERBOSE_PIPELINE("Initializing graphics pipeline from ", descriptor);
    mSubscribers.New();
    mGeometries.New();
@@ -142,7 +141,7 @@ void VulkanPipeline::PrepareFromGeometry(const A::Geometry& geometry) {
    Offset textureId {};
    for (auto texture : geometry.GetDescriptor().mTraits[MetaOf<Traits::Texture>()]) {
       // Add a texture input to the fragment shader                     
-      Code code = "Texturize^PerPixel("_code + textureId + ')';
+      Code code = "Texturize^PerPixel("_code + Code {textureId} + ')';
       VERBOSE_PIPELINE("Incorporating: ", code);
       material << Abandon(code);
       ++textureId;
@@ -349,7 +348,7 @@ bool VulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
       },
       [&](const A::Texture& texture) {
          // Add texturization, if construct contains any textures       
-         Code code1 = "Create^PerPixel(Input(Texture(" + texture.GetFormat() + ")))";
+         Code code1 = "Create^PerPixel(Input(Texture("_code + texture.GetFormat() + ")))";
          Code code2 = "Texturize^PerPixel("_code + Code {textureId} + ')';
          VERBOSE_PIPELINE("Incorporating: ", code1);
          VERBOSE_PIPELINE("Incorporating: ", code2);
@@ -360,7 +359,7 @@ bool VulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
          // Add various global traits, such as texture/color            
          if (t.template TraitIs<Traits::Texture>()) {
             // Add a texture uniform                                    
-            Code code = "Texturize^PerPixel("_code + textureId + ')';
+            Code code = "Texturize^PerPixel("_code + Code {textureId} + ')';
             VERBOSE_PIPELINE("Incorporating: ", code);
             material << Abandon(code);
             ++textureId;
