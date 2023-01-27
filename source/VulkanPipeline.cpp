@@ -108,19 +108,19 @@ void VulkanPipeline::PrepareFromGeometry(const A::Geometry& geometry) {
          code +=
             "Create^PerVertex(Input(Sampler("_code + type + ")))";
       }
-      else if (trait->template Is<Traits::ModelTransform>()) {
+      else if (trait->template Is<Traits::Transform>()) {
          // Create hardware instancing inside geometry shader, by       
          // streaming the model transformation                          
          code +=
             "Create^PerPrimitive(Input(ModelTransform("_code + type + ")))";
       }
-      else if (trait->template Is<Traits::ViewTransform>()) {
+      else if (trait->template Is<Traits::View>()) {
          // Create hardware instancing inside geometry shader, by       
          // streaming the view transformation                           
          code +=
             "Create^PerPrimitive(Input(ViewTransform("_code + type + ")))";
       }
-      else if (trait->template Is<Traits::ProjectTransform>()) {
+      else if (trait->template Is<Traits::Projection>()) {
          // Create hardware instancing inside geometry shader, by       
          // streaming the projection transformation                     
          code +=
@@ -333,7 +333,7 @@ void VulkanPipeline::Initialize() {
 /// Initialize the pipeline from geometry content                             
 ///   @param stuff - the content to use for material generation               
 ///   @return true on success                                                 
-bool VulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
+void VulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
    // Let's build a material construct                                  
    VERBOSE_PIPELINE("Generating material from: ", stuff);
 
@@ -342,9 +342,7 @@ bool VulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
    stuff.ForEachDeep([&](const Block& group) {
       group.ForEach([&](const A::Geometry& geometry) {
          PrepareFromGeometry(geometry);
-
-         // Only one geometry definition allowed                        
-         return false;
+         return false;        // Only one geometry definition allowed   
       },
       [&](const A::Texture& texture) {
          // Add texturization, if construct contains any textures       
@@ -386,7 +384,7 @@ bool VulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
    });
 
    if (material.IsEmpty())
-      return false;
+      return;
 
    // Create the pixel shader output according to the rendering pass    
    // attachment format requirements                                    
@@ -409,29 +407,25 @@ bool VulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
 
    // Now create generator and pipeline from it                         
    auto generator = mProducer->GetOwners()[0]->CreateUnit<A::Material>(Move(material));
-   return PrepareFromMaterial(generator);
+   PrepareFromMaterial(generator);
 }
 
 /// Initialize the pipeline from any GLSL code                                
 ///   @param code - the shader code                                           
 ///   @return true on success                                                 
-bool VulkanPipeline::PrepareFromCode(const GLSL& code) {
+void VulkanPipeline::PrepareFromCode(const Text& code) {
    // Let's build a material generator from available code              
    VERBOSE_PIPELINE("Generating material from code snippet: ");
    VERBOSE_PIPELINE(code.Pretty());
    auto owner = mProducer->GetOwners()[0];
    auto generator = owner->CreateUnit<A::Material>(code);
-   return PrepareFromMaterial(generator);
+   PrepareFromMaterial(generator);
 }
 
 /// Initialize the pipeline from material content                             
 ///   @param material - the content to use                                    
 ///   @return true on success                                                 
 bool VulkanPipeline::PrepareFromMaterial(const A::Material& material) {
-   // Generate the shader stages via the material content               
-   // No way around this, unfortunately (it's cached, though)           
-   material.Generate();
-
    // Iterate all stages and create vulkan shaders for them             
    for (Count i = 0; i < ShaderStage::Counter; ++i) {
       if (material.GetDataAs<Traits::Code, GLSL>(i).IsEmpty())
@@ -447,8 +441,8 @@ bool VulkanPipeline::PrepareFromMaterial(const A::Material& material) {
       mStages[stage]->Reference(1);
    }
 
-   mHash = HashData(material->GetHash(), mBlendMode, mDepth);
-   mOriginalContent = material;
+   mHash = HashData(material.GetHash(), mBlendMode, mDepth);
+   mOriginalContent = &material;
    return true;
 }
 
@@ -573,7 +567,6 @@ void VulkanPipeline::CreateNewGeometrySet() {
    // For now, only cached geometry is kept, no real set of             
    // properties is required per geometry                               
    mGeometries << nullptr;
-
    mSubscribers.Last().geometrySet = mGeometries.GetCount() - 1;
 }
 

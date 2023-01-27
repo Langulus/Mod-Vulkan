@@ -21,7 +21,7 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, const Any& descriptor)
    , mGeometries {this}
    , mTextures {this} {
    // Seek a window in the descriptor & hierarchy                       
-   mWindow = mOwners.SeekUnit("Window", descriptor);
+   mWindow = SeekUnit<A::Window>(descriptor);
    LANGULUS_ASSERT(mWindow, Construct, "No window available for UI");
 }
 
@@ -32,7 +32,7 @@ VulkanRenderer::~VulkanRenderer() {
 
 /// Initialize the renderer, creating the swapchain for a native window       
 ///   @param window - the window to use for the renderer                      
-void VulkanRenderer::Initialize(Unit* window) {
+void VulkanRenderer::Initialize(const A::Window* window) {
    if (mRendererInitialized)
       return;
 
@@ -358,8 +358,7 @@ VkSurfaceFormatKHR VulkanRenderer::GetSurfaceFormat() const noexcept {
 
    // Choose image format                                               
    VkSurfaceFormatKHR surfaceFormat {
-      VK_FORMAT_MAX_ENUM,
-      VK_COLOR_SPACE_MAX_ENUM_KHR
+      VK_FORMAT_MAX_ENUM, VK_COLOR_SPACE_MAX_ENUM_KHR
    };
 
    if (surface_formats.size() == 1 && surface_formats[0].format == VK_FORMAT_UNDEFINED) {

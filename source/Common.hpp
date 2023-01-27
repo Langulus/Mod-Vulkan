@@ -24,8 +24,6 @@ LANGULUS_DEFINE_TRAIT(Perspective, "Perspective state (boolean)");
 LANGULUS_DEFINE_TRAIT(FOV, "Horizontal field of view angle, usually a real number");
 LANGULUS_DEFINE_TRAIT(AspectRatio, "Aspect ratio trait (width / height), usually a real number");
 LANGULUS_DEFINE_TRAIT(Viewport, "Viewport and depth clipping, usually a Range4");
-LANGULUS_DEFINE_TRAIT(Projection, "Camera projection matrix");
-LANGULUS_DEFINE_TRAIT(View, "Camera view matrix");
 
 using namespace Langulus;
 using namespace Langulus::Flow;

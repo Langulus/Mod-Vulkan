@@ -128,7 +128,7 @@ private:
    Count CompileLevelBatched(const Matrix4&, const Matrix4&, Level, PipelineSet&);
    Count CompileLevelHierarchical(const Matrix4&, const Matrix4&, Level, PipelineSet&);
    Count CompileThing(const Thing*, LodState&, PipelineSet&);
-   VulkanPipeline* CompileInstance(const VulkanRenderable*, const Unit*, LodState&);
+   VulkanPipeline* CompileInstance(const VulkanRenderable*, const A::Instance*, LodState&);
    Count CompileLevels();
 
    void RenderBatched(const RenderConfig&) const;

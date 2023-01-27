@@ -112,7 +112,7 @@ public:
    void Create(Verb&);
 
    void Draw();
-   void Initialize(Unit*);
+   void Initialize(const A::Window*);
    void Resize(const Vec2&);
    void Uninitialize();
 
