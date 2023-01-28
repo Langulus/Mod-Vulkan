@@ -142,7 +142,7 @@ void VulkanRenderable::Refresh() {
    ResetRenderable();
 
    // Gather all instances for this renderable, and calculate levels    
-   mInstances = GetOwners().GatherUnits<SeekStyle::Here>("Instance");
+   mInstances = GatherUnits<A::Instance, SeekStyle::Here>();
    if (!mInstances.IsEmpty())
       mLevelRange = mInstances[0]->GetLevel();
    else

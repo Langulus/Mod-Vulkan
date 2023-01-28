@@ -21,7 +21,7 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, const Any& descriptor)
    , mGeometries {this}
    , mTextures {this} {
    // Seek a window in the descriptor & hierarchy                       
-   mWindow = SeekUnit<A::Window>(descriptor);
+   mWindow = SeekUnitAux<A::Window>(descriptor);
    LANGULUS_ASSERT(mWindow, Construct, "No window available for UI");
 }
 
