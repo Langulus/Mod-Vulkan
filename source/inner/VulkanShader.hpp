@@ -22,28 +22,25 @@ private:
 
    // Shader code                                                       
    Text mCode;
+   // Shader stage description                                          
+   mutable Shader mStageDescription {};
+   // Shader stage description                                          
+   mutable bool mCompiled {};
    // Shader stage                                                      
-   Shader mStageDescription {};
    ShaderStage::Enum mStage {ShaderStage::Pixel};
    // Uniform/input bindings for each shader stage                      
    TAny<Trait> mInputs[RefreshRate::StagesCount];
-   // True if shader is compiled                                        
-   bool mCompiled {};
-   // True if shader is auto-completed                                  
-   bool mCompleted {};
 
 public:
    VulkanShader(VulkanRenderer*, const Any&);
    ~VulkanShader();
 
-   NOD() bool IsCompiled() const noexcept;
-   NOD() auto& GetShader() const noexcept;
-   NOD() auto& GetBindings() const noexcept;
-   NOD() auto& GetAttributes() const noexcept;
-   NOD() auto& GetCode() const noexcept;
    NOD() Rate GetRate() const noexcept;
+   NOD() VertexInput CreateVertexInputState() const noexcept;
 
-   void Compile();
+   const Shader& Compile() const;
    void AddInput(const Trait&);
    VkShaderStageFlagBits GetStageFlagBit() const noexcept;
+   ShaderStage::Enum GetStage() const noexcept;
+   const Text& GetCode() const noexcept;
 };

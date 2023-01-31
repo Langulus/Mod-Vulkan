@@ -15,7 +15,7 @@ constexpr MapMode::MapMode(Type value) noexcept
    : mMode {value} {}
 
 constexpr RefreshRate::RefreshRate(const CT::DenseNumber auto& value) noexcept
-   : mMode {value} {}
+   : mMode {static_cast<Type>(value)} {}
 
 constexpr RefreshRate::RefreshRate(const Enum& value) noexcept
    : mMode {value} {}
@@ -433,81 +433,6 @@ VkPrimitiveTopology AsVkPrimitive(DMeta meta) {
 
    LANGULUS_THROW(Graphics, "Unsupported topology");
 }
-
-/// Recalculate LOD index for identity model matrix                           
-LANGULUS(ALWAYSINLINE)
-void LodState::Transform() {
-   mModel = {};
-   mModelView = mViewInverted;
-   mOrigin = {};
-   mRadius = {};
-   mDistanceToSurface = {};
-   mLODIndex = 0;
-}
-
-/// Recalculate LOD index by specifying the model matrix                      
-///   @param model - the model transformation                                 
-LANGULUS(ALWAYSINLINE)
-void LodState::Transform(const Matrix4& model) {
-   mModel = model;
-   mModelView = mModel * mViewInverted;
-   mOrigin = mModelView.GetPosition();
-   mRadius = mModelView.GetScale().HMax() * Real {0.5};
-   mDistanceToSurface = mOrigin.Length() - mRadius;
-   mLODIndex = 0;
-   if (mDistanceToSurface > 0 && mRadius > 0) {
-      // View is outside the sphere                                     
-      const Real near = ::std::log10(mRadius / mDistanceToSurface);
-      const Real far = ::std::log10(mDistanceToSurface / mRadius);
-      mLODIndex = Math::Clamp(near - far, Real {MinIndex}, Real {MaxIndex});
-   }
-   else if (mDistanceToSurface < 0) {
-      // Being inside the sphere always gives the most detail           
-      mLODIndex = Real {MaxIndex};
-   }
-}
-
-/// Get the distance from the camera to the model's bounding sphere           
-/// surface, divided by the bounding sphere size                              
-///   @return the distance                                                    
-LANGULUS(ALWAYSINLINE)
-Real LodState::GetNormalizedDistance() const noexcept {
-   return mDistanceToSurface / mRadius;
-}
-
-/// Return the LOD index, which is a real number in the range                 
-/// [MinIndex;MaxIndex]                                                       
-/// Calculate the LOD index via log10 distance from a sphere to               
-/// the camera view. You can imagine it as the number of zeroes behind        
-/// or in front of the distance                                               
-/// If index is below zero, then we're observing from afar                    
-/// If index is above zero, then we're observing too close                    
-/// At zero we're observing the default quality asset                         
-///   @return the LOD index                                                   
-LANGULUS(ALWAYSINLINE)
-Real LodState::GetIndex() const noexcept {
-   return mLODIndex;
-}
-
-/// Get LOD index in the range [0;IndexCount)                                 
-///   @return the absolute index                                              
-LANGULUS(ALWAYSINLINE)
-AbsoluteLodIndex LodState::GetAbsoluteIndex() const noexcept {
-   return AbsoluteLodIndex(LodIndex(mLODIndex) - MinIndex);
-}
-
-/// VRAM content hash is the same as the original content                     
-LANGULUS(ALWAYSINLINE)
-Hash ContentVRAM::GetHash() const {
-   return mOriginalContent.GetHash();
-}
-
-/// Compare VRAM by comparing original contents                               
-LANGULUS(ALWAYSINLINE)
-bool ContentVRAM::operator == (const ContentVRAM& other) const noexcept {
-   return mOriginalContent == other.mOriginalContent;
-}
-
 
 /// Helper function for converting colors to floats                           
 /// If data is made of integers, colors will be normalized in the 255 range   

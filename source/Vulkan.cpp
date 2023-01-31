@@ -67,7 +67,7 @@ LANGULUS_DEFINE_MODULE(
 
    /// Get validation layers                                                  
    ///   @return a reference to the available validation layers               
-   auto& Vulkan::GetValidationLayers() const noexcept {
+   const TokenSet& Vulkan::GetValidationLayers() const noexcept {
       return mValidationLayers;
    }
 #endif

@@ -10,83 +10,72 @@
 #define VERBOSE_VKTEXTURE(...) //Logger::Verbose(Self(), __VA_ARGS__)
 
 
-/// Descriptor constructor                                                    
+/// VRAM texture constructor                                                  
 ///   @param producer - the texture producer                                  
 ///   @param descriptor - the texture descriptor                              
 VulkanTexture::VulkanTexture(VulkanRenderer* producer, const Any& descriptor)
-   : ContentVRAM {MetaOf<VulkanTexture>(), descriptor}
+   : A::Graphics {MetaOf<VulkanTexture>(), descriptor}
    , ProducedFrom {producer, descriptor} {
-   TODO();
+   descriptor.ForEachDeep(
+      [&](const A::Texture& content) {
+         InitializeFromPixels(content);
+      }
+   );
 }
 
-/// VRAM destruction                                                          
+/// VRAM texture destructor                                                   
 VulkanTexture::~VulkanTexture() {
-   Uninitialize();
-}
-
-/// Create the VRAM texture from a verb                                       
-///   @param verb - creation verb                                             
-void VulkanTexture::Create(Verb& verb) {
-   verb.ForEachDeep([&](const A::Texture* content) {
-      mOriginalContent = content;
-      verb.Done();
-   });
+   if (mSampler)
+      vkDestroySampler(mProducer->mDevice, mSampler, nullptr);
+   if (mImageView)
+      vkDestroyImageView(mProducer->mDevice, mImageView, nullptr);
+   if (mImage.GetImage())
+      mProducer->mVRAM.DestroyImage(mImage);
 }
 
 /// Initialize from the provided content                                      
-void VulkanTexture::Initialize() {
-   if (mContentMirrored)
-      return;
-
-   // Generate content if not generated yet                             
-   const auto startTime = SteadyClock::now();
-   const auto content = mOriginalContent.As<A::Texture>();
-   if (!content)
-      LANGULUS_THROW(Graphics, "Bad content");
-
-   content->Generate();
-
+///   @param content - the abstract texture content interface                 
+void VulkanTexture::InitializeFromPixels(const A::Texture& content) {
    // Check if any data was found                                       
-   const auto pixels = content->GetData<Traits::Color>();
-   if (!pixels || pixels->IsEmpty()) {
-      LANGULUS_THROW(Graphics,
-         "Can't generate content - no pixel data found inside");
-   }
+   const auto startTime = SteadyClock::now();
+   const auto pixels = content.GetData<Traits::Color>();
+   if (!pixels || pixels->IsEmpty())
+      LANGULUS_THROW(Graphics, "Can't generate texture - no color data found");
 
    // Copy base view and create image                                   
    // Beware, the VRAM image may have a different internal format       
    auto& vram = mProducer->mVRAM;
-   mView = content->GetView();
+   mView = content.GetView();
    mImage = vram.CreateImage(
       mView, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT
    );
 
    // Copy raw data to VRAM stager                                      
-   // The stager is created to contain the type in the VRAMImage,       
+   // The stager is created to contain the type in the VulkanImage,     
    // which may or may have not changed                                 
-   const auto totalVramBytes = mImage.mView.GetBytesize();
+   const auto totalVramBytes = mImage.GetView().GetBytesize();
    auto stager = vram.CreateBuffer(
-      mImage.mView.mFormat, totalVramBytes,
+      mImage.GetView().mFormat, totalVramBytes,
       VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
    );
 
-   if (mImage.mView.mFormat == content->GetView().mFormat) {
+   if (mImage.GetView().mFormat == content.GetView().mFormat) {
       // Formats match, directly upload the dense memory                
-      stager.Upload(0, totalVramBytes, pixels->GetBytes());
+      stager.Upload(0, totalVramBytes, pixels->GetRaw());
    }
    else {
       // Add an alpha channel                                           
       //TODO this may not be the only reason this happens!              
       Logger::Warning(
          "Performance warning: texture is being converted "
-         "to a different internal memory layout"
+         "to a different internal memory format"
       );
 
       auto rawTo = stager.Lock(0, totalVramBytes);
-      auto rawFrom = pixels->GetBytes();
-      const auto strideTo = mImage.mView.GetPixelBytesize();
-      const auto strideFrom = content->GetView().GetPixelBytesize();
+      auto rawFrom = pixels->GetRaw();
+      const auto strideTo = mImage.GetView().GetPixelBytesize();
+      const auto strideFrom = content.GetView().GetPixelBytesize();
       for (uint32_t pixel = 0; pixel < mView.GetPixelCount(); ++pixel) {
          ::std::memcpy(rawTo, rawFrom, strideFrom);
          ::std::memset(rawTo + strideFrom, 255, strideTo - strideFrom);
@@ -113,7 +102,7 @@ void VulkanTexture::Initialize() {
    barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-   barrier.image = mImage.mBuffer;
+   barrier.image = mImage.GetImage();
    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
    barrier.subresourceRange.baseMipLevel = 0;
    barrier.subresourceRange.levelCount = 1;
@@ -121,6 +110,7 @@ void VulkanTexture::Initialize() {
    barrier.subresourceRange.layerCount = 1;
    barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
    barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
    vkCmdPipelineBarrier(
       cmdbuffer,
       VK_PIPELINE_STAGE_HOST_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT,
@@ -142,13 +132,13 @@ void VulkanTexture::Initialize() {
    region.imageSubresource.layerCount = 1;
    region.imageOffset = {0, 0, 0};
    region.imageExtent = {mView.mWidth, mView.mHeight, mView.mDepth};
+
    vkCmdCopyBufferToImage(
       cmdbuffer,
-      stager.mBuffer,
-      mImage.mBuffer,
+      stager.GetBuffer(),
+      mImage.GetImage(),
       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-      1,
-      &region
+      1, &region
    );
 
    // Transition to VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL            
@@ -158,7 +148,7 @@ void VulkanTexture::Initialize() {
    barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-   barrier.image = mImage.mBuffer;
+   barrier.image = mImage.GetImage();
    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
    barrier.subresourceRange.baseMipLevel = 0;
    barrier.subresourceRange.levelCount = 1;
@@ -166,6 +156,7 @@ void VulkanTexture::Initialize() {
    barrier.subresourceRange.layerCount = 1;
    barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
    barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
    vkCmdPipelineBarrier(
       cmdbuffer,
       VK_PIPELINE_STAGE_TRANSFER_BIT,
@@ -188,11 +179,7 @@ void VulkanTexture::Initialize() {
    vram.DestroyBuffer(stager);
 
    // Create image view                                                 
-   mImageView = vram.CreateImageView(mImage.mBuffer, mImage.mView);
-   if (!mImageView) {
-      Uninitialize();
-      LANGULUS_THROW(Graphics, "Can't create vulkan image view");
-   }
+   mImageView = vram.CreateImageView(mImage);
 
    // Create samplers                                                   
    VkSamplerCreateInfo samplerInfo {};
@@ -212,26 +199,24 @@ void VulkanTexture::Initialize() {
    samplerInfo.mipLodBias = 0.0f;
    samplerInfo.minLod = 0.0f;
    samplerInfo.maxLod = 0.0f;
-   if (vkCreateSampler(mProducer->mDevice, &samplerInfo, nullptr, &mSampler.Get())) {
-      Uninitialize();
+
+   if (vkCreateSampler(mProducer->mDevice, &samplerInfo, nullptr, &mSampler.Get()))
       LANGULUS_THROW(Graphics, "Can't create vulkan sampler");
-   }
 
    VERBOSE_VKTEXTURE(Logger::Green, "Data uploaded in VRAM for ",
       SteadyClock::now() - startTime);
-   mContentMirrored = true;
 }
 
-/// Remove texture from VRAM                                                  
-void VulkanTexture::Uninitialize() {
-   if (mSampler)
-      vkDestroySampler(mProducer->mDevice, mSampler, nullptr);
+/// Get the VkImageView                                                       
+///   @return the image view                                                  
+LANGULUS(ALWAYSINLINE)
+VkImageView VulkanTexture::GetImageView() const noexcept {
+   return mImageView;
+}
 
-   if (mImageView)
-      vkDestroyImageView(mProducer->mDevice, mImageView, nullptr);
-
-   if (mImage.mBuffer)
-      mProducer->mVRAM.DestroyImage(mImage);
-
-   mContentMirrored = false;
+/// Get the VkSampler                                                         
+///   @return the sampler                                                     
+LANGULUS(ALWAYSINLINE)
+VkSampler VulkanTexture::GetSampler() const noexcept {
+   return mSampler;
 }

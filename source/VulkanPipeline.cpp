@@ -22,7 +22,7 @@ VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, const Any& descriptor)
    mGeometries.New();
 
    descriptor.ForEachDeep(
-      [this](A::File& file) {
+      [this](const A::File& file) {
          // Create from file                                            
          PrepareFromFile(file);
       },
@@ -46,16 +46,196 @@ VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, const Any& descriptor)
       }
    );
 
-   if (!mHash) {
-      // Still not initialized, try wrapping the entire argument        
-      // inside a construct                                             
-      PrepareFromConstruct(Construct::From<VulkanPipeline>(descriptor));
+   const auto device = mProducer->mDevice;
+
+   // Copy the viewport state                                           
+   VkViewport viewport {};
+   VkRect2D scissor {};
+   VkPipelineViewportStateCreateInfo viewportState {};
+   viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+   viewportState.viewportCount = 1;
+   viewportState.pViewports = &viewport;
+   viewportState.scissorCount = 1;
+   viewportState.pScissors = &scissor;
+
+   // Tweak the rasterizer                                              
+   VkPipelineRasterizationStateCreateInfo rasterizer {};
+   rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+   rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+   if (mStages[ShaderStage::Vertex]) {
+      // Override polygon mode if a vertex shader stage is available    
+      switch (mPrimitive) {
+      case VK_PRIMITIVE_TOPOLOGY_POINT_LIST:
+         rasterizer.polygonMode = VK_POLYGON_MODE_POINT;
+         break;
+      case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP:
+      case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN:
+      case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST:
+         rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+         break;
+      case VK_PRIMITIVE_TOPOLOGY_LINE_STRIP:
+      case VK_PRIMITIVE_TOPOLOGY_LINE_LIST:
+         rasterizer.polygonMode = VK_POLYGON_MODE_LINE;
+         break;
+      default:
+         LANGULUS_THROW(Graphics, "Unsupported primitive");
+      }
    }
+   //rasterizer.polygonMode = VK_POLYGON_MODE_LINE; //for debuggery
+   rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+   rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+
+   // These are relevant if polygonMode is VK_POLYGON_MODE_LINE         
+   rasterizer.lineWidth = 1.0f;
+
+   // Setup the antialiasing/supersampling mode                         
+   VkPipelineMultisampleStateCreateInfo multisampling {};
+   multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+   multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+
+   // Define the color blending state                                   
+   VkPipelineColorBlendAttachmentState colorBlendAttachment {};
+   colorBlendAttachment.colorWriteMask = 
+      VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | 
+      VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+   colorBlendAttachment.blendEnable = VK_TRUE;
+   colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+   colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+   colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+   colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+   colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+   /*colorBlendAttachment.srcAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_SRC_ALPHA;
+   colorBlendAttachment.dstAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;*/
+   //colorBlendAttachment.alphaBlendOp = VkBlendOp::VK_BLEND_OP_SUBTRACT;
+   colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+
+   VkPipelineColorBlendStateCreateInfo colorBlending {};
+   colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+   colorBlending.logicOpEnable = VK_FALSE;//TODO
+   colorBlending.logicOp = VK_LOGIC_OP_COPY;
+   colorBlending.attachmentCount = 1;
+   colorBlending.pAttachments = &colorBlendAttachment;
+
+   // Create the uniform buffers                                        
+   CreateUniformBuffers();
+
+   // Create the pipeline layouts                                       
+   std::vector<UBOLayout> relevantLayouts {
+      mStaticUBOLayout, mDynamicUBOLayout
+   };
+
+   if (mSamplersUBOLayout)
+      relevantLayouts.push_back(mSamplersUBOLayout);
+
+   VkPipelineLayoutCreateInfo pipelineLayoutInfo {};
+   pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+   pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(relevantLayouts.size());
+   pipelineLayoutInfo.pSetLayouts = relevantLayouts.data();
+
+   if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &mPipeLayout.Get()))
+      LANGULUS_THROW(Graphics, "Can't create pipeline layout");
+
+   // Allow viewport to be dynamically set                              
+   const VkDynamicState dynamicStates[] {
+      VK_DYNAMIC_STATE_VIEWPORT,
+      VK_DYNAMIC_STATE_SCISSOR
+   };
+
+   VkPipelineDynamicStateCreateInfo dynamicState {};
+   dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+   dynamicState.dynamicStateCount = 2;
+   dynamicState.pDynamicStates = dynamicStates;
+
+   VkPipelineDepthStencilStateCreateInfo depthStencil {};
+   depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+   depthStencil.depthTestEnable = mDepth ? VK_TRUE : VK_FALSE;
+   depthStencil.depthWriteEnable = mDepth ? VK_TRUE : VK_FALSE;
+   depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+   depthStencil.minDepthBounds = 0.0f;
+   depthStencil.maxDepthBounds = 1.0f;
+
+   // By default empty input and assembly states are used               
+   mInput = {};
+   mInput.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+   if (mStages[ShaderStage::Vertex])
+      mInput = mStages[ShaderStage::Vertex]->CreateVertexInputState();
+
+   // Input assembly                                                    
+   mAssembly = {};
+   mAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+   mAssembly.topology = mPrimitive;
+   mAssembly.primitiveRestartEnable = VK_FALSE;
+
+   // Create the pipeline                                               
+   TAny<Shader> stages;
+   for (auto shader : mStages)
+      stages << shader->Compile();
+
+   VkGraphicsPipelineCreateInfo pipelineInfo {};
+   pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+   pipelineInfo.pViewportState = &viewportState;
+   pipelineInfo.pRasterizationState = &rasterizer;
+   pipelineInfo.pMultisampleState = &multisampling;
+   pipelineInfo.pColorBlendState = &colorBlending;
+   pipelineInfo.pDepthStencilState = &depthStencil;
+   pipelineInfo.stageCount = static_cast<uint32_t>(stages.GetCount());
+   pipelineInfo.pStages = stages.GetRaw();
+   pipelineInfo.pVertexInputState = &mInput;
+   pipelineInfo.pInputAssemblyState = &mAssembly;
+   pipelineInfo.pTessellationState = nullptr;
+   pipelineInfo.layout = mPipeLayout;
+   pipelineInfo.renderPass = mProducer->mPass;
+   pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+   pipelineInfo.pDynamicState = &dynamicState;
+
+   if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &mPipeline.Get()))
+      LANGULUS_THROW(Graphics, "Can't create graphical pipeline");
 }
 
 /// Pipeline destruction                                                      
 VulkanPipeline::~VulkanPipeline() {
-   Uninitialize();
+   // Destroy the uniform buffer objects                                
+   mRelevantDynamicDescriptors.Clear();
+
+   for (auto& ubo : mStaticUBO)
+      ubo.Destroy();
+   for (auto& ubo : mDynamicUBO)
+      ubo.Destroy();
+
+   mSamplerUBO.Reset();
+
+   // Destroy uniform buffer object pool                                
+   const auto device = mProducer->mDevice;
+   if (mUBOPool) {
+      vkDestroyDescriptorPool(device, mUBOPool, nullptr);
+      mUBOPool = 0;
+   }
+
+   // Destroy pipeline                                                  
+   if (mPipeline) {
+      vkDestroyPipeline(device, mPipeline, nullptr);
+      mPipeline = 0;
+   }
+
+   // Destroy pipeline layout                                           
+   if (mPipeLayout) {
+      vkDestroyPipelineLayout(device, mPipeLayout, nullptr);
+      mPipeLayout = 0;
+   }
+
+   // Destroy every UBO layout                                          
+   if (mStaticUBOLayout) {
+      vkDestroyDescriptorSetLayout(device, mStaticUBOLayout, nullptr);
+      mStaticUBOLayout = 0;
+   }
+   if (mDynamicUBOLayout) {
+      vkDestroyDescriptorSetLayout(device, mDynamicUBOLayout, nullptr);
+      mDynamicUBOLayout = 0;
+   }
+   if (mSamplersUBOLayout) {
+      vkDestroyDescriptorSetLayout(device, mSamplersUBOLayout, nullptr);
+      mSamplersUBOLayout = 0;
+   }
 }
 
 /// Create a pipeline from a file                                             
@@ -65,9 +245,7 @@ void VulkanPipeline::PrepareFromFile(const A::File& file) {
       // Check if file is a GLSL code file, and attempt using it        
       PrepareFromCode(file.ReadAs<GLSL>());
    }
-   catch (...) {
-      throw;
-   }
+   catch (...) { throw; }
 
    //TODO handle other kinds of files
 }
@@ -81,7 +259,7 @@ void VulkanPipeline::PrepareFromGeometry(const A::Geometry& geometry) {
    mPrimitive = AsVkPrimitive(geometry.GetTopology());
          
    // Scan the input attributes (inside geometry data)                  
-   for (auto data : geometry.GetData()) {
+   for (auto data : geometry.GetDataMap()) {
       const auto trait = data.mKey;
       const auto type = data.mValue.GetType();
 
@@ -160,176 +338,6 @@ void VulkanPipeline::PrepareFromGeometry(const A::Geometry& geometry) {
    material << "Rasterize^PerPrimitive()"_code;
 }
 
-/// Initialize the pipeline from the accumulated construct                    
-void VulkanPipeline::Initialize() {
-   if (mGenerated)
-      return;
-   mGenerated = true;
-
-   const auto device = mProducer->mDevice;
-
-   // Copy the viewport state                                           
-   VkViewport viewport {};
-   VkRect2D scissor {};
-   VkPipelineViewportStateCreateInfo viewportState {};
-   viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-   viewportState.viewportCount = 1;
-   viewportState.pViewports = &viewport;
-   viewportState.scissorCount = 1;
-   viewportState.pScissors = &scissor;
-
-   // Tweak the rasterizer                                              
-   VkPipelineRasterizationStateCreateInfo rasterizer {};
-   rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-   rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-   if (mStages[ShaderStage::Vertex]) {
-      // Override polygon mode if a vertex shader stage is available    
-      switch (mPrimitive) {
-      case VK_PRIMITIVE_TOPOLOGY_POINT_LIST:
-         rasterizer.polygonMode = VK_POLYGON_MODE_POINT;
-         break;
-      case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP:
-      case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN:
-      case VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST:
-         rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-         break;
-      case VK_PRIMITIVE_TOPOLOGY_LINE_STRIP:
-      case VK_PRIMITIVE_TOPOLOGY_LINE_LIST:
-         rasterizer.polygonMode = VK_POLYGON_MODE_LINE;
-         break;
-      default:
-         LANGULUS_THROW(Graphics, "Unsupported primitive");
-      }
-   }
-   //rasterizer.polygonMode = VK_POLYGON_MODE_LINE; //for debuggery
-   rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-   rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-
-   // These are relevant if polygonMode is VK_POLYGON_MODE_LINE         
-   rasterizer.lineWidth = 1.0f;
-
-   // Setup the antialiasing/supersampling mode                         
-   VkPipelineMultisampleStateCreateInfo multisampling {};
-   multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-   multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-
-   // Define the color blending state                                   
-   VkPipelineColorBlendAttachmentState colorBlendAttachment {};
-   colorBlendAttachment.colorWriteMask = 
-      VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | 
-      VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-   colorBlendAttachment.blendEnable = VK_TRUE;
-   colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-   colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-   colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
-   colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-   colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-   /*colorBlendAttachment.srcAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_SRC_ALPHA;
-   colorBlendAttachment.dstAlphaBlendFactor = VkBlendFactor::VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;*/
-   //colorBlendAttachment.alphaBlendOp = VkBlendOp::VK_BLEND_OP_SUBTRACT;
-   colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
-
-   VkPipelineColorBlendStateCreateInfo colorBlending {};
-   colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-   colorBlending.logicOpEnable = VK_FALSE;//TODO
-   colorBlending.logicOp = VK_LOGIC_OP_COPY;
-   colorBlending.attachmentCount = 1;
-   colorBlending.pAttachments = &colorBlendAttachment;
-
-   // Create the uniform buffers                                        
-   try { CreateUniformBuffers(); }
-   catch (...) {
-      Uninitialize();
-      LANGULUS_THROW(Graphics, "Can't create uniform buffers");
-   }
-
-   // Create the pipeline layouts                                       
-   std::vector<UBOLayout> relevantLayouts {
-      mStaticUBOLayout, mDynamicUBOLayout
-   };
-
-   if (mSamplersUBOLayout)
-      relevantLayouts.push_back(mSamplersUBOLayout);
-
-   VkPipelineLayoutCreateInfo pipelineLayoutInfo {};
-   pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-   pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(relevantLayouts.size());
-   pipelineLayoutInfo.pSetLayouts = relevantLayouts.data();
-
-   if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &mPipeLayout.Get())) {
-      Uninitialize();
-      LANGULUS_THROW(Graphics, "Can't create pipeline layout");
-   }
-
-   // Allow viewport to be dynamically set                              
-   const VkDynamicState dynamicStates[] {
-      VK_DYNAMIC_STATE_VIEWPORT,
-      VK_DYNAMIC_STATE_SCISSOR
-   };
-
-   VkPipelineDynamicStateCreateInfo dynamicState {};
-   dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-   dynamicState.dynamicStateCount = 2;
-   dynamicState.pDynamicStates = dynamicStates;
-
-   VkPipelineDepthStencilStateCreateInfo depthStencil {};
-   depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-   depthStencil.depthTestEnable = mDepth ? VK_TRUE : VK_FALSE;
-   depthStencil.depthWriteEnable = mDepth ? VK_TRUE : VK_FALSE;
-   depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
-   depthStencil.minDepthBounds = 0.0f;
-   depthStencil.maxDepthBounds = 1.0f;
-
-   // By default empty input and assembly states are used               
-   mInput = {};
-   mInput.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-   if (mStages[ShaderStage::Vertex]) {
-      mInput.vertexBindingDescriptionCount 
-         = uint32_t(mStages[ShaderStage::Vertex]->GetBindings().size());
-      mInput.pVertexBindingDescriptions 
-         = mStages[ShaderStage::Vertex]->GetBindings().data();
-      mInput.vertexAttributeDescriptionCount 
-         = uint32_t(mStages[ShaderStage::Vertex]->GetAttributes().size());
-      mInput.pVertexAttributeDescriptions 
-         = mStages[ShaderStage::Vertex]->GetAttributes().data();
-   }
-
-   // Input assembly                                                    
-   mAssembly = {};
-   mAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-   mAssembly.topology = mPrimitive;
-   mAssembly.primitiveRestartEnable = VK_FALSE;
-
-   // Create the pipeline                                               
-   TAny<Shader> stages;
-   for (auto stage : mStages) {
-      stage.mValue->Compile();
-      stages << stage.mValue->GetShader();
-   }
-
-   VkGraphicsPipelineCreateInfo pipelineInfo {};
-   pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-   pipelineInfo.pViewportState = &viewportState;
-   pipelineInfo.pRasterizationState = &rasterizer;
-   pipelineInfo.pMultisampleState = &multisampling;
-   pipelineInfo.pColorBlendState = &colorBlending;
-   pipelineInfo.pDepthStencilState = &depthStencil;
-   pipelineInfo.stageCount = uint32_t(stages.GetCount());
-   pipelineInfo.pStages = stages.GetRaw();
-   pipelineInfo.pVertexInputState = &mInput;
-   pipelineInfo.pInputAssemblyState = &mAssembly;
-   pipelineInfo.pTessellationState = nullptr;
-   pipelineInfo.layout = mPipeLayout;
-   pipelineInfo.renderPass = mProducer->mPass;
-   pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
-   pipelineInfo.pDynamicState = &dynamicState;
-
-   if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &mPipeline.Get())) {
-      Uninitialize();
-      LANGULUS_THROW(Graphics, "Can't create graphical pipeline");
-   }
-}
-
 /// Initialize the pipeline from geometry content                             
 ///   @param stuff - the content to use for material generation               
 ///   @return true on success                                                 
@@ -378,7 +386,7 @@ void VulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
       [&](const VulkanLayer& layer) {
          // Add layer preferences                                       
          VERBOSE_PIPELINE("Incorporating layer preferences from ", layer);
-         if (layer.GetStyle() & VisualLayer::Hierarchical)
+         if (layer.GetStyle() & VulkanLayer::Hierarchical)
             mDepth = false;
       });
    });
@@ -406,92 +414,39 @@ void VulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
    }
 
    // Now create generator and pipeline from it                         
-   auto generator = mProducer->GetOwners()[0]->CreateUnit<A::Material>(Move(material));
-   PrepareFromMaterial(generator);
+   Verbs::Create creator {Construct::From<A::Material>(Abandon(material))};
+   Run(creator).ForEach([this](const A::Material& generator) {
+      PrepareFromMaterial(generator);
+   });
 }
 
-/// Initialize the pipeline from any GLSL code                                
+/// Initialize the pipeline from any code                                     
 ///   @param code - the shader code                                           
 ///   @return true on success                                                 
 void VulkanPipeline::PrepareFromCode(const Text& code) {
    // Let's build a material generator from available code              
    VERBOSE_PIPELINE("Generating material from code snippet: ");
-   VERBOSE_PIPELINE(code.Pretty());
-   auto owner = mProducer->GetOwners()[0];
-   auto generator = owner->CreateUnit<A::Material>(code);
-   PrepareFromMaterial(generator);
+   VERBOSE_PIPELINE(GLSL {code}.Pretty());
+   Verbs::Create creator {Construct::From<A::Material>(code)};
+   Run(creator).ForEach([this](const A::Material& generator) {
+      PrepareFromMaterial(generator);
+   });
 }
 
 /// Initialize the pipeline from material content                             
 ///   @param material - the content to use                                    
 ///   @return true on success                                                 
-bool VulkanPipeline::PrepareFromMaterial(const A::Material& material) {
-   // Iterate all stages and create vulkan shaders for them             
-   for (Count i = 0; i < ShaderStage::Counter; ++i) {
-      if (material.GetDataAs<Traits::Code, GLSL>(i).IsEmpty())
-         continue;
+void VulkanPipeline::PrepareFromMaterial(const A::Material& material) {
+   const auto shaders = material.GetData<Traits::Shader>();
+   if (!shaders)
+      LANGULUS_THROW(Graphics, "No shaders provided in material");
 
-      // Add the stage                                                  
-      const auto stage = ShaderStage::Enum(i);
-      VulkanShader shader(mProducer);
-      if (!shader.InitializeFromMaterial(stage, material))
-         return false;
-
-      mStages[stage] = mProducer->Cache(Move(shader));
-      mStages[stage]->Reference(1);
-   }
-
-   mHash = HashData(material.GetHash(), mBlendMode, mDepth);
-   mOriginalContent = &material;
-   return true;
-}
-
-/// Uninitialize the pipeline                                                 
-void VulkanPipeline::Uninitialize() {
-   // Remove shaders                                                    
-   mStages.Clear();
-
-   // Destroy the uniform buffer objects                                
-   mRelevantDynamicDescriptors.Clear();
-
-   for (auto& ubo : mStaticUBO)
-      ubo.Destroy();
-   for (auto& ubo : mDynamicUBO)
-      ubo.Destroy();
-
-   mSamplerUBO.Reset();
-
-   // Destroy uniform buffer object pool                                
-   const auto device = mProducer->mDevice;
-   if (mUBOPool) {
-      vkDestroyDescriptorPool(device, mUBOPool, nullptr);
-      mUBOPool = 0;
-   }
-
-   // Destroy pipeline                                                  
-   if (mPipeline) {
-      vkDestroyPipeline(device, mPipeline, nullptr);
-      mPipeline = 0;
-   }
-
-   // Destroy pipeline layout                                           
-   if (mPipeLayout) {
-      vkDestroyPipelineLayout(device, mPipeLayout, nullptr);
-      mPipeLayout = 0;
-   }
-
-   // Destroy every UBO layout                                          
-   if (mStaticUBOLayout) {
-      vkDestroyDescriptorSetLayout(device, mStaticUBOLayout, nullptr);
-      mStaticUBOLayout = 0;
-   }
-   if (mDynamicUBOLayout) {
-      vkDestroyDescriptorSetLayout(device, mDynamicUBOLayout, nullptr);
-      mDynamicUBOLayout = 0;
-   }
-   if (mSamplersUBOLayout) {
-      vkDestroyDescriptorSetLayout(device, mSamplersUBOLayout, nullptr);
-      mSamplersUBOLayout = 0;
+   for (auto stage : *shaders) {
+      // Create a vulkan shader for each material-provided shader       
+      Verbs::Create creator {Construct::From<VulkanShader>(stage)};
+      mProducer->Create(creator);
+      auto vkshader = creator.GetOutput().As<const VulkanShader*>();
+      mStages[vkshader->GetStage()] = vkshader;
    }
 }
 
@@ -573,8 +528,7 @@ void VulkanPipeline::CreateNewGeometrySet() {
 /// Create uniform buffers                                                    
 void VulkanPipeline::CreateUniformBuffers() {
    const auto device = mProducer->mDevice;
-   const auto uniforms = mOriginalContent->GetData<Traits::Trait>();
-   if (!uniforms || uniforms->IsEmpty())
+   if (mUniforms.IsEmpty())
       LANGULUS_THROW(Graphics, "No uniforms/inputs provided by generator");
 
    // Create descriptor pools                                           
@@ -608,8 +562,7 @@ void VulkanPipeline::CreateUniformBuffers() {
 
          // Add relevant inputs                                         
          const auto index = Rate(Rate::StaticUniformBegin + rate).GetInputIndex();
-         auto& inputs = uniforms->As<TAny<Trait>>(index);
-         for (auto& trait : inputs) {
+         for (const auto& trait : mUniforms[index]) {
             if (trait.template TraitIs<Traits::Texture>())
                continue;
             ubo.mUniforms.Emplace(0, trait);
@@ -649,8 +602,7 @@ void VulkanPipeline::CreateUniformBuffers() {
 
          // Add relevant inputs                                         
          const auto index = Rate(Rate::DynamicUniformBegin + rate).GetInputIndex();
-         auto& inputs = uniforms->As<TAny<Trait>>(index);
-         for (auto& trait : inputs) {
+         for (const auto& trait : mUniforms[index]) {
             if (trait.template TraitIs<Traits::Texture>())
                continue;
             ubo.mUniforms.Emplace(0, trait);
@@ -687,8 +639,7 @@ void VulkanPipeline::CreateUniformBuffers() {
    {
       // Add relevant inputs                                            
       SamplerUBO ubo;
-      auto& inputs = uniforms->As<TAny<Trait>>(PerRenderable.GetInputIndex());
-      for (auto& trait : inputs) {
+      for (const auto& trait : mUniforms[PerRenderable.GetInputIndex()]) {
          if (!trait.template TraitIs<Traits::Texture>())
             continue;
          ubo.mUniforms << Uniform {0, trait};
@@ -770,8 +721,11 @@ void VulkanPipeline::UpdateUniformBuffers() const {
 ///   @return the number of rendered subscribers                              
 Count VulkanPipeline::RenderLevel(const Offset& offset) const {
    // Bind the pipeline                                                 
-   vkCmdBindPipeline(mProducer->GetRenderCB(), 
-      VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeline);
+   vkCmdBindPipeline(
+      mProducer->GetRenderCB(), 
+      VK_PIPELINE_BIND_POINT_GRAPHICS,
+      mPipeline
+   );
 
    // Bind static uniform buffer (set 0)                                
    vkCmdBindDescriptorSets(
@@ -829,7 +783,7 @@ Count VulkanPipeline::RenderLevel(const Offset& offset) const {
          // No geometry available, so simulate a triangle draw          
          // Pipelines usually have a streamless vertex shader bound in  
          // such cases, that draws a zoomed in fullscreen triangle      
-         auto& cmdbuffer = mProducer->GetRenderCB();
+         auto cmdbuffer = mProducer->GetRenderCB();
          vkCmdDraw(cmdbuffer, 3, 1, 0, 0);
       }
    }
@@ -842,8 +796,11 @@ Count VulkanPipeline::RenderLevel(const Offset& offset) const {
 ///   @attention sub should contain byte offsets for this pipeline's UBOs     
 void VulkanPipeline::RenderSubscriber(const PipeSubscriber& sub) const {
    // Bind the pipeline                                                 
-   vkCmdBindPipeline(mProducer->GetRenderCB(), 
-      VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeline);
+   vkCmdBindPipeline(
+      mProducer->GetRenderCB(), 
+      VK_PIPELINE_BIND_POINT_GRAPHICS, 
+      mPipeline
+   );
 
    // Bind static uniform buffer (set 0)                                
    vkCmdBindDescriptorSets(
@@ -886,7 +843,7 @@ void VulkanPipeline::RenderSubscriber(const PipeSubscriber& sub) const {
       // No geometry available, so simulate a triangle draw             
       // Pipelines usually have a streamless vertex shader bound in     
       // such cases, that draws a zoomed in fullscreen triangle         
-      auto& cmdbuffer = mProducer->GetRenderCB();
+      auto cmdbuffer = mProducer->GetRenderCB();
       vkCmdDraw(cmdbuffer, 3, 1, 0, 0);
    }
 }

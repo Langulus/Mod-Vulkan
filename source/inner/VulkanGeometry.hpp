@@ -15,10 +15,9 @@
 /// Can convert RAM content to VRAM vertex/index buffers, by copying the      
 /// contents to the GPU                                                       
 ///                                                                           
-struct VulkanGeometry : ContentVRAM, ProducedFrom<VulkanRenderer> {
+struct VulkanGeometry : A::Graphics, ProducedFrom<VulkanRenderer> {
    LANGULUS(ABSTRACT) false;
-   LANGULUS_BASES(ContentVRAM);
-   LANGULUS_VERBS(Verbs::Create);
+   LANGULUS_BASES(A::Graphics);
 
 private:
    // Vertex info                                                       
@@ -37,12 +36,6 @@ public:
    VulkanGeometry(VulkanRenderer*, const Any&);
    ~VulkanGeometry();
 
-   void Initialize();
-   void Uninitialize();
    void Bind() const;
    void Render() const;
-
-   void Create(Verb&);
-
-   using ContentVRAM::operator ==;
 };

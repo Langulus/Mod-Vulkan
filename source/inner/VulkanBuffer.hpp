@@ -22,7 +22,7 @@ protected:
    Own<VkDevice> mDevice;
 
 public:
-   bool IsValid() const noexcept;
+   NOD() bool IsValid() const noexcept;
    void Reset() noexcept;
    bool Upload(Offset, Size, const void*) const;
    Byte* Lock(Offset, Size) const;
@@ -43,8 +43,10 @@ protected:
    Own<VkBuffer> mBuffer;
 
 public:
-   bool IsValid() const noexcept;
+   NOD() bool IsValid() const noexcept;
    void Reset() noexcept;
+   NOD() DMeta GetMeta() const noexcept;
+   NOD() const VkBuffer& GetBuffer() const noexcept;
 };
 
 
@@ -63,8 +65,11 @@ protected:
    VkImageCreateInfo mInfo {};
 
 public:
-   bool IsValid() const noexcept;
+   NOD() bool IsValid() const noexcept;
    void Reset() noexcept;
+   NOD() const TextureView& GetView() const noexcept;
+   NOD() VkImage GetImage() const noexcept;
+   NOD() const VkImageCreateInfo& GetImageCreateInfo() const noexcept;
 };
 
 #include "VulkanBuffer.inl"

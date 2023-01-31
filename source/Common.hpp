@@ -12,7 +12,7 @@ LANGULUS_EXCEPTION(Graphics);
 
 LANGULUS_DEFINE_TRAIT(Shader, "Shader unit");
 LANGULUS_DEFINE_TRAIT(MapMode, "Mapping mode");
-LANGULUS_DEFINE_TRAIT(Resolution, "Resolution, usually a vector");
+//LANGULUS_DEFINE_TRAIT(Resolution, "Resolution, usually a vector");
 LANGULUS_DEFINE_TRAIT(Tesselation, "Tesselation, usually an integer");
 LANGULUS_DEFINE_TRAIT(Topology, "Topology type");
 LANGULUS_DEFINE_TRAIT(Interpolator, "Interpolation mode");
@@ -360,107 +360,9 @@ using TokenSet = ::std::vector<const char*>;
 constexpr uint32_t VK_INDEFINITELY = ::std::numeric_limits<uint32_t>::max();
 
 /// These calls must be implemented for each OS individually                  
-bool CreateNativeVulkanSurfaceKHR(const VkInstance&, const void*, VkSurfaceKHR&);
-TokenSet GetRequiredExtensions();
+bool CreateNativeVulkanSurfaceKHR(const VkInstance&, const A::Window*, VkSurfaceKHR&);
 
-
-
-///                                                                           
-///   Vertex/index buffer view                                                
-///                                                                           
-struct GeometryView {
-   // Number of primitives                                              
-   uint32_t mPrimitiveCount {};
-   // Starting primitive                                                
-   uint32_t mPrimitiveStart {};
-   // Number of indices                                                 
-   uint32_t mIndexCount {};
-   // Starting index                                                    
-   uint32_t mIndexStart {};
-   // Data topology                                                     
-   DMeta mPrimitiveType {};
-   // Double-sidedness                                                  
-   bool mBilateral {};
-
-   bool operator == (const GeometryView&) const noexcept;
-   GeometryView Decay() const;
-};
-
-
-///                                                                           
-///   Universal pixel buffer view                                             
-///                                                                           
-struct TextureView {
-   uint32_t mWidth {1};
-   uint32_t mHeight {1};
-   uint32_t mDepth {1};
-   uint32_t mFrames {1};
-   DMeta mFormat {};
-   // Reverse RGBA to BGRA                                              
-   // This is not a scalable solution and would eventually fail         
-   bool mReverseFormat {};
-
-   bool operator == (const TextureView&) const noexcept;
-
-   NOD() constexpr uint32_t GetPixelCount() const noexcept;
-   NOD() constexpr uint32_t GetDimensionCount() const noexcept;
-   NOD() Size GetPixelBytesize() const noexcept;
-   NOD() Size GetBytesize() const noexcept;
-   NOD() uint32_t GetChannelCount() const noexcept;
-};
-
-using LodIndex = int32_t;
-using AbsoluteLodIndex = uint32_t;
-
-
-///                                                                           
-///   Level of detail state                                                   
-///                                                                           
-/// A helper structure that is used to fetch the correct LOD level LOD level  
-/// is simply a geometry, that is designed to represent a zoomed-in or a      
-/// zoomed-out region of another geometry. These regions can be generated on  
-/// the fly, may reuse existing geometry or may not exist at all              
-///                                                                           
-struct LodState {
-   Level mLevel;
-   Matrix4 mView;
-   Matrix4 mViewInverted;
-   Matrix4 mModel;
-   TFrustum<Vec3> mFrustum;
-
-   // Calculated after Transform()                                      
-   Matrix4 mModelView;
-   Vec4 mOrigin;
-   Real mRadius;
-   Real mDistanceToSurface;
-   Real mLODIndex;
-
-   static constexpr LodIndex MinIndex = -6;
-   static constexpr LodIndex MaxIndex = 6;
-   static constexpr LodIndex IndexCount = MaxIndex - MinIndex + 1;
-
-   void Transform();
-   void Transform(const Matrix4&);
-   NOD() Real GetNormalizedDistance() const noexcept;
-   NOD() Real GetIndex() const noexcept;
-   NOD() AbsoluteLodIndex GetAbsoluteIndex() const noexcept;
-};
-
-///                                                                           
-///   VRAM content mirror                                                     
-///                                                                           
-class ContentVRAM : public Unit {
-protected:
-   Ptr<A::Content> mOriginalContent;
-   bool mContentMirrored = false;
-
-public:
-   using Unit::Unit;
-
-   NOD() Hash GetHash() const;
-   bool operator == (const ContentVRAM&) const noexcept;
-};
-
+NOD() TokenSet GetRequiredExtensions();
 NOD() VkIndexType AsVkIndexType(DMeta);
 NOD() VkFormat AsVkFormat(DMeta, bool reverse = false);
 NOD() DMeta VkFormatToDMeta(const VkFormat&, bool& reverse);

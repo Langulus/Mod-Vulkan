@@ -7,6 +7,7 @@
 ///                                                                           
 #include <shaderc/shaderc.hpp>
 #include "../Vulkan.hpp"
+#include "../GLSL.hpp"
 
 #define VERBOSE_SHADER(...) //Logger::Verbose(Self(), __VA_ARGS__)
 
@@ -22,9 +23,15 @@ VulkanShader::VulkanShader(VulkanRenderer* producer, const Any& descriptor)
       [this](const ShaderStage::Enum& stage) {
          mStage = stage;
       },
-      [this](const A::File* file) {
-         //TODO load a shader file (text/binary/etc.)
-         TODO();
+      [this](const A::File& file) {
+         // Create from file                                            
+         mCode = file.ReadAs<GLSL>();
+      },
+      [this](const Path& path) {
+         // Create from file path                                       
+         const auto file = GetRuntime()->GetFile(path);
+         if (file)
+            mCode = file->ReadAs<GLSL>();
       },
       [this](const Text& code) {
          mCode = code;
@@ -55,10 +62,10 @@ VulkanShader::~VulkanShader() {
 }
 
 /// Compile the shader code                                                   
-///   @return true on success                                                 
-void VulkanShader::Compile() {
+///   @return the compiled vulkan shader                                      
+const Shader& VulkanShader::Compile() const {
    if (mCompiled)
-      return;
+      return mStageDescription;
 
    const auto device = mProducer->mDevice;
    const auto startTime = SteadyClock::now();
@@ -95,7 +102,7 @@ void VulkanShader::Compile() {
    if (assembly.GetCompilationStatus() != shaderc_compilation_status_success) {
       Logger::Error(Self(), "Shader Compilation Error: ", assembly.GetErrorMessage());
       Logger::Error(Self(), "For shader:");
-      Logger::Error(Self(), mCode.Pretty());
+      Logger::Error(Self(), GLSL {mCode}.Pretty());
       LANGULUS_THROW(Graphics, "Shader compilation failed");
    }
 
@@ -104,11 +111,10 @@ void VulkanShader::Compile() {
    createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
    createInfo.codeSize = (assembly.cend() - assembly.cbegin()) * sizeof(Decay<decltype(assembly.cbegin())>);
    createInfo.pCode = assembly.cbegin();
+
    VkShaderModule shaderModule;
-   if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
-      Logger::Error(Self(), "Error creating shader module");
+   if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
       LANGULUS_THROW(Graphics, "vkCreateShaderModule failed");
-   }
 
    // Create the shader stage                                           
    mStageDescription = {};
@@ -120,6 +126,7 @@ void VulkanShader::Compile() {
    
    VERBOSE_SHADER(Logger::Green, "Compiled shader in ", SteadyClock::now() - startTime);
    VERBOSE_SHADER(Logger::Green, mCode.Pretty());
+   return mStageDescription;
 }
 
 /// Bind vertex input                                                         
@@ -183,7 +190,20 @@ void VulkanShader::AddInput(const Trait& input) {
    mAttributes.push_back(attributeDescription);
 }
 
-/// Get a VkShaderStageFlagBits corresponding the the this shader's stage     
+/// Get the vertex stage index                                                
+///   @return the vertex stage                                                
+LANGULUS(ALWAYSINLINE)
+ShaderStage::Enum VulkanShader::GetStage() const noexcept {
+   return mStage;
+}
+
+/// Get the shader code                                                       
+LANGULUS(ALWAYSINLINE)
+const Text& VulkanShader::GetCode() const noexcept {
+   return mCode;
+}
+
+/// Get a VkShaderStageFlagBits corresponding the this shader's stage         
 ///   @return the flag                                                        
 LANGULUS(ALWAYSINLINE)
 VkShaderStageFlagBits VulkanShader::GetStageFlagBit() const noexcept {
@@ -199,36 +219,24 @@ VkShaderStageFlagBits VulkanShader::GetStageFlagBit() const noexcept {
    return StageMap[mStage];
 }
 
-LANGULUS(ALWAYSINLINE)
-bool VulkanShader::IsCompiled() const noexcept {
-   return mCompiled;
-}
-
-LANGULUS(ALWAYSINLINE)
-auto& VulkanShader::GetShader() const noexcept {
-   return mStageDescription;
-}
-
-LANGULUS(ALWAYSINLINE)
-auto& VulkanShader::GetBindings() const noexcept {
-   return mBindings;
-}
-
-LANGULUS(ALWAYSINLINE)
-auto& VulkanShader::GetAttributes() const noexcept {
-   return mAttributes;
-}
-
-LANGULUS(ALWAYSINLINE)
-auto& VulkanShader::GetCode() const noexcept {
-   return mCode;
-}
-
+/// Get the rate index of the shader stage                                    
+///   @return the rate                                                        
 LANGULUS(ALWAYSINLINE)
 Rate VulkanShader::GetRate() const noexcept {
    return mStage + Rate::StagesBegin;
 }
 
+/// Get a vertex input descriptor for vulkan use                              
+///   @return the descriptor                                                  
+VertexInput VulkanShader::CreateVertexInputState() const noexcept {
+   VertexInput result {};
+   result.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+   result.vertexBindingDescriptionCount = static_cast<uint32_t>(mBindings.size());
+   result.pVertexBindingDescriptions = mBindings.data();
+   result.vertexAttributeDescriptionCount = static_cast<uint32_t>(mAttributes.size());
+   result.pVertexAttributeDescriptions = mAttributes.data();
+   return result;
+}
 
 // in order to mix standard rasterizer with ray marcher we must first linearize depth
 // uniform float near;

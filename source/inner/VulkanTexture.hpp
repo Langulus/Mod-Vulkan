@@ -14,10 +14,9 @@
 ///                                                                           
 /// Handles hardware pixel/voxel buffers                                      
 ///                                                                           
-struct VulkanTexture : ContentVRAM, ProducedFrom<VulkanRenderer> {
+struct VulkanTexture : A::Graphics, ProducedFrom<VulkanRenderer> {
    LANGULUS(ABSTRACT) false;
-   LANGULUS_BASES(ContentVRAM);
-   LANGULUS_VERBS(Verbs::Create);
+   LANGULUS_BASES(A::Graphics);
 
 private:
    // Original content texture view                                     
@@ -29,14 +28,12 @@ private:
    // Image sampler                                                     
    Own<VkSampler> mSampler;
 
+   void InitializeFromPixels(const A::Texture&);
+
 public:
    VulkanTexture(VulkanRenderer*, const Any&);
    ~VulkanTexture();
 
-   void Initialize();
-   void Uninitialize();
-
-   void Create(Verb&);
-
-   using ContentVRAM::operator ==;
+   NOD() VkImageView GetImageView() const noexcept;
+   NOD() VkSampler GetSampler() const noexcept;
 };

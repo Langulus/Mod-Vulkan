@@ -251,17 +251,16 @@ VkImageView VulkanMemory::CreateImageView(const VkImage& image, const TextureVie
 
    VkImageView imageView {};
    if (vkCreateImageView(mDevice, &viewInfo, nullptr, &imageView))
-      return 0;
+      LANGULUS_THROW(Graphics, "vkCreateImageView failed");
 
    return imageView;
 }
 
 /// Create image view                                                         
 ///   @param image - image to create view for                                 
-///   @param view - pc image view                                             
 ///   @return the image view                                                  
-VkImageView VulkanMemory::CreateImageView(const VkImage& image, const TextureView& view) {
-   const VkFormat fmt = AsVkFormat(view.mFormat);
+VkImageView VulkanMemory::CreateImageView(const VulkanImage& image) {
+   const VkFormat fmt = AsVkFormat(image.GetView().mFormat);
    const bool depthusage =
          fmt == VK_FORMAT_D32_SFLOAT
       || fmt == VK_FORMAT_D32_SFLOAT_S8_UINT
@@ -269,9 +268,9 @@ VkImageView VulkanMemory::CreateImageView(const VkImage& image, const TextureVie
       || fmt == VK_FORMAT_D16_UNORM_S8_UINT
       || fmt == VK_FORMAT_D24_UNORM_S8_UINT;
 
-   return CreateImageView(image, view, depthusage 
-      ? VK_IMAGE_ASPECT_DEPTH_BIT 
-      : VK_IMAGE_ASPECT_COLOR_BIT
+   return CreateImageView(image.GetImage(), image.GetView(),
+      depthusage ? VK_IMAGE_ASPECT_DEPTH_BIT 
+                 : VK_IMAGE_ASPECT_COLOR_BIT
    );
 }
 

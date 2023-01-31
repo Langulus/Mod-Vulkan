@@ -30,10 +30,17 @@ VulkanRenderer* VulkanRenderable::GetRenderer() const noexcept {
 /// This is the point where content might be generated upon request           
 ///   @param lod - information used to extract the best LOD                   
 ///   @return the VRAM geometry or nullptr if content is not available        
-VulkanGeometry* VulkanRenderable::GetGeometry(const LodState& lod) const {
+VulkanGeometry* VulkanRenderable::GetGeometry(const LOD& lod) const {
    const auto i = lod.GetAbsoluteIndex();
-   if (!mLOD[i].mGeometry && mGeometryContent)
-      mLOD[i].mGeometry = GetRenderer()->Cache(mGeometryContent->GetLOD(lod));
+   if (!mLOD[i].mGeometry && mGeometryContent) {
+      // Cache geometry to VRAM                                         
+      Verbs::Create creator {
+         Construct::From<VulkanGeometry>(mGeometryContent->GetLOD(lod))
+      };
+      mProducer->Create(creator);
+      mLOD[i].mGeometry = creator.GetOutput().As<VulkanGeometry*>();
+   }
+
    return mLOD[i].mGeometry;
 }
 
@@ -41,10 +48,17 @@ VulkanGeometry* VulkanRenderable::GetGeometry(const LodState& lod) const {
 /// This is the point where content might be generated upon request           
 ///   @param lod - information used to extract the best LOD                   
 ///   @return the VRAM texture or nullptr if content is not available         
-VulkanTexture* VulkanRenderable::GetTextures(const LodState& lod) const {
+VulkanTexture* VulkanRenderable::GetTexture(const LOD& lod) const {
    const auto i = lod.GetAbsoluteIndex();
-   if (!mLOD[i].mTexture && mTextureContent)
-      mLOD[i].mTexture = GetRenderer()->Cache(mTextureContent); //TODO texture lod?
+   if (!mLOD[i].mTexture && mTextureContent) {
+      // Cache texture to VRAM                                          
+      Verbs::Create creator {
+         Construct::From<VulkanTexture>(mTextureContent->GetLOD(lod))
+      };
+      mProducer->Create(creator);
+      mLOD[i].mTexture = creator.GetOutput().As<VulkanTexture*>();
+   }
+
    return mLOD[i].mTexture;
 }
 
@@ -53,7 +67,7 @@ VulkanTexture* VulkanRenderable::GetTextures(const LodState& lod) const {
 ///   @param layer - additional settings might be provided by the used layer  
 ///   @return the pipeline                                                    
 VulkanPipeline* VulkanRenderable::GetOrCreatePipeline(
-   const LodState& lod, const VulkanLayer* layer
+   const LOD& lod, const VulkanLayer* layer
 ) const {
    // Always return the predefined pipeline if available                
    if (mPredefinedPipeline)
@@ -81,11 +95,6 @@ VulkanPipeline* VulkanRenderable::GetOrCreatePipeline(
    // Add shaders if any such trait exists in unit environment          
    auto shader = SeekTrait<Traits::Shader>();
    if (!shader.IsEmpty())
-      construct << shader;
-
-   // An alternative way to set a shader snippet via GLSL code trait    
-   shader = SeekTrait<Traits::Code>();
-   if (!shader.IsEmpty() && shader.Is<GLSL>())
       construct << shader;
 
    // Add colorization if available                                     
@@ -152,30 +161,23 @@ void VulkanRenderable::Refresh() {
       mLevelRange.Embrace(instance->GetLevel());
 
    // Attempt extracting pipeline/material/geometry/textures from owners
-   for (auto owner : GetOwners()) {
-      for (auto unit : owner->GetUnits()) {
-         // First check for predefined pipeline                         
-         auto pipeline = dynamic_cast<VulkanPipeline*>(unit);
-         if (pipeline) {
-            mPredefinedPipeline = pipeline;
-            return;
-         }
-
-         // Then check for predefined material                          
-         auto material = dynamic_cast<A::Material*>(unit);
-         if (material) {
-            mMaterialContent = material;
-            return;
-         }
-
-         // If no material or pipe, check for geometries and textures   
-         auto geometry = dynamic_cast<A::Geometry*>(unit);
-         if (geometry)
-            mGeometryContent = geometry;
-
-         auto texture = dynamic_cast<A::Texture*>(unit);
-         if (texture)
-            mTextureContent = texture;
-      }
+   const auto pipeline = SeekUnit<VulkanPipeline, SeekStyle::Here>();
+   if (pipeline) {
+      mPredefinedPipeline = pipeline;
+      return;
    }
+
+   const auto material = SeekUnit<A::Material, SeekStyle::Here>();
+   if (material) {
+      mMaterialContent = material;
+      return;
+   }
+
+   const auto geometry = SeekUnit<A::Geometry, SeekStyle::Here>();
+   if (geometry)
+      mGeometryContent = geometry;
+
+   const auto texture = SeekUnit<A::Texture, SeekStyle::Here>();
+   if (texture)
+      mTextureContent = texture;
 }

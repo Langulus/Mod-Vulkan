@@ -26,17 +26,17 @@ protected:
    // Precompiled instances and levels, updated on Refresh()            
    TAny<const A::Instance*> mInstances;
    TRange<Level> mLevelRange;
-   Ptr<Unit> mMaterialContent;
-   Ptr<Unit> mGeometryContent;
-   Ptr<Unit> mTextureContent;
-   Ptr<VulkanPipeline> mPredefinedPipeline;
+   Ptr<A::Material> mMaterialContent;
+   Ptr<A::Geometry> mGeometryContent;
+   Ptr<A::Texture> mTextureContent;
+   mutable Ptr<VulkanPipeline> mPredefinedPipeline;
 
    // Precompiled content, updated on Refresh()                         
-   struct {
+   mutable struct {
       Ptr<VulkanGeometry> mGeometry;
       Ptr<VulkanTexture> mTexture;
       Ptr<VulkanPipeline> mPipeline;
-   } mLOD[LodState::IndexCount];
+   } mLOD[LOD::IndexCount];
 
    void ResetRenderable();
 
@@ -44,9 +44,9 @@ public:
    VulkanRenderable(VulkanLayer*, const Any&);
 
    NOD() VulkanRenderer* GetRenderer() const noexcept;
-   NOD() VulkanGeometry* GetGeometry(const LodState&) const;
-   NOD() VulkanTexture*  GetTextures(const LodState&) const;
-   NOD() VulkanPipeline* GetOrCreatePipeline(const LodState&, const VulkanLayer*) const;
+   NOD() VulkanGeometry* GetGeometry(const LOD&) const;
+   NOD() VulkanTexture*  GetTexture(const LOD&) const;
+   NOD() VulkanPipeline* GetOrCreatePipeline(const LOD&, const VulkanLayer*) const;
 
    void Refresh();
 };

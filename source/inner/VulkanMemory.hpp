@@ -42,7 +42,8 @@ public:
    void DestroyImage(VulkanImage&) const;
 
    VkImageView CreateImageView(const VkImage&, const TextureView&, VkImageAspectFlags);
-   VkImageView CreateImageView(const VkImage&, const TextureView&);
+   VkImageView CreateImageView(const VulkanImage&, const TextureView&, VkImageAspectFlags);
+   VkImageView CreateImageView(const VulkanImage&);
 
    void ImageTransfer(VulkanImage&, VkImageLayout from, VkImageLayout to);
    void ImageTransfer(VkImage&, VkImageLayout from, VkImageLayout to);

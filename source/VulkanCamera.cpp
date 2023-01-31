@@ -93,9 +93,9 @@ void VulkanCamera::Refresh() {
 /// Get view transformation for a given level                                 
 ///   @param level - the level                                                
 ///   @return the view transformation for the camera                          
-Matrix4 VulkanCamera::GetViewTransform(Level level) const {
+Matrix4 VulkanCamera::GetViewTransform(const LOD& lod) const {
    if (mInstances.IsEmpty())
       return {};
 
-   return mInstances[0]->GetViewTransform(level);
+   return mInstances[0]->GetViewTransform(lod);
 }

@@ -20,11 +20,11 @@
 #include <vulkan/vulkan.h>
 
 #if LANGULUS_OS(WINDOWS)
-   bool CreateNativeVulkanSurfaceKHR(const VkInstance& instance, const void* window, VkSurfaceKHR& surface) {
+   bool CreateNativeVulkanSurfaceKHR(const VkInstance& instance, const A::Window* window, VkSurfaceKHR& surface) {
       VkWin32SurfaceCreateInfoKHR createInfo;
       memset(&createInfo, 0, sizeof(VkWin32SurfaceCreateInfoKHR));
       createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-      createInfo.hwnd = reinterpret_cast<HWND>(const_cast<void*>(window));
+      createInfo.hwnd = reinterpret_cast<HWND>(window->GetNativeHandle());
       createInfo.hinstance = GetModuleHandle(nullptr);
       auto CreateWin32SurfaceKHR = (PFN_vkCreateWin32SurfaceKHR)
          vkGetInstanceProcAddr(instance, "vkCreateWin32SurfaceKHR");
@@ -34,11 +34,11 @@
       return true;
    }
 #elif LANGULUS_OS(LINUX)
-   bool CreateNativeVulkanSurfaceKHR(const VkInstance& instance, const AWindow* window, VkSurfaceKHR& surface) {
+   bool CreateNativeVulkanSurfaceKHR(const VkInstance& instance, const A::Window* window, VkSurfaceKHR& surface) {
       VkXlibSurfaceCreateInfoKHR createInfo;
       memset(&createInfo, 0, sizeof(VkXlibSurfaceCreateInfoKHR));
       createInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
-      createInfo.window = reinterpret_cast<Window>(window);
+      createInfo.window = reinterpret_cast<Window>(window->GetNativeHandle());
       auto CreateXLIBSurfaceKHR = (PFN_vkCreateXlibSurfaceKHR)
          vkGetInstanceProcAddr(instance, "PFN_vkCreateXlibSurfaceKHR");
 

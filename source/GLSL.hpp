@@ -78,8 +78,6 @@ public:
 
    NOD() GLSL Clone() const;
    NOD() static GLSL From(ShaderStage::Enum);
-   /*NOD() Text::Selection Select(ShaderToken::Enum);
-   NOD() Text::Selection Select(const Text&);*/
    NOD() bool IsDefined(const Text&);
    NOD() Text Pretty() const;
    NOD() static GLSL Type(DMeta);

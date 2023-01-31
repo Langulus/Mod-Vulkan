@@ -122,42 +122,9 @@ struct SamplerUBO {
    SamplerUBO(SamplerUBO&&) noexcept = default;
    ~SamplerUBO();
 
-   /// Check if two sampler sets are functionally the same                    
-   bool operator == (const SamplerUBO& rhs) const noexcept {
-      return mSamplers == rhs.mSamplers && mUniforms == rhs.mUniforms;
-   }
+   bool operator == (const SamplerUBO&) const noexcept;
 
    void Create(VulkanRenderer*, VkDescriptorPool);
    void Update(BufferUpdates&) const;
-
-   /// Set a sampler                                                          
-   ///   @param value - the value to set                                      
-   ///   @param index - the index of the stride, ignored if buffer is static  
-   template<CT::Data DATA>
-   void Set(const DATA& value, Offset index = 0) {
-      LANGULUS_ASSERT(mSamplers.GetCount() > index, Graphics, "Bad texture index");
-
-      if constexpr (CT::DerivedFrom<DATA, VulkanTexture>) {
-         // Reference content that's already in VRAM                    
-         value->Initialize();
-         VkDescriptorImageInfo sampler;
-         sampler.sampler = value->GetSampler();
-         sampler.imageView = value->GetImageView();
-         sampler.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-         mSamplers[index] = sampler;
-      }
-      else if constexpr (CT::Unit<DATA>) {
-         // Cache content in VRAM                                       
-         auto cached = PrepareTexture(value);
-         VkDescriptorImageInfo sampler;
-         sampler.sampler = cached->GetSampler();
-         sampler.imageView = cached->GetImageView();
-         sampler.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-         mSamplers[index] = sampler;
-      }
-      else LANGULUS_ERROR("Unsupported sampler type");
-   }
-
-private:
-   VulkanTexture* PrepareTexture(Unit*) const;
+   void Set(const VulkanTexture*, Offset = 0);
 };

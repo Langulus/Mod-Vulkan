@@ -46,5 +46,5 @@ public:
 
    void Refresh();
    void Compile();
-   NOD() Matrix4 GetViewTransform(Level) const;
+   NOD() Matrix4 GetViewTransform(const LOD&) const;
 };

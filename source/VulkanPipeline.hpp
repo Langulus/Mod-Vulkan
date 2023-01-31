@@ -34,8 +34,10 @@ private:
    void CreateNewSamplerSet();
    void CreateNewGeometrySet();
 
+   TAny<TAny<Trait>> mUniforms;
+
    // Shaders                                                           
-   TUnorderedMap<ShaderStage::Enum, VulkanShader*> mStages;
+   Ptr<const VulkanShader> mStages[ShaderStage::Counter];
    // The graphics pipeline                                             
    Own<VkPipeline> mPipeline;
    // The rendering pipeline layout                                     
@@ -76,22 +78,16 @@ private:
    TAny<PipeSubscriber> mSubscribers;
    TAny<const VulkanGeometry*> mGeometries;
 
-   Hash mHash;
-   bool mGenerated {false};
-   Ptr<A::Content> mOriginalContent;
-
-public:
-   VulkanPipeline(VulkanRenderer*, const Any&);
-   ~VulkanPipeline();
-
    void PrepareFromFile(const A::File&);
    void PrepareFromConstruct(const Construct&);
    void PrepareFromMaterial(const A::Material&);
    void PrepareFromGeometry(const A::Geometry&);
    void PrepareFromCode(const Text&);
 
-   void Initialize();
-   void Uninitialize();
+public:
+   VulkanPipeline(VulkanRenderer*, const Any&);
+   ~VulkanPipeline();
+
    NOD() Count RenderLevel(const Offset&) const;
    void RenderSubscriber(const PipeSubscriber&) const;
    void ResetUniforms();
@@ -105,18 +101,16 @@ public:
    ///                  used as ID only when setting a texture                
    template<Rate RATE, CT::Trait TRAIT, CT::Data DATA>
    void SetUniform(const DATA& value, Offset index = 0) {
-      if constexpr (CT::Texture<DATA>) {
+      if constexpr (CT::Same<DATA, VulkanTexture>) {
          static_assert(RATE == PerRenderable,
             "Setting a texture requires Rate::Renderable");
          // Set the sampler with the given index                        
-         mSamplerUBO[mSubscribers.Last().samplerSet]
-            .template Set<DATA>(value, index);
+         mSamplerUBO[mSubscribers.Last().samplerSet].Set(value, index);
       }
-      else if constexpr (CT::Geometry<DATA>) {
+      else if constexpr (CT::Same<DATA, VulkanGeometry>) {
          static_assert(RATE == PerRenderable,
             "Setting a geometry stream requires Rate::Renderable");
-         // Set the geometry stream, make sure VRAM is initialized      
-         value->Initialize();
+         // Set the geometry stream                                     
          mGeometries[mSubscribers.Last().geometrySet] = value;
       }
       else if constexpr (RATE.IsStaticUniform()) {

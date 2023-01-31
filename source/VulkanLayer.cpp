@@ -32,7 +32,7 @@ void VulkanLayer::Create(Verb& verb) {
 ///   @return true if anything renderable was generated                       
 bool VulkanLayer::Generate(PipelineSet& pipelines) {
    CompileCameras();
-   auto n = CompileLevels();
+   CompileLevels();
    return pipelines.Merge(mRelevantPipelines);
 }
 
@@ -49,7 +49,7 @@ void VulkanLayer::CompileCameras() {
 ///   @param lod - the lod state to use                                       
 ///   @return the pipeline if instance is relevant                            
 VulkanPipeline* VulkanLayer::CompileInstance(
-   const VulkanRenderable* renderable, const A::Instance* instance, LodState& lod
+   const VulkanRenderable* renderable, const A::Instance* instance, LOD& lod
 ) {
    if (!instance) {
       // No instances, so culling based only on default level           
@@ -61,27 +61,31 @@ VulkanPipeline* VulkanLayer::CompileInstance(
       // Instance available, so cull                                    
       if (instance->Cull(lod))
          return nullptr;
-      lod.Transform(instance->GetModelTransform(lod.mLevel));
+      lod.Transform(instance->GetModelTransform(lod));
    }
 
    // Get relevant pipeline                                             
    auto pipeline = renderable->GetOrCreatePipeline(lod, this);
    if (!pipeline)
       return nullptr;
-   pipeline->Initialize();
 
    // Get relevant geometry                                             
    const auto geometry = renderable->GetGeometry(lod);
-   if (geometry)
-      pipeline->SetUniform<PerRenderable, Traits::Geometry>(geometry);
+   if (geometry) {
+      pipeline->template
+         SetUniform<PerRenderable, Traits::Geometry>(geometry);
+   }
 
    // Get relevant textures                                             
-   const auto textures = renderable->GetTextures(lod);
-   if (textures)
-      pipeline->SetUniform<PerRenderable, Traits::Texture>(textures);
+   const auto textures = renderable->GetTexture(lod);
+   if (textures) {
+      pipeline->template
+         SetUniform<PerRenderable, Traits::Texture>(textures);
+   }
 
    // Push uniforms                                                     
-   pipeline->SetUniform<PerInstance, Traits::Transform>(lod.mModel);
+   pipeline->template
+      SetUniform<PerInstance, Traits::Transform>(lod.mModel);
    return pipeline;
 }
 
@@ -91,7 +95,7 @@ VulkanPipeline* VulkanLayer::CompileInstance(
 ///   @param lod - the lod state to use                                       
 ///   @param pipesPerCamera - [out] pipelines used by the hierarchy           
 ///   @return 1 if something from the hierarchy was rendered                  
-Count VulkanLayer::CompileThing(const Thing* thing, LodState& lod, PipelineSet& pipesPerCamera) {
+Count VulkanLayer::CompileThing(const Thing* thing, LOD& lod, PipelineSet& pipesPerCamera) {
    // Iterate all renderables of the entity, which are part of this     
    // layer - disregard all others                                      
    auto relevantRenderables = thing->GatherUnits<VulkanRenderable, SeekStyle::Here>();
@@ -157,28 +161,18 @@ Count VulkanLayer::CompileLevelHierarchical(
    Level level, PipelineSet& pipesPerCamera
 ) {
    // Construct view and frustum for culling                            
-   LodState lod;
-   lod.mLevel = level;
-   lod.mView = view;
-   lod.mViewInverted = lod.mView.Invert();
-   lod.mFrustum = lod.mViewInverted * projection;
+   LOD lod {level, view, projection};
 
    // Nest-iterate all children of the layer owner                      
    Count renderedEntities {};
-   for (auto owner : GetOwners())
+   for (const auto owner : GetOwners())
       renderedEntities += CompileThing(owner, lod, pipesPerCamera);
    
    if (renderedEntities) {
       for (auto pipeline : pipesPerCamera) {
-         // Push PerLevel uniforms if required                          
-         //const auto projectedView = lod.mViewInverted * projection;
-         //const auto projectedViewInverted = projectedView.Invert();
-
+         // Push PerLevel uniforms                                      
          pipeline->SetUniform<PerLevel, Traits::View>(lod.mView);
          pipeline->SetUniform<PerLevel, Traits::Projection>(projection);
-         //pipeline->SetUniform<PerLevel, Traits::ViewTransformInverted>(lod.mViewInverted);
-         //pipeline->SetUniform<PerLevel, Traits::ViewProjectTransform>(projectedView);
-         //pipeline->SetUniform<PerLevel, Traits::ViewProjectTransformInverted>(projectedViewInverted);
          pipeline->SetUniform<PerLevel, Traits::Level>(level);
          pipeline->PushUniforms<PerLevel, false>();
       }
@@ -204,15 +198,11 @@ Count VulkanLayer::CompileLevelBatched(
    Level level, PipelineSet& pipesPerCamera
 ) {
    // Construct view and frustum   for culling                          
-   LodState lod;
-   lod.mLevel = level;
-   lod.mView = view;
-   lod.mViewInverted = lod.mView.Invert();
-   lod.mFrustum = lod.mViewInverted * projection;
+   LOD lod {level, view, projection};
 
    // Iterate all renderables                                           
    Count renderedInstances {};
-   for (auto& renderable : mRenderables) {
+   for (const auto& renderable : mRenderables) {
       if (renderable.mInstances.IsEmpty()) {
          auto pipeline = CompileInstance(&renderable, nullptr, lod);
          if (pipeline) {
@@ -238,14 +228,8 @@ Count VulkanLayer::CompileLevelBatched(
    if (renderedInstances) {
       for (auto pipeline : pipesPerCamera) {
          // Push PerLevel uniforms if required                          
-         const auto projectedView = lod.mViewInverted * projection;
-         const auto projectedViewInverted = projectedView.Invert();
-
          pipeline->SetUniform<PerLevel, Traits::View>(lod.mView);
          pipeline->SetUniform<PerLevel, Traits::Projection>(projection);
-         //pipeline->SetUniform<PerLevel, Traits::ViewTransformInverted>(lod.mViewInverted);
-         //pipeline->SetUniform<PerLevel, Traits::ViewProjectTransform>(projectedView);
-         //pipeline->SetUniform<PerLevel, Traits::ViewProjectTransformInverted>(projectedViewInverted);
          pipeline->SetUniform<PerLevel, Traits::Level>(level);
          pipeline->PushUniforms<PerLevel>();
 
@@ -288,9 +272,8 @@ Count VulkanLayer::CompileLevels() {
          for (auto pipeline : pipesPerCamera) {
             // Push PerCamera uniforms if required                      
             pipeline->SetUniform<PerCamera, Traits::Projection>(Matrix4 {});
-            //pipeline->SetUniform<PerCamera, Traits::ProjectTransformInverted>(Matrix4 {});
             pipeline->SetUniform<PerCamera, Traits::FOV>(Radians {});
-            pipeline->SetUniform<PerCamera, Traits::Resolution>(GetWindow()->GetSize());
+            pipeline->SetUniform<PerCamera, Traits::Size>(GetWindow()->GetSize());
             if (mStyle & Style::Hierarchical)
                pipeline->PushUniforms<PerCamera, false>();
             else
@@ -317,7 +300,7 @@ Count VulkanLayer::CompileLevels() {
       }
       else if (camera.mObservableRange.Inside(Level::Default)) {
          // Default level style - checks only if camera sees default    
-         const auto view = camera.GetViewTransform(Level::Default);
+         const auto view = camera.GetViewTransform({});
          if (mStyle & Style::Hierarchical)
             CompileLevelHierarchical(view, camera.mProjection, {}, pipesPerCamera);
          else
@@ -329,9 +312,8 @@ Count VulkanLayer::CompileLevels() {
          for (auto pipeline : pipesPerCamera) {
             // Push PerCamera uniforms if required                      
             pipeline->SetUniform<PerCamera, Traits::Projection>(camera.mProjection);
-            //pipeline->SetUniform<PerCamera, Traits::ProjectTransformInverted>(camera.mProjectionInverted);
             pipeline->SetUniform<PerCamera, Traits::FOV>(camera.mFOV);
-            pipeline->SetUniform<PerCamera, Traits::Resolution>(camera.mResolution);
+            pipeline->SetUniform<PerCamera, Traits::Size>(camera.mResolution);
             if (mStyle & Style::Hierarchical)
                pipeline->PushUniforms<PerCamera, false>();
             else
@@ -367,8 +349,8 @@ void VulkanLayer::RenderBatched(const RenderConfig& config) const {
 
    if (mRelevantCameras.IsEmpty()) {
       VkViewport viewport {};
-      viewport.width = GetProducer()->GetResolution()[0];
-      viewport.height = GetProducer()->GetResolution()[1];
+      viewport.width = GetProducer()->mResolution[0];
+      viewport.height = GetProducer()->mResolution[1];
 
       VkRect2D scissor {};
       scissor.extent.width = static_cast<uint32_t>(viewport.width);
@@ -431,8 +413,8 @@ void VulkanLayer::RenderHierarchical(const RenderConfig& config) const {
    // Iterate all valid cameras                                         
    if (mRelevantCameras.IsEmpty()) {
       VkViewport viewport {};
-      viewport.width = GetProducer()->GetResolution()[0];
-      viewport.height = GetProducer()->GetResolution()[1];
+      viewport.width = GetProducer()->mResolution[0];
+      viewport.height = GetProducer()->mResolution[1];
 
       VkRect2D scissor {};
       scissor.extent.width = static_cast<uint32_t>(viewport.width);
@@ -463,7 +445,7 @@ void VulkanLayer::RenderHierarchical(const RenderConfig& config) const {
       // Main pass ends                                                 
       vkCmdEndRenderPass(config.mCommands);
    }
-   else for (const auto camera : mRelevantCameras) {
+   else for (const auto& camera : mRelevantCameras) {
       config.mPassBeginInfo.renderArea.extent.width = camera->mResolution[0];
       config.mPassBeginInfo.renderArea.extent.height = camera->mResolution[1];
 
@@ -493,4 +475,10 @@ void VulkanLayer::RenderHierarchical(const RenderConfig& config) const {
       // Main pass ends                                                 
       vkCmdEndRenderPass(config.mCommands);
    }
+}
+
+/// Get the style of a layer                                                  
+///   @return the layer style                                                 
+VulkanLayer::Style VulkanLayer::GetStyle() const noexcept {
+   return mStyle;
 }

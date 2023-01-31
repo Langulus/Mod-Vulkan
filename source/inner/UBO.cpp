@@ -22,6 +22,13 @@ void UBO::Destroy() {
    mRAM.Reset();
 }
 
+/// Align a value to an alignment                                             
+template<CT::DenseInteger T>
+NOD() constexpr T Align(const T& v, const T& alignment) noexcept {
+   const auto r = v % alignment;
+   return r > 0 ? v + (alignment - r) : v;
+}
+
 /// Calculate aligned range, as well as individual uniform byte offsets       
 void UBO::CalculateSizes() {
    // Calculate required UBO buffer sizes for the whole pipeline        
@@ -91,11 +98,11 @@ void UBO::Reallocate(Count elements) {
    mAllocated = elements;
    const auto byteSize = mStride * mAllocated;
    mBuffer = mRenderer->mVRAM.CreateBuffer(
-      nullptr, VkDeviceSize(byteSize),
+      nullptr, VkDeviceSize {byteSize},
       VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, 
       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
    );
-   mDescriptor.buffer = mBuffer.mBuffer;
+   mDescriptor.buffer = mBuffer.GetBuffer();
 
    // Resize the RAM data, retaining contained data                     
    mRAM.Reserve(byteSize);
@@ -219,11 +226,21 @@ SamplerUBO::~SamplerUBO() {
    }
 }
 
-/// Cache and initialize the texture                                          
-///   @param value - texture to cache and initialize                          
-///   @return the VRAM texture                                                
-VulkanTexture* SamplerUBO::PrepareTexture(Unit* texture) const {
-   auto cached = mRenderer->Cache(texture);
-   cached->Initialize();
-   return cached;
+/// Check if two sampler sets are functionally the same                    
+bool SamplerUBO::operator == (const SamplerUBO& rhs) const noexcept {
+   return mSamplers == rhs.mSamplers && mUniforms == rhs.mUniforms;
+}
+
+/// Set a sampler                                                          
+///   @param value - the value to set                                      
+///   @param index - the index of the stride, ignored if buffer is static  
+void SamplerUBO::Set(const VulkanTexture* texture, Offset index) {
+   LANGULUS_ASSERT(mSamplers.GetCount() > index, Graphics,
+      "Bad texture index");
+
+   VkDescriptorImageInfo sampler;
+   sampler.sampler = texture->GetSampler();
+   sampler.imageView = texture->GetImageView();
+   sampler.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+   mSamplers[index] = sampler;
 }

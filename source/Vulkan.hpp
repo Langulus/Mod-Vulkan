@@ -58,7 +58,7 @@ public:
    VkPhysicalDevice PickAdapter() const;
 
    #if LANGULUS(DEBUG)
-      auto& GetValidationLayers() const noexcept;
+      const TokenSet& GetValidationLayers() const noexcept;
       void CheckValidationLayerSupport(const TokenSet&) const;
    #endif
 };
