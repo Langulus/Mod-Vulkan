@@ -37,7 +37,7 @@ VulkanGeometry::VulkanGeometry(VulkanRenderer* producer, const Any& descriptor)
    : A::Graphics {MetaOf<VulkanGeometry>(), descriptor}
    , ProducedFrom {producer, descriptor} {
    descriptor.ForEachDeep([&](const A::Geometry& geometry) {
-      const auto startTime = SteadyClock::now();
+      VERBOSE_VKGEOMETRY(const auto startTime = SteadyClock::now());
 
       // Create a buffer for each provided type, as long as that type   
       // can be decayed into vertices                                   

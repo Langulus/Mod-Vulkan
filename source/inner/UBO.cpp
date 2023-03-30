@@ -22,13 +22,6 @@ void UBO::Destroy() {
    mRAM.Reset();
 }
 
-/// Align a value to an alignment                                             
-template<CT::DenseInteger T>
-NOD() constexpr T Align(const T& v, const T& alignment) noexcept {
-   const auto r = v % alignment;
-   return r > 0 ? v + (alignment - r) : v;
-}
-
 /// Calculate aligned range, as well as individual uniform byte offsets       
 void UBO::CalculateSizes() {
    // Calculate required UBO buffer sizes for the whole pipeline        
@@ -226,14 +219,14 @@ SamplerUBO::~SamplerUBO() {
    }
 }
 
-/// Check if two sampler sets are functionally the same                    
+/// Check if two sampler sets are functionally the same                       
 bool SamplerUBO::operator == (const SamplerUBO& rhs) const noexcept {
    return mSamplers == rhs.mSamplers && mUniforms == rhs.mUniforms;
 }
 
-/// Set a sampler                                                          
-///   @param value - the value to set                                      
-///   @param index - the index of the stride, ignored if buffer is static  
+/// Set a sampler                                                             
+///   @param value - the value to set                                         
+///   @param index - the index of the stride, ignored if buffer is static     
 void SamplerUBO::Set(const VulkanTexture* texture, Offset index) {
    LANGULUS_ASSERT(mSamplers.GetCount() > index, Graphics,
       "Bad texture index");

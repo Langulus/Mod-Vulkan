@@ -15,6 +15,12 @@
 struct Uniform {
    Offset mPosition;
    Trait mTrait;
+
+   Uniform(Offset offset, const Trait& data)
+      : mPosition {offset}
+      , mTrait {data} {}
+
+   bool operator == (const Uniform&) const = default;
 };
 
 ///                                                                           

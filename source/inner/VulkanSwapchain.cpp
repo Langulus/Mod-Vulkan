@@ -19,8 +19,8 @@ void VulkanSwapchain::CreateSurface(const A::Window* window) {
 
 /// Create the swapchain                                                      
 ///   @param format - surface format                                          
-///   @return true on success                                                 
-void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format) {
+///   @param families - set of queue families to use                          
+void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const TAny<uint32_t>& families) {
    // Resolution                                                        
    const auto adapter = mRenderer.GetAdapter();
    const Real resx = mRenderer.mResolution[0];
@@ -77,13 +77,6 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format) {
       imageCount = surface_caps.maxImageCount;
 
    // Setup the swapchain                                               
-   const ::std::set<uint32_t> families {
-      mGraphicIndex, mPresentIndex, mTransferIndex
-   };
-
-   std::vector<uint32_t> familiesvec;
-   std::copy(families.begin(), families.end(), ::std::back_inserter(familiesvec));
-
    VkSwapchainCreateInfoKHR swapInfo {};
    swapInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
    swapInfo.surface = mSurface;
@@ -93,11 +86,11 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format) {
    swapInfo.imageExtent = extent;
    swapInfo.imageArrayLayers = 1;   // 2 if stereoscopic                
    swapInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-   swapInfo.imageSharingMode = familiesvec.size() == 1 
+   swapInfo.imageSharingMode = families.GetCount() == 1
       ? VK_SHARING_MODE_EXCLUSIVE 
       : VK_SHARING_MODE_CONCURRENT;
-   swapInfo.queueFamilyIndexCount = static_cast<uint32_t>(familiesvec.size());
-   swapInfo.pQueueFamilyIndices = familiesvec.data();
+   swapInfo.queueFamilyIndexCount = static_cast<uint32_t>(families.GetCount());
+   swapInfo.pQueueFamilyIndices = families.GetRaw();
    swapInfo.preTransform = surface_caps.currentTransform;
    swapInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
    swapInfo.presentMode = surfacePresentMode;
@@ -217,11 +210,11 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format) {
 }
 
 /// Recreate the swapchain (usually on window resize)                         
-///   @return true on success                                                 
-void VulkanSwapchain::Recreate() {
+///   @param families - a set of queue families                               
+void VulkanSwapchain::Recreate(const TAny<uint32_t>& families) {
    vkDeviceWaitIdle(mRenderer.mDevice);
    Destroy();
-   Create(GetSurfaceFormat());
+   Create(GetSurfaceFormat(), families);
 }
 
 /// Destroy the current swapchain                                             

@@ -151,7 +151,7 @@ void VulkanRenderable::Refresh() {
    ResetRenderable();
 
    // Gather all instances for this renderable, and calculate levels    
-   mInstances = GatherUnits<A::Instance, SeekStyle::Here>();
+   mInstances = GatherUnits<A::Instance, Seek::Here>();
    if (!mInstances.IsEmpty())
       mLevelRange = mInstances[0]->GetLevel();
    else
@@ -161,23 +161,23 @@ void VulkanRenderable::Refresh() {
       mLevelRange.Embrace(instance->GetLevel());
 
    // Attempt extracting pipeline/material/geometry/textures from owners
-   const auto pipeline = SeekUnit<VulkanPipeline, SeekStyle::Here>();
+   const auto pipeline = SeekUnit<VulkanPipeline, Seek::Here>();
    if (pipeline) {
       mPredefinedPipeline = pipeline;
       return;
    }
 
-   const auto material = SeekUnit<A::Material, SeekStyle::Here>();
+   const auto material = SeekUnit<A::Material, Seek::Here>();
    if (material) {
       mMaterialContent = material;
       return;
    }
 
-   const auto geometry = SeekUnit<A::Geometry, SeekStyle::Here>();
+   const auto geometry = SeekUnit<A::Geometry, Seek::Here>();
    if (geometry)
       mGeometryContent = geometry;
 
-   const auto texture = SeekUnit<A::Texture, SeekStyle::Here>();
+   const auto texture = SeekUnit<A::Texture, Seek::Here>();
    if (texture)
       mTextureContent = texture;
 }

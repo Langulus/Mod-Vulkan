@@ -37,9 +37,21 @@ protected:
    friend struct VulkanSwapchain;
    friend struct VulkanLayer;
 
+protected:
+   //                                                                   
+   // Runtime updatable variables                                       
+   //                                                                   
+   
    // The platform window, where the renderer is created                
    Ptr<const A::Window> mWindow;
+   // The time gradient, used for animations                            
+   Ptr<TGradient<Time>> mTime;
+   // Mouse position, can be passed to shaders                          
+   Ptr<Grad2v2> mMousePosition;
+   // Mouse scroll, can be passed to shaders                            
+   Ptr<Grad2v2> mMouseScroll;
 
+protected:
    // The logical device                                                
    Own<VkDevice> mDevice;
    // VRAM memory properties                                            
@@ -62,6 +74,8 @@ protected:
    uint32_t mPresentIndex {};
    // Transfer family                                                   
    uint32_t mTransferIndex {};
+   // The set of families                                               
+   TAny<uint32_t> mFamilies;
 
    // For draw commands                                                 
    Own<VkCommandPool> mCommandPool;
@@ -96,6 +110,7 @@ public:
 
    NOD() VkInstance GetVulkanInstance() const noexcept;
    NOD() VkPhysicalDevice GetAdapter() const noexcept;
+   NOD() const A::Window* GetWindow() const noexcept;
    NOD() Size GetOuterUBOAlignment() const noexcept;
    NOD() VkCommandBuffer GetRenderCB() const noexcept;
 };

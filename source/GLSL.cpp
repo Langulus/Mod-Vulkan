@@ -3,12 +3,6 @@
 #define GLSL_VERBOSE(a)
 
 
-/// Clone the GLSL container, retaining type                                  
-///   @return the cloned GLSL container                                       
-GLSL GLSL::Clone() const {
-   return Text::Clone();
-}
-
 /// Create GLSL from shader template                                          
 ///   @param stage - the shader stage to use as template                      
 ///   @return the GLSL code                                                   

@@ -123,6 +123,7 @@ public:
    void Render(const RenderConfig&) const;
 
    NOD() Style GetStyle() const noexcept;
+   NOD() const A::Window* GetWindow() const noexcept;
 
 private:
    void CompileCameras();

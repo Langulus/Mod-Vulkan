@@ -26,6 +26,9 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, const Any& descriptor)
    LANGULUS_ASSERT(mWindow, Construct,
       "No window available for renderer");
    SeekTraitAux<Traits::Size>(descriptor, mResolution);
+   SeekTraitAux<Traits::Time>(descriptor, mTime);
+   SeekTraitAux<Traits::MousePosition>(descriptor, mMousePosition);
+   SeekTraitAux<Traits::MouseScroll>(descriptor, mMouseScroll);
 
    // Create native surface                                             
    mSwapchain.CreateSurface(mWindow);
@@ -91,12 +94,10 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, const Any& descriptor)
 
    // Create queues for rendering & presenting                          
    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-   std::set<uint32_t> uniqueQueueFamilies {
-      mGraphicIndex, mPresentIndex, mTransferIndex
-   };
+   mFamilies <<= mGraphicIndex <<= mPresentIndex <<= mTransferIndex;
 
    float queuePriority = 1.0f;
-   for (auto queueFamily : uniqueQueueFamilies) {
+   for (auto queueFamily : mFamilies) {
       VkDeviceQueueCreateInfo queueCreateInfo {};
       queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
       queueCreateInfo.queueFamilyIndex = queueFamily;
@@ -149,7 +150,7 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, const Any& descriptor)
 
    // Create the swap chain                                             
    const auto format = mSwapchain.GetSurfaceFormat();
-   mSwapchain.Create(format);
+   mSwapchain.Create(format, mFamilies);
 
    // Define color attachment for the back buffer                       
    VkAttachmentDescription colorAttachment {};
@@ -255,7 +256,7 @@ void VulkanRenderer::Create(Verb& verb) {
 void VulkanRenderer::Resize(const Vec2& size) {
    if (mResolution != size) {
       mResolution = size;
-      mSwapchain.Recreate();
+      mSwapchain.Recreate(mFamilies);
       vkDeviceWaitIdle(mDevice);
    }
 }
@@ -268,19 +269,6 @@ void VulkanRenderer::Draw() {
 
    // Wait for previous present to finish                               
    vkQueueWaitIdle(mPresentQueue);
-
-   // Get some global values, like time, mouse position, mouse scroll   
-   // But do it in the context of the window, as this renderer is       
-   // most likely just its sideproduct and is somewhere else            
-   TimeGradient timeGradient;
-   SAFETY(if (!mWindow->SeekValue<Traits::Time>(timeGradient))
-      Logger::Warning(Self(), "No time gradient found, so shader timers will be all zero");
-
-   auto timeFromInit = timeGradient.Current().SecondsReal();
-   Grad2v2 mousePosition;
-   mWindow->SeekValue<Traits::MousePosition>(mousePosition);
-   Grad2v2 mouseScroll;
-   mWindow->SeekValue<Traits::MouseScroll>(mouseScroll);
 
    // Reset all pipelines that already exist                            
    for (auto& pipe : mPipelines)
@@ -295,9 +283,9 @@ void VulkanRenderer::Draw() {
    // Upload any uniform buffer changes to VRAM                         
    // Once this data is uploaded, we're free to prepare the next frame  
    for (auto pipe : relevantPipes) {
-      pipe->SetUniform<PerTick, Traits::Time>(timeFromInit);
-      pipe->SetUniform<PerTick, Traits::MousePosition>(mousePosition.Current());
-      pipe->SetUniform<PerTick, Traits::MouseScroll>(mouseScroll.Current());
+      pipe->SetUniform<PerTick, Traits::Time>(mTime->Current());
+      pipe->SetUniform<PerTick, Traits::MousePosition>(mMousePosition->Current());
+      pipe->SetUniform<PerTick, Traits::MouseScroll>(mMouseScroll->Current());
       pipe->UpdateUniformBuffers();
    }
 
@@ -342,6 +330,12 @@ VkInstance VulkanRenderer::GetVulkanInstance() const noexcept {
 ///   @return the physical device handle                                      
 VkPhysicalDevice VulkanRenderer::GetAdapter() const noexcept {
    return mProducer->mAdapter;
+}
+
+/// Get the window interface                                                  
+///   @return the window interface                                            
+const A::Window* VulkanRenderer::GetWindow() const noexcept {
+   return mWindow;
 }
 
 /// Get hardware dependent UBO outer alignment for dynamic buffers            

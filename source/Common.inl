@@ -441,10 +441,10 @@ VkPrimitiveTopology AsVkPrimitive(DMeta meta) {
 LANGULUS(ALWAYSINLINE)
 RGBAf AnyColorToVector(const Any& color) {
    // Inspect the data pack, what color components does it contain?     
-   const auto redChannel = color.GetMember<Traits::R>();
-   const auto greenChannel = color.GetMember<Traits::G>();
-   const auto blueChannel = color.GetMember<Traits::B>();
-   const auto alphaChannel = color.GetMember<Traits::A>();
+   const auto redChannel = color.GetMember(MetaOf<Traits::R>());
+   const auto greenChannel = color.GetMember(MetaOf<Traits::G>());
+   const auto blueChannel = color.GetMember(MetaOf<Traits::B>());
+   const auto alphaChannel = color.GetMember(MetaOf<Traits::A>());
 
    // Get the values (and normalize them if we have to)                 
    RGBAf result;

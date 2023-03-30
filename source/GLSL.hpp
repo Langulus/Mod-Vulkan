@@ -7,7 +7,7 @@ LANGULUS_EXCEPTION(GLSL);
 ///                                                                           
 ///   GLSL code container & tools                                             
 ///                                                                           
-class GLSL : public Text {
+struct GLSL : Text {
    LANGULUS_BASES(Text);
 private:
    /// GLSL template for each programmable shader stage                       
@@ -64,6 +64,9 @@ private:
 public:
    using Text::Text;
 
+   GLSL(const Text&);
+   GLSL(Text&&);
+
    explicit GLSL(const CT::Deep auto&);
    explicit GLSL(DMeta);
    explicit GLSL(TMeta);
@@ -92,8 +95,8 @@ public:
    NOD() static GLSL Type();
 };
 
-NOD() GLSL operator + (const CT::NotText auto&, const GLSL&);
-NOD() GLSL operator + (const GLSL&, const CT::NotText auto&);
+/*NOD() GLSL operator + (const CT::NotText auto&, const GLSL&);
+NOD() GLSL operator + (const GLSL&, const CT::NotText auto&);*/
 
 LANGULUS(ALWAYSINLINE)
 GLSL operator "" _glsl(const char* text, std::size_t size) {

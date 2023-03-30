@@ -306,8 +306,9 @@ void VulkanPipeline::PrepareFromGeometry(const A::Geometry& geometry) {
       }
       else {
          // Just forward custom inputs, starting from the vertex stage  
+         const auto serializedData = Serializer::Serialize<Code>(data);
          code +=
-            "Create^PerVertex(Input("_code + trait + '(' + data + ")))";
+            "Create^PerVertex(Input("_code + trait + '(' + serializedData + ")))";
       }
 
       VERBOSE_PIPELINE("Incorporating: ", code);
@@ -319,7 +320,7 @@ void VulkanPipeline::PrepareFromGeometry(const A::Geometry& geometry) {
    Offset textureId {};
    for (auto texture : geometry.GetDescriptor().mTraits[MetaOf<Traits::Texture>()]) {
       // Add a texture input to the fragment shader                     
-      Code code = "Texturize^PerPixel("_code + Code {textureId} + ')';
+      Code code = "Texturize^PerPixel("_code + textureId + ')';
       VERBOSE_PIPELINE("Incorporating: ", code);
       material << Abandon(code);
       ++textureId;
@@ -328,7 +329,7 @@ void VulkanPipeline::PrepareFromGeometry(const A::Geometry& geometry) {
    // Geometry can contain 'baked-in' solid color in its descriptor     
    // Make sure we utilize it in the fragment shader                    
    for (auto color : geometry.GetDescriptor().mTraits[MetaOf<Traits::Color>()]) {
-      Code code = "Texturize^PerPixel("_code + color.AsCast<RGBA>() + ')';
+      Code code = "Texturize^PerPixel("_code + Code {color.AsCast<RGBA>()} + ')';
       VERBOSE_PIPELINE("Incorporating: ", code);
       material << Abandon(code);
    }
@@ -340,7 +341,6 @@ void VulkanPipeline::PrepareFromGeometry(const A::Geometry& geometry) {
 
 /// Initialize the pipeline from geometry content                             
 ///   @param stuff - the content to use for material generation               
-///   @return true on success                                                 
 void VulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
    // Let's build a material construct                                  
    VERBOSE_PIPELINE("Generating material from: ", stuff);
@@ -355,7 +355,7 @@ void VulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
       [&](const A::Texture& texture) {
          // Add texturization, if construct contains any textures       
          Code code1 = "Create^PerPixel(Input(Texture("_code + texture.GetFormat() + ")))";
-         Code code2 = "Texturize^PerPixel("_code + Code {textureId} + ')';
+         Code code2 = "Texturize^PerPixel("_code + textureId + ')';
          VERBOSE_PIPELINE("Incorporating: ", code1);
          VERBOSE_PIPELINE("Incorporating: ", code2);
          material << Abandon(code1) << Abandon(code2);
@@ -365,21 +365,21 @@ void VulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
          // Add various global traits, such as texture/color            
          if (t.template TraitIs<Traits::Texture>()) {
             // Add a texture uniform                                    
-            Code code = "Texturize^PerPixel("_code + Code {textureId} + ')';
+            Code code = "Texturize^PerPixel("_code + textureId + ')';
             VERBOSE_PIPELINE("Incorporating: ", code);
             material << Abandon(code);
             ++textureId;
          }
          else if (t.template TraitIs<Traits::Color>()) {
             // Add constant colorization                                
-            Code code = "Texturize^PerPixel("_code + t.AsCast<RGBA>() + ')';
+            Code code = "Texturize^PerPixel("_code + Code {t.AsCast<RGBA>()} + ')';
             VERBOSE_PIPELINE("Incorporating: ", code);
             material << Abandon(code);
          }
       },
       [&](const RGBA& color) {
          // Add a constant color                                        
-         Code code = "Texturize^PerPixel("_code + color + ')';
+         Code code = "Texturize^PerPixel("_code + Code {color} + ')';
          VERBOSE_PIPELINE("Incorporating: ", code);
          material << Abandon(code);
       },
@@ -422,7 +422,6 @@ void VulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
 
 /// Initialize the pipeline from any code                                     
 ///   @param code - the shader code                                           
-///   @return true on success                                                 
 void VulkanPipeline::PrepareFromCode(const Text& code) {
    // Let's build a material generator from available code              
    VERBOSE_PIPELINE("Generating material from code snippet: ");
@@ -435,7 +434,6 @@ void VulkanPipeline::PrepareFromCode(const Text& code) {
 
 /// Initialize the pipeline from material content                             
 ///   @param material - the content to use                                    
-///   @return true on success                                                 
 void VulkanPipeline::PrepareFromMaterial(const A::Material& material) {
    const auto shaders = material.GetData<Traits::Shader>();
    if (!shaders)
@@ -565,7 +563,7 @@ void VulkanPipeline::CreateUniformBuffers() {
          for (const auto& trait : mUniforms[index]) {
             if (trait.template TraitIs<Traits::Texture>())
                continue;
-            ubo.mUniforms.Emplace(0, trait);
+            ubo.mUniforms.Emplace(0u, trait);
          }
 
          if (ubo.mUniforms.IsEmpty())

@@ -87,15 +87,25 @@ void VulkanCamera::Compile() {
 
 /// Recompile the camera                                                      
 void VulkanCamera::Refresh() {
-   mInstances = GatherUnits<A::Instance, SeekStyle::Here>();
+   mInstances = GatherUnits<A::Instance, Seek::Here>();
 }
 
-/// Get view transformation for a given level                                 
-///   @param level - the level                                                
+/// Get view transformation for a given LOD state                             
+///   @param lod - the level-of-detail state                                  
 ///   @return the view transformation for the camera                          
 Matrix4 VulkanCamera::GetViewTransform(const LOD& lod) const {
    if (mInstances.IsEmpty())
       return {};
 
    return mInstances[0]->GetViewTransform(lod);
+}
+
+/// Get view transformation for a given level                                 
+///   @param level - the level                                                
+///   @return the view transformation for the camera                          
+Matrix4 VulkanCamera::GetViewTransform(const Level& level) const {
+   if (mInstances.IsEmpty())
+      return {};
+
+   return mInstances[0]->GetViewTransform(level);
 }

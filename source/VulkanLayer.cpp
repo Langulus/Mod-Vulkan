@@ -98,7 +98,7 @@ VulkanPipeline* VulkanLayer::CompileInstance(
 Count VulkanLayer::CompileThing(const Thing* thing, LOD& lod, PipelineSet& pipesPerCamera) {
    // Iterate all renderables of the entity, which are part of this     
    // layer - disregard all others                                      
-   auto relevantRenderables = thing->GatherUnits<VulkanRenderable, SeekStyle::Here>();
+   auto relevantRenderables = thing->GatherUnits<VulkanRenderable, Seek::Here>();
 
    // Compile the instances associated with these renderables           
    Count renderedInstances {};
@@ -300,7 +300,7 @@ Count VulkanLayer::CompileLevels() {
       }
       else if (camera.mObservableRange.Inside(Level::Default)) {
          // Default level style - checks only if camera sees default    
-         const auto view = camera.GetViewTransform({});
+         const auto view = camera.GetViewTransform();
          if (mStyle & Style::Hierarchical)
             CompileLevelHierarchical(view, camera.mProjection, {}, pipesPerCamera);
          else
@@ -481,4 +481,10 @@ void VulkanLayer::RenderHierarchical(const RenderConfig& config) const {
 ///   @return the layer style                                                 
 VulkanLayer::Style VulkanLayer::GetStyle() const noexcept {
    return mStyle;
+}
+
+/// Get the window of a layer                                                 
+///   @return the window interface                                            
+const A::Window* VulkanLayer::GetWindow() const noexcept {
+   return mProducer->GetWindow();
 }

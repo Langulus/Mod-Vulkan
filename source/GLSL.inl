@@ -222,7 +222,7 @@ inline GLSL GLSL::Type(DMeta meta) {
 ///   @param lhs - left operand                                               
 ///   @param rhs - right operand                                              
 ///   @return the concatenated operands                                       
-LANGULUS(ALWAYSINLINE)
+/*LANGULUS(ALWAYSINLINE)
 GLSL operator + (const GLSL& lhs, const GLSL& rhs) {
    // It's essentially the same, as concatenating Text with Text        
    // with the only difference being, that it retains GLSL type         
@@ -249,7 +249,7 @@ GLSL operator + (const GLSL& lhs, const Text& rhs) {
    // It's essentially the same, as concatenating Text with Text        
    // with the only difference being, that it retains GLSL type         
    return static_cast<const Text&>(lhs) + rhs;
-}
+}*/
 
 /// Destructive concatenation of GLSL with anything                           
 /// Attempts to serialize right operand to GLSL, or GASM as an alternative    
@@ -274,11 +274,11 @@ GLSL& GLSL::operator += (const T& rhs) {
 }
 
 /// Concatenate anything with GLSL                                            
-/// Attempts to serialize left operand to GLSL, or GASM as an alternative     
+/// Attempts to serialize left operand to GLSL, or Flow::Code                 
 ///   @param lhs - left operand                                               
 ///   @param rhs - right operand                                              
 ///   @return a reference to lhs                                              
-LANGULUS(ALWAYSINLINE)
+/*LANGULUS(ALWAYSINLINE)
 GLSL operator + (const CT::NotText auto& lhs, const GLSL& rhs) {
    GLSL converted;
    converted += lhs;
@@ -287,7 +287,7 @@ GLSL operator + (const CT::NotText auto& lhs, const GLSL& rhs) {
 }
 
 /// Concatenate anything with GLSL                                            
-/// Attempts to serialize right operand to GLSL, or GASM as an alternative    
+/// Attempts to serialize right operand to GLSL, or Flow::Code                
 ///   @param lhs - left operand                                               
 ///   @param rhs - right operand                                              
 ///   @return a reference to lhs                                              
@@ -297,4 +297,4 @@ GLSL operator + (const GLSL& lhs, const CT::NotText auto& rhs) {
    converted += lhs;
    converted += rhs;
    return converted;
-}
+}*/

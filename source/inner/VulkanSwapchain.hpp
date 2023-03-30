@@ -50,8 +50,8 @@ public:
    ~VulkanSwapchain();
 
    void CreateSurface(const A::Window*);
-   void Create(const VkSurfaceFormatKHR&);
-   void Recreate();
+   void Create(const VkSurfaceFormatKHR&, const TAny<uint32_t>& families);
+   void Recreate(const TAny<uint32_t>& families);
    void Destroy();
    void DestroySurface();
 

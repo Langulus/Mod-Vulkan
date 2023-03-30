@@ -115,13 +115,13 @@ public:
       }
       else if constexpr (RATE.IsStaticUniform()) {
          // Set a static uniform                                        
-         (index);
+         (void)index;
          constexpr auto rate = RATE.GetStaticUniformIndex();
          mStaticUBO[rate].template Set<TRAIT, DATA>(value);
       }
       else if constexpr (RATE.IsDynamicUniform()) {
          // Set a dynamic uniform                                       
-         (index);
+         (void)index;
          constexpr auto rate = RATE.GetDynamicUniformIndex();
          mDynamicUBO[rate].template Set<TRAIT, DATA>(value);
       }
