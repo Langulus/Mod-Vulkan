@@ -38,7 +38,7 @@ VulkanTexture::~VulkanTexture() {
 void VulkanTexture::InitializeFromPixels(const A::Texture& content) {
    // Check if any data was found                                       
    const auto startTime = SteadyClock::now();
-   const auto pixels = content.GetData<Traits::Color>();
+   const auto pixels = content.GetDataList<Traits::Color>();
    if (!pixels || pixels->IsEmpty())
       LANGULUS_THROW(Graphics, "Can't generate texture - no color data found");
 
@@ -209,14 +209,12 @@ void VulkanTexture::InitializeFromPixels(const A::Texture& content) {
 
 /// Get the VkImageView                                                       
 ///   @return the image view                                                  
-LANGULUS(ALWAYSINLINE)
 VkImageView VulkanTexture::GetImageView() const noexcept {
    return mImageView;
 }
 
 /// Get the VkSampler                                                         
 ///   @return the sampler                                                     
-LANGULUS(ALWAYSINLINE)
 VkSampler VulkanTexture::GetSampler() const noexcept {
    return mSampler;
 }

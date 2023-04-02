@@ -21,7 +21,8 @@ protected:
    Own<VkSurfaceKHR> mSurface;
    // Swap chain                                                        
    Own<VkSwapchainKHR> mSwapChain;
-   ::std::vector<VkImage> mSwapChainImages;
+   // Images for the swap chain framebuffers                            
+   TAny<VkImage> mSwapChainImages;
    // Swap chain frames                                                 
    Frames mFrame;
    // Framebuffers                                                      
@@ -46,12 +47,12 @@ protected:
 
 public:
    VulkanSwapchain() = delete;
-   VulkanSwapchain(VulkanRenderer&);
+   VulkanSwapchain(VulkanRenderer&) noexcept;
    ~VulkanSwapchain();
 
    void CreateSurface(const A::Window*);
-   void Create(const VkSurfaceFormatKHR&, const TAny<uint32_t>& families);
-   void Recreate(const TAny<uint32_t>& families);
+   void Create(const VkSurfaceFormatKHR&, const QueueFamilies&);
+   void Recreate(const QueueFamilies&);
    void Destroy();
    void DestroySurface();
 
@@ -60,5 +61,6 @@ public:
 
    NOD() VkSurfaceFormatKHR GetSurfaceFormat() const noexcept;
    NOD() VkCommandBuffer GetRenderCB() const noexcept;
+   NOD() VkFramebuffer GetFramebuffer() const noexcept;
    NOD() VkSurfaceKHR GetSurface() const noexcept;
 };

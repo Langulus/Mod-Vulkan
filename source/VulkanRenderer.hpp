@@ -75,7 +75,7 @@ protected:
    // Transfer family                                                   
    uint32_t mTransferIndex {};
    // The set of families                                               
-   TAny<uint32_t> mFamilies;
+   QueueFamilies mFamilies;
 
    // For draw commands                                                 
    Own<VkCommandPool> mCommandPool;

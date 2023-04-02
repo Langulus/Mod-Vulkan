@@ -290,12 +290,11 @@ void VulkanRenderer::Draw() {
    }
 
    // The actual drawing starts here                                    
-   if (!StartRendering())
+   if (!mSwapchain.StartRendering())
       return;
 
    RenderConfig config {
-      GetRenderCB(), mPass,
-      mFramebuffer[mCurrentFrame]
+      GetRenderCB(), mPass, mSwapchain.GetFramebuffer()
    };
 
    config.mColorClear.color = {{0.0f, 0.0f, 0.0f, 1.0f}};
@@ -317,7 +316,7 @@ void VulkanRenderer::Draw() {
       layer.Render(config);
 
    // Swap buffers and conclude this frame                              
-   EndRendering();
+   mSwapchain.EndRendering();
 }
 
 /// Get the vulkan library instance                                           

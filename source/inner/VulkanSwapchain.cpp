@@ -8,6 +8,10 @@
 #include "../Vulkan.hpp"
 #include <set>
 
+/// Swapchain constructor                                                     
+///   @param renderer - the renderer that owns the swapchain                  
+VulkanSwapchain::VulkanSwapchain(VulkanRenderer& renderer) noexcept
+   : mRenderer {renderer} {}
 
 /// Create a surface inside a native window                                   
 ///   @param window - the window                                              
@@ -20,7 +24,7 @@ void VulkanSwapchain::CreateSurface(const A::Window* window) {
 /// Create the swapchain                                                      
 ///   @param format - surface format                                          
 ///   @param families - set of queue families to use                          
-void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const TAny<uint32_t>& families) {
+void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamilies& families) {
    // Resolution                                                        
    const auto adapter = mRenderer.GetAdapter();
    const Real resx = mRenderer.mResolution[0];
@@ -104,8 +108,8 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const TAny<uint32
    if (vkGetSwapchainImagesKHR(mRenderer.mDevice, mSwapChain, &imageCount, nullptr))
       LANGULUS_THROW(Graphics, "vkGetSwapchainImagesKHR fails");
 
-   mSwapChainImages.resize(imageCount);
-   if (vkGetSwapchainImagesKHR(mRenderer.mDevice, mSwapChain, &imageCount, mSwapChainImages.data()))
+   mSwapChainImages.New(imageCount);
+   if (vkGetSwapchainImagesKHR(mRenderer.mDevice, mSwapChain, &imageCount, mSwapChainImages.GetRaw()))
       LANGULUS_THROW(Graphics, "vkGetSwapchainImagesKHR fails");
 
    // Create the image views for the swap chain. They will all be       
@@ -116,9 +120,9 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const TAny<uint32
       extent.width, extent.height, 1, 1, viewf, reverseFormat
    };
 
-   mFrame.New(mSwapChainImages.size());
+   mFrame.New(mSwapChainImages.GetCount());
 
-   for (uint32_t i = 0; i < mSwapChainImages.size(); i++) {
+   for (uint32_t i = 0; i < mSwapChainImages.GetCount(); i++) {
       auto& image = mSwapChainImages[i];
       mRenderer.mVRAM.ImageTransfer(
          image,
@@ -211,7 +215,7 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const TAny<uint32
 
 /// Recreate the swapchain (usually on window resize)                         
 ///   @param families - a set of queue families                               
-void VulkanSwapchain::Recreate(const TAny<uint32_t>& families) {
+void VulkanSwapchain::Recreate(const QueueFamilies& families) {
    vkDeviceWaitIdle(mRenderer.mDevice);
    Destroy();
    Create(GetSurfaceFormat(), families);
@@ -261,7 +265,7 @@ void VulkanSwapchain::Destroy() {
    // Destroy swapchain                                                 
    vkDestroySwapchainKHR(mRenderer.mDevice, mSwapChain, nullptr);
    mSwapChain = 0;
-   mSwapChainImages.clear();
+   mSwapChainImages.Clear();
 }
 
 VulkanSwapchain::~VulkanSwapchain() {
@@ -413,6 +417,12 @@ Debug VulkanSwapchain::Self() const {
 ///   @return the command buffer                                              
 VkCommandBuffer VulkanSwapchain::GetRenderCB() const noexcept {
    return mCommandBuffer[mCurrentFrame];
+}
+
+/// Get the frame buffer for the current frame                                
+///   @return the frame buffer                                                
+VkFramebuffer VulkanSwapchain::GetFramebuffer() const noexcept {
+   return mFramebuffer[mCurrentFrame];
 }
 
 /// Get the native surface                                                    

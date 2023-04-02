@@ -79,7 +79,6 @@ public:
    template<CT::DenseNumber T>
    explicit GLSL(const TQuaternion<T>&);
 
-   NOD() GLSL Clone() const;
    NOD() static GLSL From(ShaderStage::Enum);
    NOD() bool IsDefined(const Text&);
    NOD() Text Pretty() const;
@@ -94,9 +93,6 @@ public:
    template<CT::Data T>
    NOD() static GLSL Type();
 };
-
-/*NOD() GLSL operator + (const CT::NotText auto&, const GLSL&);
-NOD() GLSL operator + (const GLSL&, const CT::NotText auto&);*/
 
 LANGULUS(ALWAYSINLINE)
 GLSL operator "" _glsl(const char* text, std::size_t size) {

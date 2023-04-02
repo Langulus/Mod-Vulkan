@@ -259,7 +259,7 @@ void VulkanPipeline::PrepareFromGeometry(const A::Geometry& geometry) {
    mPrimitive = AsVkPrimitive(geometry.GetTopology());
          
    // Scan the input attributes (inside geometry data)                  
-   for (auto data : geometry.GetDataMap()) {
+   for (auto data : geometry.GetDataListMap()) {
       const auto trait = data.mKey;
       const auto type = data.mValue.GetType();
 
@@ -329,7 +329,7 @@ void VulkanPipeline::PrepareFromGeometry(const A::Geometry& geometry) {
    // Geometry can contain 'baked-in' solid color in its descriptor     
    // Make sure we utilize it in the fragment shader                    
    for (auto color : geometry.GetDescriptor().mTraits[MetaOf<Traits::Color>()]) {
-      Code code = "Texturize^PerPixel("_code + Code {color.AsCast<RGBA>()} + ')';
+      Code code = "Texturize^PerPixel("_code + color.AsCast<RGBA>() + ')';
       VERBOSE_PIPELINE("Incorporating: ", code);
       material << Abandon(code);
    }
@@ -372,14 +372,14 @@ void VulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
          }
          else if (t.template TraitIs<Traits::Color>()) {
             // Add constant colorization                                
-            Code code = "Texturize^PerPixel("_code + Code {t.AsCast<RGBA>()} + ')';
+            Code code = "Texturize^PerPixel("_code + t.AsCast<RGBA>() + ')';
             VERBOSE_PIPELINE("Incorporating: ", code);
             material << Abandon(code);
          }
       },
       [&](const RGBA& color) {
          // Add a constant color                                        
-         Code code = "Texturize^PerPixel("_code + Code {color} + ')';
+         Code code = "Texturize^PerPixel("_code + color + ')';
          VERBOSE_PIPELINE("Incorporating: ", code);
          material << Abandon(code);
       },
@@ -435,7 +435,7 @@ void VulkanPipeline::PrepareFromCode(const Text& code) {
 /// Initialize the pipeline from material content                             
 ///   @param material - the content to use                                    
 void VulkanPipeline::PrepareFromMaterial(const A::Material& material) {
-   const auto shaders = material.GetData<Traits::Shader>();
+   const auto shaders = material.GetDataList<Traits::Shader>();
    if (!shaders)
       LANGULUS_THROW(Graphics, "No shaders provided in material");
 
@@ -507,7 +507,8 @@ void VulkanPipeline::CreateNewSamplerSet() {
       );
    }
 
-   mSubscribers.Last().samplerSet = mSamplerUBO.GetCount() - 1;
+   mSubscribers.Last().samplerSet =
+      static_cast<uint32_t>(mSamplerUBO.GetCount() - 1);
 }
 
 /// Create a new geometry set                                                 
@@ -520,7 +521,8 @@ void VulkanPipeline::CreateNewGeometrySet() {
    // For now, only cached geometry is kept, no real set of             
    // properties is required per geometry                               
    mGeometries << nullptr;
-   mSubscribers.Last().geometrySet = mGeometries.GetCount() - 1;
+   mSubscribers.Last().geometrySet =
+      static_cast<uint32_t>(mGeometries.GetCount() - 1);
 }
 
 /// Create uniform buffers                                                    
@@ -687,7 +689,7 @@ void VulkanPipeline::UpdateUniformBuffers() const {
    BufferUpdates writes;
 
    // Gather required static updates                                    
-   Offset binding {};
+   uint32_t binding {};
    for (auto& it : mStaticUBO) {
       it.Update(binding, mStaticUBOSet, writes);
       ++binding;

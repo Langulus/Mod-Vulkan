@@ -2,6 +2,19 @@
 #include "GLSL.hpp"
 #include "Vulkan.hpp"
 
+
+/// Construct by copying text                                                 
+///   @param other - text container to shallow-copy                           
+LANGULUS(ALWAYSINLINE)
+GLSL::GLSL(const Text& other)
+   : Text {other} {}
+
+/// Construct by moving text                                                  
+///   @param other - text container to move                                   
+LANGULUS(ALWAYSINLINE)
+GLSL::GLSL(Text&& other)
+   : Text {Forward<Text>(other)} {}
+
 /// Convert a block to GLSL code                                              
 ///   @param block - the block to convert to GLSL                             
 GLSL::GLSL(const CT::Deep auto& block) : Text {} {

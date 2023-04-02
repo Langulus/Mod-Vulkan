@@ -356,6 +356,7 @@ using Frames = TAny<VkImageView>;
 using FrameBuffers = ::std::vector<VkFramebuffer>;
 using CmdBuffers = ::std::vector<VkCommandBuffer>;
 using TokenSet = ::std::vector<const char*>;
+using QueueFamilies = TAny<uint32_t>;
 
 constexpr uint32_t VK_INDEFINITELY = ::std::numeric_limits<uint32_t>::max();
 

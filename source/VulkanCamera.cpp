@@ -25,7 +25,8 @@ void VulkanCamera::Compile() {
    if (mResolution[1] <= 1)
       mResolution[1] = 1;
 
-   mAspectRatio = mResolution[0] / mResolution[1];
+   mAspectRatio = static_cast<Real>(mResolution[0])
+                / static_cast<Real>(mResolution[1]);
    mViewport.mMax.xy() = mResolution;
 
    if (mPerspective) {

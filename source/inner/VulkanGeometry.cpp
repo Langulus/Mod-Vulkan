@@ -42,7 +42,7 @@ VulkanGeometry::VulkanGeometry(VulkanRenderer* producer, const Any& descriptor)
       // Create a buffer for each provided type, as long as that type   
       // can be decayed into vertices                                   
       auto& vram = mProducer->mVRAM;
-      for (auto data : geometry.GetDataMap()) {
+      for (auto data : geometry.GetDataListMap()) {
          const auto& group = data.mValue;
          bool isIndexData = false;
          if (!IsVertexData(group, isIndexData)) {
@@ -83,7 +83,7 @@ VulkanGeometry::VulkanGeometry(VulkanRenderer* producer, const Any& descriptor)
 
       // Make sure mView.mPCount means vertex count, and not            
       // primitive count. Decay in order to do that.                    
-      mTopology = geometry.GetView().mPrimitiveType;
+      mTopology = geometry.GetTopology();
       mView = geometry.GetView().Decay();
 
       VERBOSE_VKGEOMETRY(Logger::Green, "Data uploaded in VRAM for ",

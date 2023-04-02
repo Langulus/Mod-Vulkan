@@ -38,7 +38,7 @@ VulkanShader::VulkanShader(VulkanRenderer* producer, const Any& descriptor)
       },
       [this](const A::Material* material) {
          // Access input mappings                                       
-         const auto uniforms = material->template GetData<Traits::Trait>();
+         const auto uniforms = material->template GetDataList<Traits::Trait>();
          if (uniforms && uniforms->IsEmpty()) {
             // Add relevant inputs                                      
             const auto index = Rate(Rate::StagesBegin + mStage).GetInputIndex();
@@ -192,20 +192,17 @@ void VulkanShader::AddInput(const Trait& input) {
 
 /// Get the vertex stage index                                                
 ///   @return the vertex stage                                                
-LANGULUS(ALWAYSINLINE)
 ShaderStage::Enum VulkanShader::GetStage() const noexcept {
    return mStage;
 }
 
 /// Get the shader code                                                       
-LANGULUS(ALWAYSINLINE)
 const Text& VulkanShader::GetCode() const noexcept {
    return mCode;
 }
 
 /// Get a VkShaderStageFlagBits corresponding the this shader's stage         
 ///   @return the flag                                                        
-LANGULUS(ALWAYSINLINE)
 VkShaderStageFlagBits VulkanShader::GetStageFlagBit() const noexcept {
    static constexpr VkShaderStageFlagBits StageMap[ShaderStage::Counter] {
       VK_SHADER_STAGE_VERTEX_BIT,
@@ -221,7 +218,6 @@ VkShaderStageFlagBits VulkanShader::GetStageFlagBit() const noexcept {
 
 /// Get the rate index of the shader stage                                    
 ///   @return the rate                                                        
-LANGULUS(ALWAYSINLINE)
 Rate VulkanShader::GetRate() const noexcept {
    return mStage + Rate::StagesBegin;
 }
