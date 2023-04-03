@@ -12,9 +12,10 @@ target_link_libraries(Test.Mod.Vulkan
 				Catch2
 )
 
+add_dependencies(Test.Mod.Vulkan Mod.GLFW)
 langulus_copy_dlls(
 	TO		Test.Mod.Vulkan
-	FROM	Langulus.Framework
+	FROM	Langulus.Framework Mod.GLFW Mod.Vulkan
 )
 
 add_test(NAME Test.Mod.Vulkan COMMAND Test.Mod.Vulkan)
