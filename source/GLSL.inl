@@ -5,13 +5,13 @@
 
 /// Construct by copying text                                                 
 ///   @param other - text container to shallow-copy                           
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 GLSL::GLSL(const Text& other)
    : Text {other} {}
 
 /// Construct by moving text                                                  
 ///   @param other - text container to move                                   
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 GLSL::GLSL(Text&& other)
    : Text {Forward<Text>(other)} {}
 
@@ -54,19 +54,19 @@ GLSL::GLSL(const CT::Deep auto& block) : Text {} {
 
 /// Meta data -> GLSL serializer                                              
 ///   @param type - type to serialize                                         
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 GLSL::GLSL(DMeta meta)
    : GLSL {GLSL::Type(meta)} {}
 
 /// Meta trait -> GLSL serializer                                             
 ///   @param trait - trait to serialize                                       
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 GLSL::GLSL(TMeta meta)
    : Text {meta->mToken} {}
 
 /// Meta constant -> GLSL serializer                                          
 ///   @param trait - trait to serialize                                       
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 GLSL::GLSL(CMeta meta)
    : Text {meta->mToken} {}
 
@@ -75,7 +75,7 @@ GLSL::GLSL(CMeta meta)
 ///   @tparam S - vector size (deducible)                                     
 ///   @param vector - vector to serialize                                     
 template<CT::DenseNumber T, Count C>
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 GLSL::GLSL(const TVector<T, C>& vector) {
    if constexpr (C == 1)
       *this += vector[0];
@@ -97,7 +97,7 @@ GLSL::GLSL(const TVector<T, C>& vector) {
 ///   @tparam S2 - matrix rows (deducible)                                    
 ///   @param matrix - matrix to serialize                                     
 template<CT::DenseNumber T, Count C, Count R>
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 GLSL::GLSL(const TMatrix<T, C, R>& matrix) {
    *this += GLSL::template Type<TMatrix<T, C, R>>();
    *this += '(';
@@ -113,7 +113,7 @@ GLSL::GLSL(const TMatrix<T, C, R>& matrix) {
 ///   @tparam T - quaternion type (deducible)                                 
 ///   @param quaternion - quaternion to serialize                             
 template<CT::DenseNumber T>
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 GLSL::GLSL(const TQuaternion<T>& quaternion) {
    *this += GLSL::template Type<TQuaternion<T>>();
    *this += '(';
@@ -130,7 +130,7 @@ GLSL::GLSL(const TQuaternion<T>& quaternion) {
 /// GLSL static type string conversion                                        
 ///   @return the GLSL string                                                 
 template<CT::Data T>
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 GLSL GLSL::Type() {
    return Type(MetaData::Of<Decay<T>>());
 }
@@ -235,7 +235,7 @@ inline GLSL GLSL::Type(DMeta meta) {
 ///   @param lhs - left operand                                               
 ///   @param rhs - right operand                                              
 ///   @return the concatenated operands                                       
-/*LANGULUS(ALWAYSINLINE)
+/*LANGULUS(INLINED)
 GLSL operator + (const GLSL& lhs, const GLSL& rhs) {
    // It's essentially the same, as concatenating Text with Text        
    // with the only difference being, that it retains GLSL type         
@@ -246,7 +246,7 @@ GLSL operator + (const GLSL& lhs, const GLSL& rhs) {
 ///   @param lhs - left operand                                               
 ///   @param rhs - right operand                                              
 ///   @return the concatenated operands as GLSL                               
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 GLSL operator + (const Text& lhs, const GLSL& rhs) {
    // It's essentially the same, as concatenating Text with Text        
    // with the only difference being, that it retains GLSL type         
@@ -257,7 +257,7 @@ GLSL operator + (const Text& lhs, const GLSL& rhs) {
 ///   @param lhs - left operand                                               
 ///   @param rhs - right operand                                              
 ///   @return the concatenated operands as GLSL                               
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 GLSL operator + (const GLSL& lhs, const Text& rhs) {
    // It's essentially the same, as concatenating Text with Text        
    // with the only difference being, that it retains GLSL type         
@@ -269,7 +269,7 @@ GLSL operator + (const GLSL& lhs, const Text& rhs) {
 ///   @param rhs - right operand                                              
 ///   @return a reference to lhs                                              
 template<class T>
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 GLSL& GLSL::operator += (const T& rhs) {
    if constexpr (CT::Text<T>) {
       Text::operator += (rhs);
@@ -291,7 +291,7 @@ GLSL& GLSL::operator += (const T& rhs) {
 ///   @param lhs - left operand                                               
 ///   @param rhs - right operand                                              
 ///   @return a reference to lhs                                              
-/*LANGULUS(ALWAYSINLINE)
+/*LANGULUS(INLINED)
 GLSL operator + (const CT::NotText auto& lhs, const GLSL& rhs) {
    GLSL converted;
    converted += lhs;
@@ -304,7 +304,7 @@ GLSL operator + (const CT::NotText auto& lhs, const GLSL& rhs) {
 ///   @param lhs - left operand                                               
 ///   @param rhs - right operand                                              
 ///   @return a reference to lhs                                              
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 GLSL operator + (const GLSL& lhs, const CT::NotText auto& rhs) {
    GLSL converted;
    converted += lhs;

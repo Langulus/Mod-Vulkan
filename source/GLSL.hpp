@@ -94,7 +94,7 @@ public:
    NOD() static GLSL Type();
 };
 
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 GLSL operator "" _glsl(const char* text, std::size_t size) {
    return GLSL {text, size};
 }

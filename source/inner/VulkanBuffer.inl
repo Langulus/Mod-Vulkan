@@ -11,20 +11,20 @@
 
 /// Check if buffer contains valid VRAM allocation                            
 ///   @return true if VRAM allocation is valid                                
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 bool VRAM::IsValid() const noexcept { 
    return mMemory && mDevice; 
 }
 
 /// Reset the buffer. This does not deallocate the memory!                    
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 void VRAM::Reset() noexcept {
    mMemory.Reset();
    mDevice.Reset();
 }
 
 /// Upload data to VRAM                                                       
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 bool VRAM::Upload(Offset offset, Size bytes, const void* data) const {
    auto raw = Lock(offset, bytes);
    ::std::memcpy(raw, data, bytes);
@@ -33,7 +33,7 @@ bool VRAM::Upload(Offset offset, Size bytes, const void* data) const {
 }
 
 /// Lock VRAM                                                                 
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 Byte* VRAM::Lock(Offset offset, Size bytes) const {
    void* raw;
    vkMapMemory(mDevice, mMemory, offset, bytes, 0, &raw);
@@ -41,43 +41,43 @@ Byte* VRAM::Lock(Offset offset, Size bytes) const {
 }
 
 /// Unlock VRAM                                                               
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 void VRAM::Unlock() const {
    vkUnmapMemory(mDevice, mMemory);
 }
 
 /// Check if buffer contains valid VRAM allocation                            
 ///   @return true if VRAM allocation is valid                                
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 bool VulkanBuffer::IsValid() const noexcept {
    return mBuffer && VRAM::IsValid();
 }
 
 /// Reset the buffer. This does not deallocate the memory!                    
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 void VulkanBuffer::Reset() noexcept {
    mBuffer.Reset();
    VRAM::Reset();
 }
 
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 DMeta VulkanBuffer::GetMeta() const noexcept {
    return mMeta;
 }
 
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 const VkBuffer& VulkanBuffer::GetBuffer() const noexcept {
    return mBuffer;
 }
 
 /// Check if buffer contains valid VRAM allocation                            
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 bool VulkanImage::IsValid() const noexcept {
    return mBuffer && VRAM::IsValid();
 }
 
 /// Reset the buffer. This does not deallocate the memory                     
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 void VulkanImage::Reset() noexcept {
    mView = {};
    mInfo = {};
@@ -87,21 +87,21 @@ void VulkanImage::Reset() noexcept {
 
 /// Get the texture view                                                      
 ///   @return a reference to the view                                         
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 const TextureView& VulkanImage::GetView() const noexcept {
    return mView;
 }
 
 /// Get the VkImage                                                           
 ///   @return a VkImage                                                       
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 VkImage VulkanImage::GetImage() const noexcept {
    return mBuffer;
 }
 
 /// Get the VkImageCreateInfo                                                 
 ///   @return the image create info                                           
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 const VkImageCreateInfo& VulkanImage::GetImageCreateInfo() const noexcept {
    return mInfo;
 }

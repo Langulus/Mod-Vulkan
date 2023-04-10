@@ -20,58 +20,58 @@ constexpr RefreshRate::RefreshRate(const CT::DenseNumber auto& value) noexcept
 constexpr RefreshRate::RefreshRate(const Enum& value) noexcept
    : mMode {value} {}
 
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 constexpr bool RefreshRate::IsUniform() const noexcept {
    return mMode >= UniformBegin && mMode < UniformEnd;
 }
 
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 constexpr bool RefreshRate::IsStaticUniform() const noexcept {
    return mMode >= StaticUniformBegin && mMode < StaticUniformEnd;
 }
 
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 constexpr bool RefreshRate::IsDynamicUniform() const noexcept {
    return mMode >= DynamicUniformBegin && mMode < DynamicUniformEnd;
 }
 
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 constexpr bool RefreshRate::IsAttribute() const noexcept {
    return mMode == Enum::Vertex;
 }
 
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 constexpr bool RefreshRate::IsInput() const noexcept {
    return mMode >= InputBegin && mMode < InputEnd;
 }
 
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 constexpr bool RefreshRate::IsShaderStage() const noexcept {
    return mMode >= StagesBegin && mMode < StagesEnd;
 }
 
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 constexpr Offset RefreshRate::GetInputIndex() const {
    if (!IsInput())
       LANGULUS_THROW(Graphics, "Not an input");
    return mMode - InputBegin;
 }
 
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 constexpr Offset RefreshRate::GetStaticUniformIndex() const {
    if (!IsStaticUniform())
       LANGULUS_THROW(Graphics, "Not a static uniform");
    return mMode - StaticUniformBegin;
 }
 
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 constexpr Offset RefreshRate::GetDynamicUniformIndex() const {
    if (!IsDynamicUniform())
       LANGULUS_THROW(Graphics, "Not a dynamic uniform");
    return mMode - DynamicUniformBegin;
 }
 
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 constexpr ShaderStage::Enum RefreshRate::GetStageIndex() const {
    if (!IsShaderStage())
       LANGULUS_THROW(Graphics, "Not a shader stage");
@@ -81,7 +81,7 @@ constexpr ShaderStage::Enum RefreshRate::GetStageIndex() const {
 /// Convert a meta data to a VK index format                                  
 ///   @param meta - the type definition to convert                            
 ///   @return the vulkan format equivalent                                    
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 VkIndexType AsVkIndexType(DMeta meta) {
    if (meta->Is<uint32_t>())
       return VK_INDEX_TYPE_UINT32;
@@ -97,7 +97,7 @@ VkIndexType AsVkIndexType(DMeta meta) {
 ///   @param type - the type definition to convert                            
 ///   @param reverse - whether to invert color definition                     
 ///   @return the vulkan format equivalent                                    
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 VkFormat AsVkFormat(DMeta type, bool reverse) {
    switch (type->mSize) {
    case 1:
@@ -228,7 +228,7 @@ VkFormat AsVkFormat(DMeta type, bool reverse) {
 ///   @param type - the vulkan format type                                    
 ///   @param reverse - whether or not reversal is required                    
 ///   @return the piception equivalent                                        
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 DMeta VkFormatToDMeta(const VkFormat& type, bool& reverse) {
    reverse = false;
    switch (type) {
@@ -344,7 +344,7 @@ constexpr VkShaderStageFlagBits AsVkStage(ShaderStage::Enum stage) noexcept {
 /// Converter from PC primitive to VK primitive                               
 ///   @param meta - the primitive type                                        
 ///   @return the vulkan equivalent                                           
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 VkPrimitiveTopology AsVkPrimitive(DMeta meta) {
    if (meta->CastsTo<A::Point>())
       return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
@@ -366,7 +366,7 @@ VkPrimitiveTopology AsVkPrimitive(DMeta meta) {
 /// If data is made of integers, colors will be normalized in the 255 range   
 ///   @param color - the color to convert to RGBAf                            
 ///   @return a floating point RGBA vector                                    
-LANGULUS(ALWAYSINLINE)
+LANGULUS(INLINED)
 RGBAf AnyColorToVector(const Any& color) {
    // Inspect the data pack, what color components does it contain?     
    const auto redChannel = color.GetMember(MetaOf<Traits::R>());
