@@ -165,7 +165,7 @@ Count VulkanLayer::CompileLevelHierarchical(
 
    // Nest-iterate all children of the layer owner                      
    Count renderedEntities {};
-   for (const auto owner : GetOwners())
+   for (const auto& owner : GetOwners())
       renderedEntities += CompileThing(owner, lod, pipesPerCamera);
    
    if (renderedEntities) {
