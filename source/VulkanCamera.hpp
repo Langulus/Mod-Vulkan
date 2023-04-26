@@ -7,6 +7,9 @@
 ///                                                                           
 #pragma once
 #include "Common.hpp"
+#include <Math/Ranges.hpp>
+ 
+using LevelRange = TRange<Level>;
 
 
 ///                                                                           

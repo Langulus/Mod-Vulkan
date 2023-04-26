@@ -6,7 +6,9 @@
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
 #pragma once
-#include <Langulus.hpp>
+#include <Entity/External.hpp>
+#include <Math/Colors.hpp>
+#include <Math/Primitives.hpp>
 
 LANGULUS_EXCEPTION(Graphics);
 

@@ -6,7 +6,8 @@
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
 #include "Vulkan.hpp"
-#include <iterator>
+#include <Entity/Thing.hpp>
+//#include <iterator>
 
 
 /// Descriptor constructor                                                    

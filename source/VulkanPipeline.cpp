@@ -7,6 +7,7 @@
 ///                                                                           
 #include "Vulkan.hpp"
 #include "GLSL.hpp"
+#include <Anyness/Path.hpp>
 
 #define VERBOSE_PIPELINE(...) Logger::Verbose(Self(), __VA_ARGS__)
 

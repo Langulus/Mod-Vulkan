@@ -1,5 +1,6 @@
 #pragma once
 #include "Common.hpp"
+#include <Anyness/Text.hpp>
 
 LANGULUS_EXCEPTION(GLSL);
 

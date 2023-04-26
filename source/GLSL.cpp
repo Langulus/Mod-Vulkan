@@ -1,4 +1,6 @@
 #include "GLSL.hpp"
+#include <Anyness/Edit.hpp>
+#include <Flow/Verbs/Catenate.hpp>
 
 #define GLSL_VERBOSE(a)
 

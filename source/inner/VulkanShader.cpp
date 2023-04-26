@@ -8,6 +8,7 @@
 #include <shaderc/shaderc.hpp>
 #include "../Vulkan.hpp"
 #include "../GLSL.hpp"
+#include <Anyness/Path.hpp>
 
 #define VERBOSE_SHADER(...) //Logger::Verbose(Self(), __VA_ARGS__)
 

@@ -11,6 +11,9 @@
 #include "VulkanLight.hpp"
 #include "inner/VulkanMemory.hpp"
 
+#include <Anyness/TSet.hpp>
+#include <Anyness/TUnorderedSet.hpp>
+
 struct LayerSubscriber {
    const VulkanPipeline* pipeline {};
    PipeSubscriber sub {};
