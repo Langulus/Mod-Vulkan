@@ -283,6 +283,8 @@ Vulkan::Vulkan(Runtime* runtime, const Any&)
 
 /// Vulkan module destruction                                                 
 Vulkan::~Vulkan() {
+   mRenderers.Reset();
+
    if (mDevice) {
       vkDestroyDevice(mDevice, nullptr);
       mDevice = nullptr;
