@@ -102,6 +102,8 @@ protected:
    // Texture content mirror, keeps RAM/VRAM synchronized               
    TFactoryUnique<VulkanTexture> mTextures;
 
+   void Destroy();
+
 public:
    VulkanRenderer(Vulkan*, const Any&);
    ~VulkanRenderer();

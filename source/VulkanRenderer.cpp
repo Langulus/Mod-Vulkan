@@ -37,8 +37,10 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, const Any& descriptor)
    const auto adapter = GetAdapter();
    uint32_t queueCount;
    vkGetPhysicalDeviceQueueFamilyProperties(adapter, &queueCount, nullptr);
-   if (queueCount == 0)
+   if (queueCount == 0) {
+      Destroy();
       LANGULUS_THROW(Graphics, "No queue families");
+   }
 
    std::vector<VkQueueFamilyProperties> queueProperties(queueCount);
    vkGetPhysicalDeviceQueueFamilyProperties(adapter, &queueCount, &queueProperties[0]);
@@ -46,8 +48,10 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, const Any& descriptor)
    // Not all queues support presenting. Find one that does.            
    std::vector<VkBool32> supportsPresent(queueCount);
    for (uint32_t i = 0; i < queueCount; i++) {
-      if (vkGetPhysicalDeviceSurfaceSupportKHR(adapter, i, mSwapchain.GetSurface(), &supportsPresent[i]))
+      if (vkGetPhysicalDeviceSurfaceSupportKHR(adapter, i, mSwapchain.GetSurface(), &supportsPresent[i])) {
+         Destroy();
          LANGULUS_THROW(Graphics, "vkGetPhysicalDeviceSurfaceSupportKHR failed");
+      }
    }
 
    mGraphicIndex = UINT32_MAX;
@@ -71,6 +75,7 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, const Any& descriptor)
    }
 
    if (mGraphicIndex == UINT32_MAX || mPresentIndex == UINT32_MAX) {
+      Destroy();
       LANGULUS_THROW(Graphics,
          "Your graphical adapter doesn't support rendering or presenting to screen");
    }
@@ -82,6 +87,7 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, const Any& descriptor)
    }
 
    if (mTransferIndex == UINT32_MAX) {
+      Destroy();
       LANGULUS_THROW(Graphics,
          "Your graphical adapter doesn't support memory transfer operations. "
          "Is this even possible? Aborting just in case, because you can't use your VRAM...");
@@ -131,8 +137,10 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, const Any& descriptor)
    #endif
 
    // Create the logical device                                         
-   if (vkCreateDevice(adapter, &deviceInfo, nullptr, &mDevice.Get()))
+   if (vkCreateDevice(adapter, &deviceInfo, nullptr, &mDevice.Get())) {
+      Destroy();
       LANGULUS_THROW(Graphics, "Could not create logical device for rendering");
+   }
 
    mVRAM.Initialize(adapter, mDevice, mTransferIndex);
 
@@ -145,12 +153,18 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, const Any& descriptor)
    poolInfo.queueFamilyIndex = mGraphicIndex;
    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-   if (vkCreateCommandPool(mDevice, &poolInfo, nullptr, &mCommandPool.Get()))
+   if (vkCreateCommandPool(mDevice, &poolInfo, nullptr, &mCommandPool.Get())) {
+      Destroy();
       LANGULUS_THROW(Graphics, "Can't create command pool for rendering");
+   }
 
    // Create the swap chain                                             
    const auto format = mSwapchain.GetSurfaceFormat();
-   mSwapchain.Create(format, mFamilies);
+   try { mSwapchain.Create(format, mFamilies); }
+   catch (...) {
+      Destroy();
+      throw;
+   }
 
    // Define color attachment for the back buffer                       
    VkAttachmentDescription colorAttachment {};
@@ -209,8 +223,10 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, const Any& descriptor)
    renderPassInfo.dependencyCount = 1;
    renderPassInfo.pDependencies = &dependency;
 
-   if (vkCreateRenderPass(mDevice, &renderPassInfo, nullptr, &mPass.Get()))
+   if (vkCreateRenderPass(mDevice, &renderPassInfo, nullptr, &mPass.Get())) {
+      Destroy();
       LANGULUS_THROW(Graphics, "Can't create main rendering pass");
+   }
 
    // Get device properties                                             
    vkGetPhysicalDeviceProperties(adapter, &mPhysicalProperties);
@@ -219,8 +235,8 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, const Any& descriptor)
    vkGetPhysicalDeviceFeatures(adapter, &mPhysicalFeatures);
 }
 
-/// Renderer destruction                                                      
-VulkanRenderer::~VulkanRenderer() {
+/// Destroy anything created                                                  
+void VulkanRenderer::Destroy() {
    if (!mDevice)
       return;
 
@@ -238,6 +254,11 @@ VulkanRenderer::~VulkanRenderer() {
    mVRAM.Destroy();
 
    vkDestroyDevice(mDevice, nullptr);
+}
+
+/// Renderer destruction                                                      
+VulkanRenderer::~VulkanRenderer() {
+   Destroy();
 }
 
 /// Introduce renderables, cameras, lights, shaders, textures, geometry       

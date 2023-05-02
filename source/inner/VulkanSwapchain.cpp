@@ -31,29 +31,39 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamili
    const Real resy = mRenderer.mResolution[1];
    const auto resxuint = static_cast<uint32_t>(resx);
    const auto resyuint = static_cast<uint32_t>(resy);
-   if (resxuint == 0 || resyuint == 0)
+   if (resxuint == 0 || resyuint == 0) {
+      Destroy();
       LANGULUS_THROW(Graphics, "Bad resolution");
+   }
 
    // Create swap chain                                                 
    VkSurfaceCapabilitiesKHR surface_caps;
    memset(&surface_caps, 0, sizeof(VkSurfaceCapabilitiesKHR));
    std::vector<VkPresentModeKHR> surface_presentModes;
-   if (vkGetPhysicalDeviceSurfaceCapabilitiesKHR(adapter, mSurface, &surface_caps))
+   if (vkGetPhysicalDeviceSurfaceCapabilitiesKHR(adapter, mSurface, &surface_caps)) {
+      Destroy();
       LANGULUS_THROW(Graphics, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR failed");
+   }
 
    // Check supported present modes                                     
    uint32_t presentModeCount;
-   if (vkGetPhysicalDeviceSurfacePresentModesKHR(adapter, mSurface, &presentModeCount, nullptr))
+   if (vkGetPhysicalDeviceSurfacePresentModesKHR(adapter, mSurface, &presentModeCount, nullptr)) {
+      Destroy();
       LANGULUS_THROW(Graphics, "vkGetPhysicalDeviceSurfacePresentModesKHR failed");
+   }
 
    if (presentModeCount != 0) {
       surface_presentModes.resize(presentModeCount);
-      if (vkGetPhysicalDeviceSurfacePresentModesKHR(adapter, mSurface, &presentModeCount, surface_presentModes.data()))
+      if (vkGetPhysicalDeviceSurfacePresentModesKHR(adapter, mSurface, &presentModeCount, surface_presentModes.data())) {
+         Destroy();
          LANGULUS_THROW(Graphics, "vkGetPhysicalDeviceSurfacePresentModesKHR failed");
+      }
    }
    
-   if (surface_presentModes.empty())
+   if (surface_presentModes.empty()) {
+      Destroy();
       LANGULUS_THROW(Graphics, "Could not create swap chain");
+   }
 
    // Choose present mode                                               
    auto surfacePresentMode = VkPresentModeKHR::VK_PRESENT_MODE_FIFO_KHR;
@@ -101,16 +111,22 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamili
    swapInfo.clipped = VK_TRUE;
    swapInfo.oldSwapchain = VK_NULL_HANDLE;
 
-   if (vkCreateSwapchainKHR(mRenderer.mDevice, &swapInfo, nullptr, &mSwapChain.Get()))
+   if (vkCreateSwapchainKHR(mRenderer.mDevice, &swapInfo, nullptr, &mSwapChain.Get())) {
+      Destroy();
       LANGULUS_THROW(Graphics, "Can't create swap chain");
+   }
 
    // Get images inside swapchain                                       
-   if (vkGetSwapchainImagesKHR(mRenderer.mDevice, mSwapChain, &imageCount, nullptr))
+   if (vkGetSwapchainImagesKHR(mRenderer.mDevice, mSwapChain, &imageCount, nullptr)) {
+      Destroy();
       LANGULUS_THROW(Graphics, "vkGetSwapchainImagesKHR fails");
+   }
 
    mSwapChainImages.New(imageCount);
-   if (vkGetSwapchainImagesKHR(mRenderer.mDevice, mSwapChain, &imageCount, mSwapChainImages.GetRaw()))
+   if (vkGetSwapchainImagesKHR(mRenderer.mDevice, mSwapChain, &imageCount, mSwapChainImages.GetRaw())) {
+      Destroy();
       LANGULUS_THROW(Graphics, "vkGetSwapchainImagesKHR fails");
+   }
 
    // Create the image views for the swap chain. They will all be       
    // single layer, 2D images, with no mipmaps.                         
@@ -166,8 +182,10 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamili
       framebufferInfo.height = resyuint;
       framebufferInfo.layers = 1;
 
-      if (vkCreateFramebuffer(mRenderer.mDevice, &framebufferInfo, nullptr, &mFramebuffer[i]))
+      if (vkCreateFramebuffer(mRenderer.mDevice, &framebufferInfo, nullptr, &mFramebuffer[i])) {
+         Destroy();
          LANGULUS_THROW(Graphics, "Can't create framebuffer");
+      }
    }
 
    // Create a command buffer for each framebuffer                      
@@ -178,8 +196,10 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamili
    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
    allocInfo.commandBufferCount = uint32_t(mCommandBuffer.size());
 
-   if (vkAllocateCommandBuffers(mRenderer.mDevice, &allocInfo, mCommandBuffer.data()))
+   if (vkAllocateCommandBuffers(mRenderer.mDevice, &allocInfo, mCommandBuffer.data())) {
+      Destroy();
       LANGULUS_THROW(Graphics, "Can't create command buffers");
+   }
 
    // Create command buffer fences                                      
    if (mNewBufferFence.IsEmpty()) {
@@ -190,8 +210,10 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamili
       for (auto& it : fenceInfo) {
          it.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
          VkFence result;
-         if (vkCreateFence(mRenderer.mDevice, &it, nullptr, &result))
+         if (vkCreateFence(mRenderer.mDevice, &it, nullptr, &result)) {
+            Destroy();
             LANGULUS_THROW(Graphics, "Can't create buffer fence");
+         }
 
          mNewBufferFence << result;
       }
@@ -201,14 +223,18 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamili
    VkSemaphoreCreateInfo fenceInfo {};
    fenceInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-   if (vkCreateSemaphore(mRenderer.mDevice, &fenceInfo, nullptr, &mNewFrameFence.Get()))
+   if (vkCreateSemaphore(mRenderer.mDevice, &fenceInfo, nullptr, &mNewFrameFence.Get())) {
+      Destroy();
       LANGULUS_THROW(Graphics, "Can't create new frame semaphore");
+   }
 
    VkSemaphoreCreateInfo semaphoreInfo {};
    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-   if (vkCreateSemaphore(mRenderer.mDevice, &semaphoreInfo, nullptr, &mFrameFinished.Get()))
+   if (vkCreateSemaphore(mRenderer.mDevice, &semaphoreInfo, nullptr, &mFrameFinished.Get())) {
+      Destroy();
       LANGULUS_THROW(Graphics, "Can't create frame finished semaphore");
+   }
 
    mCurrentFrame = 0;
 }
@@ -249,13 +275,15 @@ void VulkanSwapchain::Destroy() {
    mFramebuffer.clear();
    
    // Destroy command buffers                                           
-   vkFreeCommandBuffers(
-      mRenderer.mDevice, 
-      mRenderer.mCommandPool, 
-      static_cast<uint32_t>(mCommandBuffer.size()), 
-      mCommandBuffer.data()
-   );
-   mCommandBuffer.clear();
+   if (mCommandBuffer.size()) {
+      vkFreeCommandBuffers(
+         mRenderer.mDevice,
+         mRenderer.mCommandPool,
+         static_cast<uint32_t>(mCommandBuffer.size()),
+         mCommandBuffer.data()
+      );
+      mCommandBuffer.clear();
+   }
    
    // Destroy image views                                               
    for (auto &it : mFrame)

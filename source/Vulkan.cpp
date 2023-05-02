@@ -285,18 +285,21 @@ Vulkan::Vulkan(Runtime* runtime, const Any&)
 Vulkan::~Vulkan() {
    mRenderers.Reset();
 
+   // Destroy the computation device                                    
    if (mDevice) {
       vkDestroyDevice(mDevice, nullptr);
       mDevice = nullptr;
    }
 
    #if LANGULUS_DEBUG()
+      // Destroy debug layers                                           
       auto func = (PFN_vkDestroyDebugReportCallbackEXT)
          vkGetInstanceProcAddr(mInstance, "vkDestroyDebugReportCallbackEXT");
       if (func)
          func(mInstance, mLogRelay, nullptr);
    #endif
 
+   // Finally, destroy the vulkan instance                              
    if (mInstance) {
       vkDestroyInstance(mInstance, nullptr);
       mInstance = nullptr;
