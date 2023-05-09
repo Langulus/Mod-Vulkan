@@ -42,7 +42,7 @@ SCENARIO("Renderer creation", "[renderer]") {
 
             THEN("Various traits change") {
                root.DumpHierarchy();
-
+               
                REQUIRE_FALSE(window.IsEmpty());
                REQUIRE(window.IsSparse());
                REQUIRE(window.CastsTo<A::Window>());
@@ -54,6 +54,8 @@ SCENARIO("Renderer creation", "[renderer]") {
          }
          
          #if LANGULUS_FEATURE(MEMORY_STATISTICS)
+            Fractalloc.CollectGarbage();
+
             // Detect memory leaks                                      
             if (statistics_provided) {
                if (memory_statistics != Fractalloc.GetStatistics()) {
