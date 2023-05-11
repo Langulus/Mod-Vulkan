@@ -87,7 +87,7 @@ VkIndexType AsVkIndexType(DMeta meta) {
       return VK_INDEX_TYPE_UINT32;
    else if (meta->Is<uint16_t>())
       return VK_INDEX_TYPE_UINT16;
-   else if (meta->Is<uint8_t>())
+   else if (meta->Is<uint8_t>() || meta->Is<uint8>())
       return VK_INDEX_TYPE_UINT8_EXT;
    else
       LANGULUS_THROW(Graphics, "Unsupported index type");
@@ -101,7 +101,7 @@ LANGULUS(INLINED)
 VkFormat AsVkFormat(DMeta type, bool reverse) {
    switch (type->mSize) {
    case 1:
-      if (type->CastsTo<uint8_t, true>(1))
+      if (type->CastsTo<uint8_t, true>(1) || type->CastsTo<uint8, true>(1))
          return VK_FORMAT_R8_UNORM;
       if (type->CastsTo<int8_t, true>(1))
          return VK_FORMAT_R8_SNORM;
@@ -110,7 +110,7 @@ VkFormat AsVkFormat(DMeta type, bool reverse) {
       if (type->CastsTo<Depth16, true>(1))
          return VK_FORMAT_D16_UNORM;
 
-      if (type->CastsTo<uint8_t, true>(2))
+      if (type->CastsTo<uint8_t, true>(2) || type->CastsTo<uint8, true>(2))
          return VK_FORMAT_R8G8_UNORM;
       if (type->CastsTo<int8_t, true>(2))
          return VK_FORMAT_R8G8_SNORM;
@@ -121,7 +121,7 @@ VkFormat AsVkFormat(DMeta type, bool reverse) {
          return VK_FORMAT_R16_SNORM;
       break;
    case 3:
-      if (type->CastsTo<uint8_t, true>(3))
+      if (type->CastsTo<uint8_t, true>(3) || type->CastsTo<uint8, true>(3))
          return reverse ? VK_FORMAT_B8G8R8_UNORM : VK_FORMAT_R8G8B8_UNORM;
       if (type->CastsTo<int8_t, true>(3))
          return reverse ? VK_FORMAT_B8G8R8_SNORM : VK_FORMAT_R8G8B8_SNORM;
@@ -133,7 +133,7 @@ VkFormat AsVkFormat(DMeta type, bool reverse) {
       if (type->CastsTo<Float, true>(1))
          return VK_FORMAT_R32_SFLOAT;
 
-      if (type->CastsTo<uint8_t, true>(4))
+      if (type->CastsTo<uint8_t, true>(4) || type->CastsTo<uint8, true>(4))
          return reverse ? VK_FORMAT_B8G8R8A8_UNORM : VK_FORMAT_R8G8B8A8_UNORM;
       if (type->CastsTo<int8_t, true>(4))
          return reverse ? VK_FORMAT_B8G8R8A8_SNORM : VK_FORMAT_R8G8B8A8_SNORM;

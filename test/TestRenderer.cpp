@@ -34,7 +34,7 @@ SCENARIO("Renderer creation", "[renderer]") {
          root.LoadMod("Vulkan");
 
          WHEN("The renderer is created") {
-            auto window = root.CreateUnitToken("Window");
+            auto window = root.CreateUnitToken("Window", Traits::Size(640, 480));
             auto renderer = root.CreateUnitToken("Renderer");
 
             for (int repeat2 = 0; repeat2 != 10; ++repeat2)
