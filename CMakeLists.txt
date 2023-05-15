@@ -34,5 +34,6 @@ target_include_directories (LangulusModVulkan
 )
 
 if(LANGULUS_ENABLE_TESTING)
+    enable_testing()
 	add_subdirectory(test)
 endif()
