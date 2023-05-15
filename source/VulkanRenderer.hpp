@@ -111,7 +111,7 @@ public:
    void Create(Verb&);
 
    void Draw();
-   void Resize(const Vec2&);
+   void Resize(const Scale2&);
 
    NOD() VkInstance GetVulkanInstance() const noexcept;
    NOD() VkPhysicalDevice GetAdapter() const noexcept;

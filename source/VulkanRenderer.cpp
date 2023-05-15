@@ -274,7 +274,7 @@ void VulkanRenderer::Create(Verb& verb) {
 
 /// Resize the swapchain                                                      
 ///   @param size - the new size                                              
-void VulkanRenderer::Resize(const Vec2& size) {
+void VulkanRenderer::Resize(const Scale2& size) {
    if (mResolution != size) {
       mResolution = size;
       mSwapchain.Recreate(mFamilies);

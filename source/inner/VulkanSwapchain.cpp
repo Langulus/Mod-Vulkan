@@ -8,6 +8,7 @@
 #include "../Vulkan.hpp"
 #include <set>
 
+
 /// Swapchain constructor                                                     
 ///   @param renderer - the renderer that owns the swapchain                  
 VulkanSwapchain::VulkanSwapchain(VulkanRenderer& renderer) noexcept
@@ -209,7 +210,7 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamili
 
       for (auto& it : fenceInfo) {
          it.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-         VkFence result;
+         VkFence result {};
          if (vkCreateFence(mRenderer.mDevice, &it, nullptr, &result)) {
             Destroy();
             LANGULUS_THROW(Graphics, "Can't create buffer fence");

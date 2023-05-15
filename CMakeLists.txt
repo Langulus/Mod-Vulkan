@@ -1,27 +1,38 @@
-project(Langulus.Mod.Vulkan)
+cmake_minimum_required(VERSION 3.24)
+project(LangulusModVulkan)
 
 # Retrieve Vulkan installation, requires CMake 3.24+                        
 find_package(Vulkan REQUIRED COMPONENTS shaderc_combined)
 
 # Build the module                                                          
-aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/source LANGULUS_MOD_VULKAN_SOURCES)
-aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/source/inner LANGULUS_MOD_VULKAN_SOURCES)
-add_library(Mod.Vulkan SHARED ${LANGULUS_MOD_VULKAN_SOURCES})
+add_library(LangulusModVulkan SHARED
+    source/Vulkan.cpp
+    source/VulkanRenderer.cpp
+    source/VulkanRenderable.cpp
+    source/VulkanPipeline.cpp
+    source/VulkanLight.cpp
+    source/VulkanCamera.cpp
+    source/VulkanLayer.cpp
+    source/Platform.cpp
+    source/GLSL.cpp
+    source/inner/UBO.cpp
+    source/inner/VulkanGeometry.cpp
+    source/inner/VulkanMemory.cpp
+    source/inner/VulkanShader.cpp
+    source/inner/VulkanSwapchain.cpp
+    source/inner/VulkanTexture.cpp
+)
 
-if (MSVC)
-    target_compile_options(Mod.Vulkan PRIVATE /bigobj)
-endif()
-
-target_link_libraries(Mod.Vulkan
-    PRIVATE     Langulus.Framework
+target_link_libraries(LangulusModVulkan
+    PRIVATE     Langulus
                 Vulkan::Vulkan
                 Vulkan::shaderc_combined
 )
 
-target_include_directories (Mod.Vulkan 
-    PUBLIC      ${Vulkan_INCLUDE_DIRS}
+target_include_directories (LangulusModVulkan
+    PRIVATE     ${Vulkan_INCLUDE_DIRS}
 )
 
-if(BUILD_TESTING)
-    add_subdirectory(test)
+if(LANGULUS_ENABLE_TESTING)
+	add_subdirectory(test)
 endif()
