@@ -158,13 +158,7 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, const Any& descriptor)
       LANGULUS_THROW(Graphics, "Can't create command pool for rendering");
    }
 
-   // Create the swap chain                                             
    const auto format = mSwapchain.GetSurfaceFormat();
-   try { mSwapchain.Create(format, mFamilies); }
-   catch (...) {
-      Destroy();
-      throw;
-   }
 
    // Define color attachment for the back buffer                       
    VkAttachmentDescription colorAttachment {};
@@ -226,6 +220,13 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, const Any& descriptor)
    if (vkCreateRenderPass(mDevice, &renderPassInfo, nullptr, &mPass.Get())) {
       Destroy();
       LANGULUS_THROW(Graphics, "Can't create main rendering pass");
+   }
+
+   // Create the swap chain                                             
+   try { mSwapchain.Create(format, mFamilies); }
+   catch (...) {
+      Destroy();
+      throw;
    }
 
    // Get device properties                                             
