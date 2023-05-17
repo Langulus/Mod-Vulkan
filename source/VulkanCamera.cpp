@@ -10,7 +10,7 @@
 /// Descriptor constructor                                                    
 ///   @param producer - the camera producer                                   
 ///   @param descriptor - the camera descriptor                               
-VulkanCamera::VulkanCamera(VulkanLayer* producer, const Any& descriptor)
+VulkanCamera::VulkanCamera(VulkanLayer* producer, const Descriptor& descriptor)
    : Graphics {MetaOf<VulkanCamera>(), descriptor} 
    , ProducedFrom {producer, descriptor} {
    TODO();

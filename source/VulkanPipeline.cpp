@@ -15,7 +15,7 @@
 /// Descriptor constructor                                                    
 ///   @param producer - the pipeline producer                                 
 ///   @param descriptor - the pipeline descriptor                             
-VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, const Any& descriptor)
+VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, const Descriptor& descriptor)
    : Graphics {MetaOf<VulkanPipeline>(), descriptor}
    , ProducedFrom {producer, descriptor} {
    VERBOSE_PIPELINE("Initializing graphics pipeline from ", descriptor);

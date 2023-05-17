@@ -76,7 +76,7 @@ LANGULUS_DEFINE_MODULE(
 /// Vulkan module construction                                                
 ///   @param system - the system that owns the module instance                
 ///   @param handle - the library handle                                      
-Vulkan::Vulkan(Runtime* runtime, const Any&)
+Vulkan::Vulkan(Runtime* runtime, const Descriptor&)
    : A::GraphicsModule {MetaOf<Vulkan>(), runtime}
    , mRenderers {this} {
    Logger::Verbose(Self(), "Initializing...");

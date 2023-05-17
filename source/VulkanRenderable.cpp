@@ -14,7 +14,7 @@
 /// Descriptor constructor                                                    
 ///   @param producer - the renderable producer                               
 ///   @param descriptor - the renderable descriptor                           
-VulkanRenderable::VulkanRenderable(VulkanLayer* producer, const Any& descriptor)
+VulkanRenderable::VulkanRenderable(VulkanLayer* producer, const Descriptor& descriptor)
    : Graphics {MetaOf<VulkanRenderable>(), descriptor} 
    , ProducedFrom {producer, descriptor} {
    TODO();

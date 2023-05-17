@@ -85,7 +85,7 @@ private:
    void PrepareFromCode(const Text&);
 
 public:
-   VulkanPipeline(VulkanRenderer*, const Any&);
+   VulkanPipeline(VulkanRenderer*, const Descriptor&);
    ~VulkanPipeline();
 
    NOD() Count RenderLevel(const Offset&) const;

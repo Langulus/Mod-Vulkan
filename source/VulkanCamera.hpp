@@ -45,7 +45,7 @@ protected:
    Scale2u32 mResolution {640, 480};
 
 public:
-   VulkanCamera(VulkanLayer*, const Any&);
+   VulkanCamera(VulkanLayer*, const Descriptor&);
 
    void Refresh();
    void Compile();

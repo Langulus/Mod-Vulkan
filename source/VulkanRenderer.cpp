@@ -12,7 +12,7 @@
 /// Descriptor constructor                                                    
 ///   @param producer - the renderer producer                                 
 ///   @param descriptor - the renderer descriptor                             
-VulkanRenderer::VulkanRenderer(Vulkan* producer, const Any& descriptor)
+VulkanRenderer::VulkanRenderer(Vulkan* producer, const Descriptor& descriptor)
    : Renderer {MetaOf<VulkanRenderer>(), descriptor}
    , ProducedFrom {producer, descriptor}
    , mSwapchain {*this}
