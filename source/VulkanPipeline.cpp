@@ -307,7 +307,7 @@ void VulkanPipeline::PrepareFromGeometry(const A::Geometry& geometry) {
       }
       else {
          // Just forward custom inputs, starting from the vertex stage  
-         const auto serializedData = Serializer::Serialize<Code>(data);
+         const auto serializedData = Flow::Serialize<Code>(data);
          code +=
             "Create^PerVertex(Input("_code + trait + '(' + serializedData + ")))";
       }
