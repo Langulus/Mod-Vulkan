@@ -6,9 +6,6 @@
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
 #include "Vulkan.hpp"
-#include "GLSL.hpp"
-
-#define PC_VERBOSE_RENDERABLE(a) a
 
 
 /// Descriptor constructor                                                    

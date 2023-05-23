@@ -8,75 +8,6 @@
 #pragma once
 #include "Common.hpp"
 
-constexpr BlendMode::BlendMode(Type value) noexcept
-   : mMode {value} {}
-
-constexpr MapMode::MapMode(Type value) noexcept
-   : mMode {value} {}
-
-constexpr RefreshRate::RefreshRate(const CT::DenseNumber auto& value) noexcept
-   : mMode {static_cast<Type>(value)} {}
-
-constexpr RefreshRate::RefreshRate(const Enum& value) noexcept
-   : mMode {value} {}
-
-LANGULUS(INLINED)
-constexpr bool RefreshRate::IsUniform() const noexcept {
-   return mMode >= UniformBegin && mMode < UniformEnd;
-}
-
-LANGULUS(INLINED)
-constexpr bool RefreshRate::IsStaticUniform() const noexcept {
-   return mMode >= StaticUniformBegin && mMode < StaticUniformEnd;
-}
-
-LANGULUS(INLINED)
-constexpr bool RefreshRate::IsDynamicUniform() const noexcept {
-   return mMode >= DynamicUniformBegin && mMode < DynamicUniformEnd;
-}
-
-LANGULUS(INLINED)
-constexpr bool RefreshRate::IsAttribute() const noexcept {
-   return mMode == Enum::Vertex;
-}
-
-LANGULUS(INLINED)
-constexpr bool RefreshRate::IsInput() const noexcept {
-   return mMode >= InputBegin && mMode < InputEnd;
-}
-
-LANGULUS(INLINED)
-constexpr bool RefreshRate::IsShaderStage() const noexcept {
-   return mMode >= StagesBegin && mMode < StagesEnd;
-}
-
-LANGULUS(INLINED)
-constexpr Offset RefreshRate::GetInputIndex() const {
-   if (!IsInput())
-      LANGULUS_THROW(Graphics, "Not an input");
-   return mMode - InputBegin;
-}
-
-LANGULUS(INLINED)
-constexpr Offset RefreshRate::GetStaticUniformIndex() const {
-   if (!IsStaticUniform())
-      LANGULUS_THROW(Graphics, "Not a static uniform");
-   return mMode - StaticUniformBegin;
-}
-
-LANGULUS(INLINED)
-constexpr Offset RefreshRate::GetDynamicUniformIndex() const {
-   if (!IsDynamicUniform())
-      LANGULUS_THROW(Graphics, "Not a dynamic uniform");
-   return mMode - DynamicUniformBegin;
-}
-
-LANGULUS(INLINED)
-constexpr ShaderStage::Enum RefreshRate::GetStageIndex() const {
-   if (!IsShaderStage())
-      LANGULUS_THROW(Graphics, "Not a shader stage");
-   return static_cast<ShaderStage::Enum>(mMode - StagesBegin);
-}
 
 /// Convert a meta data to a VK index format                                  
 ///   @param meta - the type definition to convert                            
@@ -402,26 +333,3 @@ RGBAf AnyColorToVector(const Any& color) {
 
    return result;
 }
-
-/// Updated once per time step                                                
-constexpr Rate PerTick = Rate::Tick;
-/// Updated once per a render pass                                            
-constexpr Rate PerPass = Rate::Pass;
-/// Updated for each camera                                                   
-constexpr Rate PerCamera = Rate::Camera;
-/// Updated for each level                                                    
-constexpr Rate PerLevel = Rate::Level;
-/// Updated for each renderable                                               
-constexpr Rate PerRenderable = Rate::Renderable;
-/// Updated for each instance                                                 
-constexpr Rate PerInstance = Rate::Instance;
-/// Updated in vertex shader                                                  
-constexpr Rate PerVertex = Rate::Vertex;
-/// Updated in geometry shader                                                
-constexpr Rate PerPrimitive = Rate::Primitive;
-/// Updated in tesselation control shader                                     
-constexpr Rate PerTessCtrl = Rate::TessCtrl;
-/// Updated in tesselation evaluation shader                                  
-constexpr Rate PerTessEval = Rate::TessEval;
-/// Updated in pixel shader                                                   
-constexpr Rate PerPixel = Rate::Pixel;

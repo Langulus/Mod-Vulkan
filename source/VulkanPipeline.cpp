@@ -6,7 +6,6 @@
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
 #include "Vulkan.hpp"
-#include "GLSL.hpp"
 #include <Anyness/Path.hpp>
 
 #define VERBOSE_PIPELINE(...) Logger::Verbose(Self(), __VA_ARGS__)
@@ -243,8 +242,8 @@ VulkanPipeline::~VulkanPipeline() {
 ///   @param file - the file interface                                        
 void VulkanPipeline::PrepareFromFile(const A::File& file) {
    try {
-      // Check if file is a GLSL code file, and attempt using it        
-      PrepareFromCode(file.ReadAs<GLSL>());
+      // Check if file is a text file, and attempt using it             
+      PrepareFromCode(file.ReadAs<Text>());
    }
    catch (...) { throw; }
 
@@ -426,7 +425,7 @@ void VulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
 void VulkanPipeline::PrepareFromCode(const Text& code) {
    // Let's build a material generator from available code              
    VERBOSE_PIPELINE("Generating material from code snippet: ");
-   VERBOSE_PIPELINE(GLSL {code}.Pretty());
+   VERBOSE_PIPELINE(code);
    Verbs::Create creator {Construct::From<A::Material>(code)};
    Run(creator).ForEach([this](const A::Material& generator) {
       PrepareFromMaterial(generator);
@@ -573,12 +572,13 @@ void VulkanPipeline::CreateUniformBuffers() {
             continue;
 
          // Find out where the UBO is used                              
-         for (auto& uniform : ubo.mUniforms) {
+         //TODO precompute this in asset module!!!
+         /*for (auto& uniform : ubo.mUniforms) {
             for (const auto stage : mStages) {
                if (stage->GetCode().Find(GLSL {uniform.mTrait.GetTrait()}))
                   ubo.mStages |= stage->GetStageFlagBit();
             }
-         }
+         }*/
 
          // Allocate VRAM for the buffer and copy initial values if any 
          ubo.Create(mProducer);
@@ -613,12 +613,13 @@ void VulkanPipeline::CreateUniformBuffers() {
             continue;
 
          // Find out where the UBO is used                              
-         for (auto& uniform : ubo.mUniforms) {
+         //TODO precompute this in asset module!!!
+         /*for (auto& uniform : ubo.mUniforms) {
             for (const auto stage : mStages) {
                if (stage->GetCode().Find(GLSL {uniform.mTrait.GetTrait()}))
                   ubo.mStages |= stage->GetStageFlagBit();
             }
-         }
+         }*/
 
          // Allocate VRAM for the buffer and copy initial values if any 
          ubo.Create(mProducer);
@@ -654,14 +655,15 @@ void VulkanPipeline::CreateUniformBuffers() {
          for (auto& uniform : ubo.mUniforms) {
             // Find out where the UBO is used                           
             VkShaderStageFlags mask {};
-            for (const auto stage : mStages) {
+            //TODO precompute this in asset module!!!
+            /*for (const auto stage : mStages) {
                const auto token = 
                   GLSL {uniform.mTrait.GetTrait()}
                 + GLSL {bindings.GetCount()};
 
                if (stage->GetCode().Find(token))
                   mask |= stage->GetStageFlagBit();
-            }
+            }*/
 
             // Create the bindings for each texture                     
             VkDescriptorSetLayoutBinding binding {};

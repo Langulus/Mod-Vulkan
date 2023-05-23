@@ -5,10 +5,9 @@
 /// Distributed under GNU General Public License v3+                          
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
-#include <shaderc/shaderc.hpp>
 #include "../Vulkan.hpp"
-#include "../GLSL.hpp"
 #include <Anyness/Path.hpp>
+#include <shaderc/shaderc.hpp>
 
 #define VERBOSE_SHADER(...) //Logger::Verbose(Self(), __VA_ARGS__)
 
@@ -26,13 +25,13 @@ VulkanShader::VulkanShader(VulkanRenderer* producer, const Any& descriptor)
       },
       [this](const A::File& file) {
          // Create from file                                            
-         mCode = file.ReadAs<GLSL>();
+         mCode = file.ReadAs<Text>();
       },
       [this](const Path& path) {
          // Create from file path                                       
          const auto file = GetRuntime()->GetFile(path);
          if (file)
-            mCode = file->ReadAs<GLSL>();
+            mCode = file->ReadAs<Text>();
       },
       [this](const Text& code) {
          mCode = code;
@@ -103,7 +102,7 @@ const Shader& VulkanShader::Compile() const {
    if (assembly.GetCompilationStatus() != shaderc_compilation_status_success) {
       Logger::Error(Self(), "Shader Compilation Error: ", assembly.GetErrorMessage());
       Logger::Error(Self(), "For shader:");
-      Logger::Error(Self(), GLSL {mCode}.Pretty());
+      Logger::Error(Self(), mCode);
       LANGULUS_THROW(Graphics, "Shader compilation failed");
    }
 

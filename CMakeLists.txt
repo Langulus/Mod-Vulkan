@@ -14,7 +14,6 @@ add_library(LangulusModVulkan SHARED
     source/VulkanCamera.cpp
     source/VulkanLayer.cpp
     source/Platform.cpp
-    source/GLSL.cpp
     source/inner/UBO.cpp
     source/inner/VulkanGeometry.cpp
     source/inner/VulkanMemory.cpp
