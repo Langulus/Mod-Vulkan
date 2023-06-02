@@ -25,7 +25,7 @@ protected:
    // Whether or not a perspective projection is used                   
    bool mPerspective {true};
    // The projection matrix                                             
-   Matrix4 mProjection;
+   Mat4 mProjection;
    // Clipping range in all directions, including depth                 
    Range4 mViewport {{0, 0, 0.1, 0}, {720, 480, 1000, 0}};
    // Horizontal field of view, in radians                              
@@ -39,7 +39,7 @@ protected:
    Real mEyeSeparation {};
 
    TAny<const A::Instance*> mInstances;
-   Matrix4 mProjectionInverted;
+   Mat4 mProjectionInverted;
    VkViewport mVulkanViewport {0, 0, 640, 480, 0, 1};
    VkRect2D mVulkanScissor {{0, 0}, {640, 480}};
    Scale2u32 mResolution {640, 480};
@@ -49,6 +49,6 @@ public:
 
    void Refresh();
    void Compile();
-   NOD() Matrix4 GetViewTransform(const LOD&) const;
-   NOD() Matrix4 GetViewTransform(const Level& = Level::Default) const;
+   NOD() Mat4 GetViewTransform(const LOD&) const;
+   NOD() Mat4 GetViewTransform(const Level& = {}) const;
 };

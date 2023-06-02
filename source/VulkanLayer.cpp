@@ -7,7 +7,6 @@
 ///                                                                           
 #include "Vulkan.hpp"
 #include <Entity/Thing.hpp>
-//#include <iterator>
 
 
 /// Descriptor constructor                                                    
@@ -158,7 +157,7 @@ Count VulkanLayer::CompileThing(const Thing* thing, LOD& lod, PipelineSet& pipes
 ///   @param pipesPerCamera - [out] pipeline set for the current level only   
 ///   @return the number of compiled entities                                 
 Count VulkanLayer::CompileLevelHierarchical(
-   const Matrix4& view, const Matrix4& projection, 
+   const Mat4& view, const Mat4& projection, 
    Level level, PipelineSet& pipesPerCamera
 ) {
    // Construct view and frustum for culling                            
@@ -195,7 +194,7 @@ Count VulkanLayer::CompileLevelHierarchical(
 ///   @param pipesPerCamera - [out] pipeline set for the current level only   
 ///   @return 1 if anything was rendered, zero otherwise                      
 Count VulkanLayer::CompileLevelBatched(
-   const Matrix4& view, const Matrix4& projection, 
+   const Mat4& view, const Mat4& projection, 
    Level level, PipelineSet& pipesPerCamera
 ) {
    // Construct view and frustum   for culling                          
@@ -272,7 +271,7 @@ Count VulkanLayer::CompileLevels() {
       if (!pipesPerCamera.IsEmpty()) {
          for (auto pipeline : pipesPerCamera) {
             // Push PerCamera uniforms if required                      
-            pipeline->SetUniform<PerCamera, Traits::Projection>(Matrix4 {});
+            pipeline->SetUniform<PerCamera, Traits::Projection>(Mat4 {});
             pipeline->SetUniform<PerCamera, Traits::FOV>(Radians {});
             pipeline->SetUniform<PerCamera, Traits::Size>(GetWindow()->GetSize());
             if (mStyle & Style::Hierarchical)

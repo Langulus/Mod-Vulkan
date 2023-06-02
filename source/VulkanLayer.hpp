@@ -131,8 +131,8 @@ public:
 private:
    void CompileCameras();
 
-   Count CompileLevelBatched(const Matrix4&, const Matrix4&, Level, PipelineSet&);
-   Count CompileLevelHierarchical(const Matrix4&, const Matrix4&, Level, PipelineSet&);
+   Count CompileLevelBatched(const Mat4&, const Mat4&, Level, PipelineSet&);
+   Count CompileLevelHierarchical(const Mat4&, const Mat4&, Level, PipelineSet&);
    Count CompileThing(const Thing*, LOD&, PipelineSet&);
    NOD() VulkanPipeline* CompileInstance(const VulkanRenderable*, const A::Instance*, LOD&);
    Count CompileLevels();

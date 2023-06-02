@@ -47,10 +47,10 @@ void VulkanCamera::Compile() {
       //                      v                                         
       //                  -Aspect*Y                                     
       //                                                                
-      constexpr auto vulkanAdapter = Matrix4::Scalar(
+      constexpr auto vulkanAdapter = Mat4::Scalar(
          Vec3 {Real {1}, Real {-1}, Real {-1}}
       );
-      mProjection = vulkanAdapter * Matrix4::PerspectiveFOV(
+      mProjection = vulkanAdapter * Mat4::PerspectiveFOV(
          mFOV, mAspectRatio, mViewport.mMin[2], mViewport.mMax[2]
       );
    }
@@ -66,7 +66,7 @@ void VulkanCamera::Compile() {
       //     v                                                          
       //   +Aspect*Y                                                    
       //                                                                
-      mProjection = Matrix4::Orthographic(
+      mProjection = Mat4::Orthographic(
          mViewport.mMax[0], mViewport.mMax[1], 
          mViewport.mMin[2], mViewport.mMax[2]
       );
@@ -94,7 +94,7 @@ void VulkanCamera::Refresh() {
 /// Get view transformation for a given LOD state                             
 ///   @param lod - the level-of-detail state                                  
 ///   @return the view transformation for the camera                          
-Matrix4 VulkanCamera::GetViewTransform(const LOD& lod) const {
+Mat4 VulkanCamera::GetViewTransform(const LOD& lod) const {
    if (mInstances.IsEmpty())
       return {};
 
@@ -104,7 +104,7 @@ Matrix4 VulkanCamera::GetViewTransform(const LOD& lod) const {
 /// Get view transformation for a given level                                 
 ///   @param level - the level                                                
 ///   @return the view transformation for the camera                          
-Matrix4 VulkanCamera::GetViewTransform(const Level& level) const {
+Mat4 VulkanCamera::GetViewTransform(const Level& level) const {
    if (mInstances.IsEmpty())
       return {};
 

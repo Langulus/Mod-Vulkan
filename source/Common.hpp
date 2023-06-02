@@ -32,51 +32,6 @@ struct VulkanShader;
 
 
 ///                                                                           
-///   Shader stages                                                           
-///                                                                           
-namespace ShaderStage
-{
-   enum Enum : uint32_t {
-      Vertex = 0,          // Vertex shader stage                       
-      Geometry,            // Geometry shader stage                     
-      TessCtrl,            // Tesselation control stage                 
-      TessEval,            // Tesselation evaluation stage              
-      Pixel,               // Pixel shader stage                        
-      Compute,             // Compute shader stage                      
-
-      Counter              // Shader stage counter (keep at end)        
-   };
-
-   /// Shader names                                                           
-   constexpr Token Names[Enum::Counter] = {
-      "vertex",
-      "geometry",
-      "tesselation control",
-      "tesselation evaluation",
-      "fragment",
-      "compute"
-   };
-}
-
-///                                                                           
-///   Shader layout tokens                                                    
-///                                                                           
-namespace ShaderToken
-{
-   constexpr Token Version       = "//#VERSION\n";
-   constexpr Token Defines       = "//#DEFINES\n";
-   constexpr Token Input         = "//#INPUT\n";
-   constexpr Token Output        = "//#OUTPUT\n";
-   constexpr Token Dependencies  = "//#DEPENDENCY\n";
-   constexpr Token Colorize      = "//#COLORIZE\n";
-   constexpr Token Transform     = "//#TRANSFORM\n";
-   constexpr Token Position      = "//#POSITION\n";
-   constexpr Token Uniform       = "//#UNIFORM\n";
-   constexpr Token Texturize     = "//#TEXTURIZE\n";
-   constexpr Token Functions     = "//#FUNCTIONS\n";
-}
-
-///                                                                           
 ///   Vulkan begins its existence here                                        
 ///                                                                           
 #include <vulkan/vulkan_core.h>
