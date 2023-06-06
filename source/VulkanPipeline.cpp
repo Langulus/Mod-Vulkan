@@ -350,7 +350,7 @@ void VulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
    stuff.ForEachDeep([&](const Block& group) {
       group.ForEach([&](const A::Geometry& geometry) {
          PrepareFromGeometry(geometry);
-         return false;        // Only one geometry definition allowed   
+         return Flow::Break;  // Only one geometry definition allowed   
       },
       [&](const A::Texture& texture) {
          // Add texturization, if construct contains any textures       
