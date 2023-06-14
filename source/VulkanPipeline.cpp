@@ -208,33 +208,33 @@ VulkanPipeline::~VulkanPipeline() {
    const auto device = mProducer->mDevice;
    if (mUBOPool) {
       vkDestroyDescriptorPool(device, mUBOPool, nullptr);
-      mUBOPool = 0;
+      mUBOPool.Reset();
    }
 
    // Destroy pipeline                                                  
    if (mPipeline) {
       vkDestroyPipeline(device, mPipeline, nullptr);
-      mPipeline = 0;
+      mPipeline.Reset();
    }
 
    // Destroy pipeline layout                                           
    if (mPipeLayout) {
       vkDestroyPipelineLayout(device, mPipeLayout, nullptr);
-      mPipeLayout = 0;
+      mPipeLayout.Reset();
    }
 
    // Destroy every UBO layout                                          
    if (mStaticUBOLayout) {
       vkDestroyDescriptorSetLayout(device, mStaticUBOLayout, nullptr);
-      mStaticUBOLayout = 0;
+      mStaticUBOLayout.Reset();
    }
    if (mDynamicUBOLayout) {
       vkDestroyDescriptorSetLayout(device, mDynamicUBOLayout, nullptr);
-      mDynamicUBOLayout = 0;
+      mDynamicUBOLayout.Reset();
    }
    if (mSamplersUBOLayout) {
       vkDestroyDescriptorSetLayout(device, mSamplersUBOLayout, nullptr);
-      mSamplersUBOLayout = 0;
+      mSamplersUBOLayout.Reset();
    }
 }
 
@@ -491,7 +491,7 @@ void VulkanPipeline::CreateNewSamplerSet() {
    // This will copy the samplers layout                                
    mSamplerUBO << mSamplerUBO.Last();
    auto& ubo = mSamplerUBO.Last();
-   ubo.mSamplersUBOSet = 0;
+   ubo.mSamplersUBOSet.Reset();
 
    // Create a new descriptor set                                       
    VkDescriptorSetAllocateInfo allocInfo {};

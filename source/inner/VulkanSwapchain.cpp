@@ -267,7 +267,7 @@ void VulkanSwapchain::Destroy() {
 
    // Destroy the depth buffer images                                   
    vkDestroyImageView(mRenderer.mDevice, mDepthImageView, nullptr);
-   mDepthImageView = 0;
+   mDepthImageView.Reset();
    mRenderer.mVRAM.DestroyImage(mDepthImage);
 
    // Destroy framebuffers                                              
@@ -293,7 +293,7 @@ void VulkanSwapchain::Destroy() {
    
    // Destroy swapchain                                                 
    vkDestroySwapchainKHR(mRenderer.mDevice, mSwapChain, nullptr);
-   mSwapChain = 0;
+   mSwapChain.Reset();
    mSwapChainImages.Clear();
 }
 
