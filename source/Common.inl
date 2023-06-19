@@ -164,91 +164,91 @@ DMeta VkFormatToDMeta(const VkFormat& type, bool& reverse) {
    reverse = false;
    switch (type) {
       case VK_FORMAT_D16_UNORM:
-         return MetaData::Of<Depth16>();
+         return MetaOf<Depth16>();
       case VK_FORMAT_D32_SFLOAT:
-         return MetaData::Of<Depth32>();
+         return MetaOf<Depth32>();
       case VK_FORMAT_R8_UNORM:
-         return MetaData::Of<Red8>();
+         return MetaOf<Red8>();
       case VK_FORMAT_R16_UNORM: 
-         return MetaData::Of<uint16_t>();
+         return MetaOf<uint16_t>();
       case VK_FORMAT_R32_UINT: 
-         return MetaData::Of<uint32_t>();
+         return MetaOf<uint32_t>();
       case VK_FORMAT_R64_UINT: 
-         return MetaData::Of<uint64_t>();
+         return MetaOf<uint64_t>();
       case VK_FORMAT_R8_SNORM: 
-         return MetaData::Of<int8_t>();
+         return MetaOf<int8_t>();
       case VK_FORMAT_R16_SNORM: 
-         return MetaData::Of<int16_t>();
+         return MetaOf<int16_t>();
       case VK_FORMAT_R32_SINT: 
-         return MetaData::Of<int32_t>();
+         return MetaOf<int32_t>();
       case VK_FORMAT_R64_SINT: 
-         return MetaData::Of<int64_t>();
+         return MetaOf<int64_t>();
       case VK_FORMAT_R32_SFLOAT: 
-         return MetaData::Of<Red32>();
+         return MetaOf<Red32>();
       case VK_FORMAT_R64_SFLOAT: 
-         return MetaData::Of<Double>();
+         return MetaOf<Double>();
       case VK_FORMAT_R32G32_SFLOAT: 
-         return MetaData::Of<Vec2f>();
+         return MetaOf<Vec2f>();
       case VK_FORMAT_R64G64_SFLOAT: 
-         return MetaData::Of<Vec2d>();
+         return MetaOf<Vec2d>();
       case VK_FORMAT_R8G8B8_UNORM: case VK_FORMAT_B8G8R8_UNORM: 
          reverse = true;
-         return MetaData::Of<RGB>();
+         return MetaOf<RGB>();
       case VK_FORMAT_R32G32B32_SFLOAT:   
-         return MetaData::Of<RGB96>();
+         return MetaOf<RGB96>();
       case VK_FORMAT_R64G64B64_SFLOAT:   
-         return MetaData::Of<Vec3d>();
+         return MetaOf<Vec3d>();
       case VK_FORMAT_R8G8B8A8_UNORM: case VK_FORMAT_B8G8R8A8_UNORM:
          reverse = true;
-         return MetaData::Of<RGBA>();
+         return MetaOf<RGBA>();
       case VK_FORMAT_R32G32B32A32_SFLOAT:   
-         return MetaData::Of<RGBA128>();
+         return MetaOf<RGBA128>();
       case VK_FORMAT_R64G64B64A64_SFLOAT:   
-         return MetaData::Of<Vec4d>();
+         return MetaOf<Vec4d>();
       case VK_FORMAT_R8G8_UNORM:
-         return MetaData::Of<Vec2u8>();
+         return MetaOf<Vec2u8>();
       case VK_FORMAT_R16G16_UNORM:
-         return MetaData::Of<Vec2u16>();
+         return MetaOf<Vec2u16>();
       case VK_FORMAT_R32G32_UINT:
-         return MetaData::Of<Vec2u32>();
+         return MetaOf<Vec2u32>();
       case VK_FORMAT_R64G64_UINT:
-         return MetaData::Of<Vec2u64>();
+         return MetaOf<Vec2u64>();
       case VK_FORMAT_R8G8_SNORM:
-         return MetaData::Of<Vec2i8>();
+         return MetaOf<Vec2i8>();
       case VK_FORMAT_R16G16_SNORM:
-         return MetaData::Of<Vec2i16>();
+         return MetaOf<Vec2i16>();
       case VK_FORMAT_R32G32_SINT:
-         return MetaData::Of<Vec2i32>();
+         return MetaOf<Vec2i32>();
       case VK_FORMAT_R64G64_SINT:
-         return MetaData::Of<Vec2i64>();
+         return MetaOf<Vec2i64>();
       case VK_FORMAT_R16G16B16_UNORM:
-         return MetaData::Of<Vec2u16>();
+         return MetaOf<Vec2u16>();
       case VK_FORMAT_R32G32B32_UINT:
-         return MetaData::Of<Vec2u32>();
+         return MetaOf<Vec2u32>();
       case VK_FORMAT_R64G64B64_UINT:
-         return MetaData::Of<Vec2u64>();
+         return MetaOf<Vec2u64>();
       case VK_FORMAT_R8G8B8_SNORM:
-         return MetaData::Of<Vec3i8>();
+         return MetaOf<Vec3i8>();
       case VK_FORMAT_R16G16B16_SNORM:
-         return MetaData::Of<Vec3i16>();
+         return MetaOf<Vec3i16>();
       case VK_FORMAT_R32G32B32_SINT:
-         return MetaData::Of<Vec3i32>();
+         return MetaOf<Vec3i32>();
       case VK_FORMAT_R64G64B64_SINT:
-         return MetaData::Of<Vec3i64>();
+         return MetaOf<Vec3i64>();
       case VK_FORMAT_R16G16B16A16_UNORM:
-         return MetaData::Of<Vec4u16>();
+         return MetaOf<Vec4u16>();
       case VK_FORMAT_R32G32B32A32_UINT:
-         return MetaData::Of<Vec4u32>();
+         return MetaOf<Vec4u32>();
       case VK_FORMAT_R64G64B64A64_UINT:
-         return MetaData::Of<Vec4u64>();
+         return MetaOf<Vec4u64>();
       case VK_FORMAT_R8G8B8A8_SNORM:
-         return MetaData::Of<Vec4i8>();
+         return MetaOf<Vec4i8>();
       case VK_FORMAT_R16G16B16A16_SNORM:
-         return MetaData::Of<Vec4i16>();
+         return MetaOf<Vec4i16>();
       case VK_FORMAT_R32G32B32A32_SINT:
-         return MetaData::Of<Vec4i32>();
+         return MetaOf<Vec4i32>();
       case VK_FORMAT_R64G64B64A64_SINT:
-         return MetaData::Of<Vec4i64>();
+         return MetaOf<Vec4i64>();
       default:
          break;
    }
