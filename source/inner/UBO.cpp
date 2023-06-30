@@ -221,7 +221,7 @@ SamplerUBO::~SamplerUBO() {
 
 /// Check if two sampler sets are functionally the same                       
 bool SamplerUBO::operator == (const SamplerUBO& rhs) const noexcept {
-   return mSamplers == rhs.mSamplers && mUniforms == rhs.mUniforms;
+   return mSamplers.Compare(rhs.mSamplers) && mUniforms == rhs.mUniforms;
 }
 
 /// Set a sampler                                                             
