@@ -203,7 +203,7 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamili
    }
 
    // Create command buffer fences                                      
-   if (mNewBufferFence.IsEmpty()) {
+   if (!mNewBufferFence) {
       TAny<VkFenceCreateInfo> fenceInfo;
       fenceInfo.New(mFramebuffer.size());
       mNewBufferFence.Reserve(mFramebuffer.size());

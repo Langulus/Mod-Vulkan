@@ -91,16 +91,16 @@ VulkanPipeline* VulkanRenderable::GetOrCreatePipeline(
 
    // Add shaders if any such trait exists in unit environment          
    auto shader = SeekTrait<Traits::Shader>();
-   if (!shader.IsEmpty())
+   if (shader)
       construct << shader;
 
    // Add colorization if available                                     
    auto color = SeekTrait<Traits::Color>();
-   if (!color.IsEmpty())
+   if (color)
       construct << color;
 
    // If at this point the construct is empty, then nothing to draw     
-   if (construct.IsEmpty()) {
+   if (!construct) {
       Logger::Warning(Self(), "No contents available for generating pipeline");
       return nullptr;
    }
@@ -149,7 +149,7 @@ void VulkanRenderable::Refresh() {
 
    // Gather all instances for this renderable, and calculate levels    
    mInstances = GatherUnits<A::Instance, Seek::Here>();
-   if (!mInstances.IsEmpty())
+   if (mInstances)
       mLevelRange = mInstances[0]->GetLevel();
    else
       mLevelRange = {};

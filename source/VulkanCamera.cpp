@@ -95,7 +95,7 @@ void VulkanCamera::Refresh() {
 ///   @param lod - the level-of-detail state                                  
 ///   @return the view transformation for the camera                          
 Mat4 VulkanCamera::GetViewTransform(const LOD& lod) const {
-   if (mInstances.IsEmpty())
+   if (!mInstances)
       return {};
 
    return mInstances[0]->GetViewTransform(lod);
@@ -105,7 +105,7 @@ Mat4 VulkanCamera::GetViewTransform(const LOD& lod) const {
 ///   @param level - the level                                                
 ///   @return the view transformation for the camera                          
 Mat4 VulkanCamera::GetViewTransform(const Level& level) const {
-   if (mInstances.IsEmpty())
+   if (!mInstances)
       return {};
 
    return mInstances[0]->GetViewTransform(level);

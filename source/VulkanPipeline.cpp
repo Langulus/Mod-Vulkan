@@ -391,7 +391,7 @@ void VulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
       });
    });
 
-   if (material.IsEmpty())
+   if (!material)
       return;
 
    // Create the pixel shader output according to the rendering pass    
@@ -528,7 +528,7 @@ void VulkanPipeline::CreateNewGeometrySet() {
 /// Create uniform buffers                                                    
 void VulkanPipeline::CreateUniformBuffers() {
    const auto device = mProducer->mDevice;
-   if (mUniforms.IsEmpty())
+   if (!mUniforms)
       LANGULUS_THROW(Graphics, "No uniforms/inputs provided by generator");
 
    // Create descriptor pools                                           
@@ -568,7 +568,7 @@ void VulkanPipeline::CreateUniformBuffers() {
             ubo.mUniforms.Emplace(0u, trait);
          }
 
-         if (ubo.mUniforms.IsEmpty())
+         if (!ubo.mUniforms)
             continue;
 
          // Find out where the UBO is used                              
@@ -609,7 +609,7 @@ void VulkanPipeline::CreateUniformBuffers() {
             ubo.mUniforms.Emplace(0, trait);
          }
 
-         if (ubo.mUniforms.IsEmpty())
+         if (!ubo.mUniforms)
             continue;
 
          // Find out where the UBO is used                              
@@ -647,7 +647,7 @@ void VulkanPipeline::CreateUniformBuffers() {
          ubo.mUniforms << Uniform {0, trait};
       }
 
-      if (!ubo.mUniforms.IsEmpty()) {
+      if (ubo.mUniforms) {
          // Set any default samplers if available                       
          Bindings bindings;
          ubo.Create(mProducer, mUBOPool);
@@ -709,7 +709,7 @@ void VulkanPipeline::UpdateUniformBuffers() const {
    for (auto& samplerSet : mSamplerUBO)
       samplerSet.Update(writes);
 
-   if (!writes.IsEmpty()) {
+   if (writes) {
       // Commit all gathered updates to VRAM                            
       vkUpdateDescriptorSets(
          mProducer->mDevice,
@@ -853,7 +853,7 @@ void VulkanPipeline::RenderSubscriber(const PipeSubscriber& sub) const {
 
 /// Reset the used dynamic uniform buffers and the subscribers                
 void VulkanPipeline::ResetUniforms() {
-   if (!mSamplerUBO.IsEmpty()) {
+   if (mSamplerUBO) {
       // Always keep one sampler set in use, free the rest back to pool 
       mSamplerUBO.Clear();
       mSamplerUBO.New(1);

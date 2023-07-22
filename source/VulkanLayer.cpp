@@ -103,7 +103,7 @@ Count VulkanLayer::CompileThing(const Thing* thing, LOD& lod, PipelineSet& pipes
    // Compile the instances associated with these renderables           
    Count renderedInstances {};
    for (auto renderable : relevantRenderables) {
-      if (renderable->mInstances.IsEmpty()) {
+      if (!renderable->mInstances) {
          // Imagine a default instance                                  
          auto pipeline = CompileInstance(renderable, nullptr, lod);
          if (pipeline) {
@@ -203,7 +203,7 @@ Count VulkanLayer::CompileLevelBatched(
    // Iterate all renderables                                           
    Count renderedInstances {};
    for (const auto& renderable : mRenderables) {
-      if (renderable.mInstances.IsEmpty()) {
+      if (!renderable.mInstances) {
          auto pipeline = CompileInstance(&renderable, nullptr, lod);
          if (pipeline) {
             pipeline->PushUniforms<PerInstance>();
@@ -260,7 +260,7 @@ Count VulkanLayer::CompileLevels() {
       mSubscriberCountPerCamera.New(1);
    }
 
-   if (mCameras.IsEmpty()) {
+   if (!mCameras) {
       // No camera, so just render default level on the whole screen    
       PipelineSet pipesPerCamera;
       if (mStyle & Style::Hierarchical)
@@ -268,7 +268,7 @@ Count VulkanLayer::CompileLevels() {
       else
          CompileLevelBatched({}, {}, {}, pipesPerCamera);
 
-      if (!pipesPerCamera.IsEmpty()) {
+      if (pipesPerCamera) {
          for (auto pipeline : pipesPerCamera) {
             // Push PerCamera uniforms if required                      
             pipeline->SetUniform<PerCamera, Traits::Projection>(Mat4 {});
@@ -308,7 +308,7 @@ Count VulkanLayer::CompileLevels() {
       }
       else continue;
 
-      if (!pipesPerCamera.IsEmpty()) {
+      if (pipesPerCamera) {
          for (auto pipeline : pipesPerCamera) {
             // Push PerCamera uniforms if required                      
             pipeline->SetUniform<PerCamera, Traits::Projection>(camera.mProjection);
@@ -347,7 +347,7 @@ void VulkanLayer::RenderBatched(const RenderConfig& config) const {
    // Iterate all valid cameras                                         
    TUnorderedMap<const VulkanPipeline*, Count> done;
 
-   if (mRelevantCameras.IsEmpty()) {
+   if (!mRelevantCameras) {
       VkViewport viewport {};
       viewport.width = GetProducer()->mResolution[0];
       viewport.height = GetProducer()->mResolution[1];
@@ -411,7 +411,7 @@ void VulkanLayer::RenderHierarchical(const RenderConfig& config) const {
    auto subscriberCountPerLevel = &mSubscriberCountPerLevel[0];
 
    // Iterate all valid cameras                                         
-   if (mRelevantCameras.IsEmpty()) {
+   if (!mRelevantCameras) {
       VkViewport viewport {};
       viewport.width = GetProducer()->mResolution[0];
       viewport.height = GetProducer()->mResolution[1];

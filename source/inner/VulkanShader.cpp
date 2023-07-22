@@ -39,7 +39,7 @@ VulkanShader::VulkanShader(VulkanRenderer* producer, const Any& descriptor)
       [this](const A::Material* material) {
          // Access input mappings                                       
          const auto uniforms = material->template GetDataList<Traits::Trait>();
-         if (uniforms && uniforms->IsEmpty()) {
+         if (uniforms && !*uniforms) {
             // Add relevant inputs                                      
             const auto index = Rate(Rate::StagesBegin + mStage).GetInputIndex();
             auto& inputs = uniforms->template As<TAny<Trait>>(index);

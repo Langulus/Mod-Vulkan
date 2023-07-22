@@ -120,7 +120,7 @@ void DataUBO<false>::Create(VulkanRenderer* renderer) {
 
    // Set predefined data if available                                  
    for (auto& it : mUniforms) {
-      if (it.mTrait.IsEmpty())
+      if (!it.mTrait)
          continue;
 
       ::std::memcpy(
@@ -183,7 +183,7 @@ void SamplerUBO::Create(VulkanRenderer* renderer, VkDescriptorPool pool) {
 
    for (Offset id = 0; id < mUniforms.GetCount(); ++id) {
       auto& it = mUniforms[id];
-      if (it.mTrait.IsEmpty())
+      if (!it.mTrait)
          continue;
 
       Set(it.mTrait.As<VulkanTexture*>(), id);

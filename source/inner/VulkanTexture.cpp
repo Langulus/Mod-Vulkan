@@ -39,7 +39,7 @@ void VulkanTexture::InitializeFromPixels(const A::Texture& content) {
    // Check if any data was found                                       
    const auto startTime = SteadyClock::now();
    const auto pixels = content.GetDataList<Traits::Color>();
-   if (!pixels || pixels->IsEmpty())
+   if (!pixels || !*pixels)
       LANGULUS_THROW(Graphics, "Can't generate texture - no color data found");
 
    // Copy base view and create image                                   

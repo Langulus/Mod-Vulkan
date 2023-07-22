@@ -43,11 +43,11 @@ SCENARIO("Renderer creation", "[renderer]") {
             THEN("Various traits change") {
                root.DumpHierarchy();
                
-               REQUIRE_FALSE(window.IsEmpty());
+               REQUIRE_FALSE(!window);
                REQUIRE(window.IsSparse());
                REQUIRE(window.CastsTo<A::Window>());
 
-               REQUIRE_FALSE(renderer.IsEmpty());
+               REQUIRE_FALSE(!renderer);
                REQUIRE(renderer.IsSparse());
                REQUIRE(renderer.CastsTo<A::Renderer>());
             }
