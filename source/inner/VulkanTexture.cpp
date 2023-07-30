@@ -16,11 +16,9 @@
 VulkanTexture::VulkanTexture(VulkanRenderer* producer, const Any& descriptor)
    : A::Graphics {MetaOf<VulkanTexture>(), descriptor}
    , ProducedFrom {producer, descriptor} {
-   descriptor.ForEachDeep(
-      [&](const A::Texture& content) {
-         InitializeFromPixels(content);
-      }
-   );
+   descriptor.ForEachDeep([&](const A::Image& content) {
+      Upload(content);
+   });
 }
 
 /// VRAM texture destructor                                                   
@@ -35,12 +33,12 @@ VulkanTexture::~VulkanTexture() {
 
 /// Initialize from the provided content                                      
 ///   @param content - the abstract texture content interface                 
-void VulkanTexture::InitializeFromPixels(const A::Texture& content) {
+void VulkanTexture::Upload(const A::Image& content) {
    // Check if any data was found                                       
-   const auto startTime = SteadyClock::now();
+   const auto startTime = SteadyClock::Now();
    const auto pixels = content.GetDataList<Traits::Color>();
-   if (!pixels || !*pixels)
-      LANGULUS_THROW(Graphics, "Can't generate texture - no color data found");
+   LANGULUS_ASSERT(pixels && *pixels, Graphics,
+      "Can't generate texture - no color data found");
 
    // Copy base view and create image                                   
    // Beware, the VRAM image may have a different internal format       
@@ -86,7 +84,7 @@ void VulkanTexture::InitializeFromPixels(const A::Texture& content) {
    }
 
    VkCommandBufferBeginInfo beginInfo {};
-   VkCommandBuffer& cmdbuffer = vram.mTransferBuffer;
+   auto& cmdbuffer = vram.mTransferBuffer;
    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO; 
    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
    /*VkBufferCopy copyRegion {};

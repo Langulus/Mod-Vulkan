@@ -73,14 +73,14 @@ VulkanPipeline* VulkanLayer::CompileInstance(
    const auto geometry = renderable->GetGeometry(lod);
    if (geometry) {
       pipeline->template
-         SetUniform<PerRenderable, Traits::Geometry>(geometry);
+         SetUniform<PerRenderable, Traits::Mesh>(geometry);
    }
 
    // Get relevant textures                                             
    const auto textures = renderable->GetTexture(lod);
    if (textures) {
       pipeline->template
-         SetUniform<PerRenderable, Traits::Texture>(textures);
+         SetUniform<PerRenderable, Traits::Image>(textures);
    }
 
    // Push uniforms                                                     

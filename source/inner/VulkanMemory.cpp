@@ -85,7 +85,7 @@ bool VulkanMemory::CheckFormatSupport(VkFormat f, VkImageTiling t, VkFormatFeatu
 ///   @param view - image view                                                
 ///   @param flags - image usage flags                                        
 ///   @return an image buffer instance                                        
-VulkanImage VulkanMemory::CreateImage(const TextureView& view, VkImageUsageFlags flags) const {
+VulkanImage VulkanMemory::CreateImage(const ImageView& view, VkImageUsageFlags flags) const {
    // Precheck some simple constraints                                  
    if (!view.mFormat || (view.mWidth * view.mHeight * view.mDepth * view.mFrames == 0))
       LANGULUS_THROW(Graphics, "Wrong texture descriptor");
@@ -223,7 +223,7 @@ void VulkanMemory::DestroyImage(VulkanImage& buffer) const {
 ///   @param view - pc image view                                             
 ///   @param aspectFlags - image aspect                                       
 ///   @return the image view                                                  
-VkImageView VulkanMemory::CreateImageView(const VkImage& image, const TextureView& view, VkImageAspectFlags flags) {
+VkImageView VulkanMemory::CreateImageView(const VkImage& image, const ImageView& view, VkImageAspectFlags flags) {
    VkImageViewCreateInfo viewInfo {};
    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
    viewInfo.image = image;
@@ -331,15 +331,15 @@ VulkanBuffer VulkanMemory::CreateBuffer(DMeta meta, VkDeviceSize size, VkBufferU
 ///   @param img - VRAM image                                                 
 ///   @param from - starting layout                                           
 ///   @param to - ending layout                                               
-void VulkanMemory::ImageTransfer(VulkanImage& img, VkImageLayout from, VkImageLayout to) {
+void VulkanMemory::ImageTransfer(const VulkanImage& img, VkImageLayout from, VkImageLayout to) {
    ImageTransfer(img.mBuffer, from, to);
 }
 
-/// Transfer an image in VRAM from one layout to another                      
+/// Transfer a VRAM image from one layout to another                          
 ///   @param img - VRAM image                                                 
 ///   @param from - starting layout                                           
 ///   @param to - ending layout                                               
-void VulkanMemory::ImageTransfer(VkImage& img, VkImageLayout from, VkImageLayout to) {
+void VulkanMemory::ImageTransfer(const VkImage& img, VkImageLayout from, VkImageLayout to) {
    // Copy data to VRAM                                                 
    VkCommandBufferBeginInfo beginInfo {};
    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -364,13 +364,31 @@ void VulkanMemory::ImageTransfer(VkImage& img, VkImageLayout from, VkImageLayout
    VkPipelineStageFlags sourceStage;
    VkPipelineStageFlags destinationStage;
 
-   if (
-      from == VK_IMAGE_LAYOUT_UNDEFINED && 
-      to == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-      barrier.srcAccessMask = 0;
-      barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-      sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-      destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+   if (from == VK_IMAGE_LAYOUT_UNDEFINED) {
+      if (to == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+         // Prepare an undefined (probably external) image for filling  
+         barrier.srcAccessMask = 0;
+         barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+         sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+         destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+      }
+      else if (to == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+         // Turn the undefined image to a depth attachment              
+         barrier.srcAccessMask = 0;
+         barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+         sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+         destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+      }
+      else if (to == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+         // Turn the undefined image to a color attachment              
+         barrier.srcAccessMask = 0;
+         barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+         sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+         destinationStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+      }
+      else LANGULUS_THROW(Graphics, "Unsupported layout transition");
    }
    else if (
       from == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && 
@@ -380,39 +398,56 @@ void VulkanMemory::ImageTransfer(VkImage& img, VkImageLayout from, VkImageLayout
       sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
       destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
    }
-   else if (
-      from == VK_IMAGE_LAYOUT_UNDEFINED && 
-      to == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
-      barrier.srcAccessMask = 0;
-      barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-      sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-      destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-      barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+   else if (from == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
+      if (to == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+         // Transfers render target from display to rendering           
+         barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+         barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+         sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+         destinationStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+      }
+      else if (to == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) {
+         // Transfers a render target for CPU read                      
+         // Useful for screenshots                                      
+         barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+         barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+         sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+         destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+      }
+      else LANGULUS_THROW(Graphics, "Unsupported layout transition");
    }
-   else if (
-      from == VK_IMAGE_LAYOUT_UNDEFINED && 
-      to == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
-      barrier.srcAccessMask = 0;
-      barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-      sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-      destinationStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-      barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+   else if (from == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+      if (to == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
+         // Transfers a render target to be ready for display           
+         barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+         barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+         sourceStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+         destinationStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+      }
+      else if (to == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) {
+         // Transfers a render target for CPU read                      
+         // Useful for screenshots                                      
+         barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+         barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+         sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+         destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+      }
+      else LANGULUS_THROW(Graphics, "Unsupported layout transition");
    }
-   else if (from == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR &&
-      to == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
-      barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-      barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-      sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-      destinationStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-      barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-   }
-   else if (from == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL &&
-      to == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
-      barrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-      barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-      sourceStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-      destinationStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-      barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+   else if (from == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) {
+      if (to == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
+         // Move a transfer source to display                           
+         barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+         barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+         sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+         destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+      }
+      else LANGULUS_THROW(Graphics, "Unsupported layout transition");
    }
    else LANGULUS_THROW(Graphics, "Unsupported layout transition");
    
@@ -436,8 +471,7 @@ void VulkanMemory::ImageTransfer(VkImage& img, VkImageLayout from, VkImageLayout
 ///   @return a VRAM buffer wrapper                                           
 VulkanBuffer VulkanMemory::Upload(const Block& memory, VkBufferUsageFlags usage) {
    const auto bytesize = memory.GetByteSize();
-   if (bytesize == 0)
-      LANGULUS_THROW(Graphics, "Can't upload data of size zero");
+   LANGULUS_ASSERT(bytesize, Graphics, "Can't upload data of size zero");
 
    // Create staging buffer                                             
    auto stager = CreateBuffer(

@@ -36,7 +36,7 @@ VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, const Descriptor& descr
          // Create from predefined material generator                   
          PrepareFromMaterial(material);
       },
-      [this](const A::Geometry& geometry) {
+      [this](const A::Mesh& geometry) {
          // Create from predefined material generator                   
          PrepareFromGeometry(geometry);
       },
@@ -252,7 +252,7 @@ void VulkanPipeline::PrepareFromFile(const A::File& file) {
 
 /// Create a pipeline from geometry content generator                         
 ///   @param geometry - the geometry content interface                        
-void VulkanPipeline::PrepareFromGeometry(const A::Geometry& geometry) {
+void VulkanPipeline::PrepareFromGeometry(const A::Mesh& geometry) {
    // We use the geometry's properties to define a material             
    // generator descriptor, which we use to initialize this pipeline    
    Any material;
@@ -318,7 +318,7 @@ void VulkanPipeline::PrepareFromGeometry(const A::Geometry& geometry) {
    // Geometry can contain 'baked-in' textures in its descriptor        
    // Make sure we utilize them all in the fragment shader              
    Offset textureId {};
-   for (auto texture : geometry.GetDescriptor().mTraits[MetaOf<Traits::Texture>()]) {
+   for (auto texture : geometry.GetDescriptor().mTraits[MetaOf<Traits::Image>()]) {
       // Add a texture input to the fragment shader                     
       Code code = "Texturize^PerPixel("_code + textureId + ')';
       VERBOSE_PIPELINE("Incorporating: ", code);
@@ -348,11 +348,11 @@ void VulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
    Any material;
    Offset textureId {};
    stuff.ForEachDeep([&](const Block& group) {
-      group.ForEach([&](const A::Geometry& geometry) {
+      group.ForEach([&](const A::Mesh& geometry) {
          PrepareFromGeometry(geometry);
          return Flow::Break;  // Only one geometry definition allowed   
       },
-      [&](const A::Texture& texture) {
+      [&](const A::Image& texture) {
          // Add texturization, if construct contains any textures       
          Code code1 = "Create^PerPixel(Input(Texture("_code + texture.GetFormat() + ")))";
          Code code2 = "Texturize^PerPixel("_code + textureId + ')';
@@ -363,7 +363,7 @@ void VulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
       },
       [&](const Trait& t) {
          // Add various global traits, such as texture/color            
-         if (t.template TraitIs<Traits::Texture>()) {
+         if (t.template TraitIs<Traits::Image>()) {
             // Add a texture uniform                                    
             Code code = "Texturize^PerPixel("_code + textureId + ')';
             VERBOSE_PIPELINE("Incorporating: ", code);
@@ -443,7 +443,7 @@ void VulkanPipeline::PrepareFromMaterial(const A::Material& material) {
       // Create a vulkan shader for each material-provided shader       
       Verbs::Create creator {Construct::From<VulkanShader>(stage)};
       mProducer->Create(creator);
-      auto vkshader = creator.GetOutput().As<const VulkanShader*>();
+      auto vkshader = creator->template As<const VulkanShader*>();
       mStages[vkshader->GetStage()] = vkshader;
    }
 }
@@ -563,7 +563,7 @@ void VulkanPipeline::CreateUniformBuffers() {
          // Add relevant inputs                                         
          const auto index = Rate(Rate::StaticUniformBegin + rate).GetInputIndex();
          for (const auto& trait : mUniforms[index]) {
-            if (trait.template TraitIs<Traits::Texture>())
+            if (trait.template TraitIs<Traits::Image>())
                continue;
             ubo.mUniforms.Emplace(0u, trait);
          }
@@ -604,7 +604,7 @@ void VulkanPipeline::CreateUniformBuffers() {
          // Add relevant inputs                                         
          const auto index = Rate(Rate::DynamicUniformBegin + rate).GetInputIndex();
          for (const auto& trait : mUniforms[index]) {
-            if (trait.template TraitIs<Traits::Texture>())
+            if (trait.template TraitIs<Traits::Image>())
                continue;
             ubo.mUniforms.Emplace(0, trait);
          }
@@ -642,7 +642,7 @@ void VulkanPipeline::CreateUniformBuffers() {
       // Add relevant inputs                                            
       SamplerUBO ubo;
       for (const auto& trait : mUniforms[PerRenderable.GetInputIndex()]) {
-         if (!trait.template TraitIs<Traits::Texture>())
+         if (!trait.template TraitIs<Traits::Image>())
             continue;
          ubo.mUniforms << Uniform {0, trait};
       }

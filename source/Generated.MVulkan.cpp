@@ -88,7 +88,7 @@ REFLECT_BEGIN(CVulkanRenderable)
       REFLECT_BASE(ARenderable)
    REFLECT_END_BASES*/
    /*REFLECT_BEGIN_MEMBERS
-      REFLECT_MEMBER_TRAIT(mGeometry, Model),
+      REFLECT_MEMBER_TRAIT(mGeometry, Mesh),
       REFLECT_MEMBER_TRAIT(mTexture, Texture),
       REFLECT_MEMBER_TRAIT(mMaterial, Material)
    REFLECT_END_MEMBERS*/

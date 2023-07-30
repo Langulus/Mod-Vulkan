@@ -68,7 +68,7 @@ const Shader& VulkanShader::Compile() const {
       return mStageDescription;
 
    const auto device = mProducer->mDevice;
-   const auto startTime = SteadyClock::now();
+   const auto startTime = SteadyClock::Now();
 
    // Compiling with optimizing                                         
    shaderc::Compiler compiler;

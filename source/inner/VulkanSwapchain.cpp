@@ -117,30 +117,33 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamili
       LANGULUS_THROW(Graphics, "Can't create swap chain");
    }
 
-   // Get images inside swapchain                                       
+   // Get images from swapchain                                         
    if (vkGetSwapchainImagesKHR(mRenderer.mDevice, mSwapChain, &imageCount, nullptr)) {
       Destroy();
       LANGULUS_THROW(Graphics, "vkGetSwapchainImagesKHR fails");
    }
 
-   mSwapChainImages.New(imageCount);
-   if (vkGetSwapchainImagesKHR(mRenderer.mDevice, mSwapChain, &imageCount, mSwapChainImages.GetRaw())) {
+   TAny<VkImage> swapChainImages;
+   swapChainImages.New(imageCount);
+   if (vkGetSwapchainImagesKHR(mRenderer.mDevice, mSwapChain, &imageCount, swapChainImages.GetRaw())) {
       Destroy();
       LANGULUS_THROW(Graphics, "vkGetSwapchainImagesKHR fails");
    }
 
    // Create the image views for the swap chain. They will all be       
-   // single layer, 2D images, with no mipmaps.                         
+   // single layer, 2D images, with no mipmaps                          
+   const auto count = imageCount;
    bool reverseFormat;
    const auto viewf = VkFormatToDMeta(format.format, reverseFormat);
-   TextureView colorview {
+   ImageView colorview {
       extent.width, extent.height, 1, 1, viewf, reverseFormat
    };
 
-   mFrame.New(mSwapChainImages.GetCount());
+   mFrameViews.New(count);
+   mFrameImages.New(count);
 
-   for (uint32_t i = 0; i < mSwapChainImages.GetCount(); i++) {
-      auto& image = mSwapChainImages[i];
+   for (uint32_t i = 0; i < count; i++) {
+      auto& image = swapChainImages[i];
       mRenderer.mVRAM.ImageTransfer(
          image,
          VK_IMAGE_LAYOUT_UNDEFINED, 
@@ -152,13 +155,19 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamili
          VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
       );
 
-      mFrame[i] = mRenderer.mVRAM.CreateImageView(
+      // Add the view                                                   
+      mFrameViews[i] = mRenderer.mVRAM.CreateImageView(
          image, colorview, VK_IMAGE_ASPECT_COLOR_BIT
+      );
+
+      // Add the image                                                  
+      mFrameImages[i] = VulkanImage::FromSwapchain(
+         mRenderer.mDevice, image, colorview
       );
    }
    
    // Create the depth buffer image and view                            
-   TextureView depthview {
+   ImageView depthview {
       extent.width, extent.height, 1, 1, MetaOf<Depth32>()
    };
    mDepthImage = mRenderer.mVRAM.CreateImage(
@@ -171,9 +180,9 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamili
    );
       
    // Create framebuffers                                               
-   mFramebuffer.resize(mFrame.GetCount());
-   for (Offset i = 0; i < mFrame.GetCount(); ++i) {
-      VkImageView attachments[] {mFrame[i], mDepthImageView};
+   mFrameBuffers.New(count);
+   for (Offset i = 0; i < count; ++i) {
+      VkImageView attachments[] {mFrameViews[i], mDepthImageView};
       VkFramebufferCreateInfo framebufferInfo {};
       framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
       framebufferInfo.renderPass = mRenderer.mPass;
@@ -183,19 +192,19 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamili
       framebufferInfo.height = resyuint;
       framebufferInfo.layers = 1;
 
-      if (vkCreateFramebuffer(mRenderer.mDevice, &framebufferInfo, nullptr, &mFramebuffer[i])) {
+      if (vkCreateFramebuffer(mRenderer.mDevice, &framebufferInfo, nullptr, &mFrameBuffers[i])) {
          Destroy();
          LANGULUS_THROW(Graphics, "Can't create framebuffer");
       }
    }
 
    // Create a command buffer for each framebuffer                      
-   mCommandBuffer.resize(mFramebuffer.size());
+   mCommandBuffer.resize(count);
    VkCommandBufferAllocateInfo allocInfo {};
    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
    allocInfo.commandPool = mRenderer.mCommandPool;
    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-   allocInfo.commandBufferCount = uint32_t(mCommandBuffer.size());
+   allocInfo.commandBufferCount = count;
 
    if (vkAllocateCommandBuffers(mRenderer.mDevice, &allocInfo, mCommandBuffer.data())) {
       Destroy();
@@ -205,8 +214,8 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamili
    // Create command buffer fences                                      
    if (!mNewBufferFence) {
       TAny<VkFenceCreateInfo> fenceInfo;
-      fenceInfo.New(mFramebuffer.size());
-      mNewBufferFence.Reserve(mFramebuffer.size());
+      fenceInfo.New(count);
+      mNewBufferFence.Reserve(count);
 
       for (auto& it : fenceInfo) {
          it.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
@@ -271,9 +280,9 @@ void VulkanSwapchain::Destroy() {
    mRenderer.mVRAM.DestroyImage(mDepthImage);
 
    // Destroy framebuffers                                              
-   for (auto &it : mFramebuffer)
+   for (auto &it : mFrameBuffers)
       vkDestroyFramebuffer(mRenderer.mDevice, it, nullptr);
-   mFramebuffer.clear();
+   mFrameBuffers.Clear();
    
    // Destroy command buffers                                           
    if (mCommandBuffer.size()) {
@@ -287,14 +296,14 @@ void VulkanSwapchain::Destroy() {
    }
    
    // Destroy image views                                               
-   for (auto &it : mFrame)
+   for (auto &it : mFrameViews)
       vkDestroyImageView(mRenderer.mDevice, it, nullptr);
-   mFrame.Clear();
+   mFrameViews.Clear();
    
    // Destroy swapchain                                                 
    vkDestroySwapchainKHR(mRenderer.mDevice, mSwapChain, nullptr);
    mSwapChain.Reset();
-   mSwapChainImages.Clear();
+   mFrameImages.Clear();
 }
 
 VulkanSwapchain::~VulkanSwapchain() {
@@ -370,7 +379,7 @@ bool VulkanSwapchain::StartRendering() {
 
    // Turn the present source to color attachment                       
    mRenderer.mVRAM.ImageTransfer(
-      mSwapChainImages[mCurrentFrame], 
+      mFrameImages[mCurrentFrame],
       VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
       VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
    );
@@ -425,7 +434,7 @@ bool VulkanSwapchain::EndRendering() {
    presentInfo.pImageIndices = &mCurrentFrame;
 
    mRenderer.mVRAM.ImageTransfer(
-      mSwapChainImages[mCurrentFrame],
+      mFrameImages[mCurrentFrame],
       VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 
       VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
    );
@@ -451,11 +460,109 @@ VkCommandBuffer VulkanSwapchain::GetRenderCB() const noexcept {
 /// Get the frame buffer for the current frame                                
 ///   @return the frame buffer                                                
 VkFramebuffer VulkanSwapchain::GetFramebuffer() const noexcept {
-   return mFramebuffer[mCurrentFrame];
+   return mFrameBuffers[mCurrentFrame];
 }
 
 /// Get the native surface                                                    
 ///   @return the surface                                                     
 VkSurfaceKHR VulkanSwapchain::GetSurface() const noexcept {
    return mSurface;
+}
+
+/// Get currently bound swapchain image                                       
+///   @return the image                                                       
+const VulkanImage& VulkanSwapchain::GetCurrentImage() const noexcept {
+   return mFrameImages[mCurrentFrame];
+}
+
+/// Take a screenshot                                                         
+Ref<A::Image> VulkanSwapchain::TakeScreenshot() const {
+   // The stager is used to copy from current back buffer               
+   // (VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) to a                   
+   // VK_BUFFER_USAGE_TRANSFER_DST_BIT buffer, that is later copied to  
+   // a RAM buffer                                                      
+   const auto source = GetCurrentImage();
+   const auto bytesize = source.GetView().GetBytesize();
+   auto& vram = mRenderer.mVRAM;
+   auto stager = vram.CreateBuffer(
+      nullptr, bytesize,
+      VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+   );
+
+   // Transfer provided source to a VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+   mRenderer.mVRAM.ImageTransfer(
+      source,
+      VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+      VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+   );
+
+   // Copy bytes                                                        
+   auto& cmdbuffer = vram.mTransferBuffer;
+   VkCommandBufferBeginInfo beginInfo {};
+   beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+   beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+   vkBeginCommandBuffer(cmdbuffer, &beginInfo);
+
+   VkBufferImageCopy region {};
+   region.bufferOffset = 0;
+   region.bufferRowLength = 0;
+   region.bufferImageHeight = 0;
+   region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+   region.imageSubresource.mipLevel = 0;
+   region.imageSubresource.baseArrayLayer = 0;
+   region.imageSubresource.layerCount = 1;
+   region.imageOffset = {0, 0, 0};
+   region.imageExtent = {
+      source.GetView().mWidth,
+      source.GetView().mHeight,
+      source.GetView().mDepth
+   };
+
+   vkCmdCopyImageToBuffer(
+      cmdbuffer, source.GetImage(),
+      VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, 
+      stager.GetBuffer(),
+      1, &region
+   );
+   vkEndCommandBuffer(cmdbuffer);
+
+   // Submit                                                            
+   VkSubmitInfo submitInfo {};
+   submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+   submitInfo.commandBufferCount = 1;
+   submitInfo.pCommandBuffers = &cmdbuffer;
+   vkQueueSubmit(vram.mTransferer, 1, &submitInfo, VK_NULL_HANDLE);
+   vkQueueWaitIdle(vram.mTransferer);
+
+   // Transfer source back to its original layout                       
+   mRenderer.mVRAM.ImageTransfer(
+      source.GetImage(),
+      VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+      VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+   );
+
+   // Copy the data from the buffer to a RAM texture                    
+   Byte* input;
+   auto err = vkMapMemory(
+      stager.GetDevice(), stager.GetMemory(),
+      0, VK_WHOLE_SIZE, 0,
+      reinterpret_cast<void**>(&input)
+   );
+   LANGULUS_ASSERT(err == VK_SUCCESS, Graphics, "Failed to map memory for temp image");
+
+   Bytes memory {input, bytesize};
+
+   // Don't forget to clean up the staging buffer                       
+   vram.DestroyBuffer(stager);
+
+   // Finally, produce an image component and return it                 
+   // The image includes current timestamp to make it unique            
+   // It should be destroyed on garbage collection if unused            
+   Verbs::Create creator {Construct::From<A::Image>(
+      source.GetView(), SteadyClock::Now()
+   )};
+   auto aimage = mRenderer.RunIn(creator).As<A::Image*>();
+   aimage->Upload(::std::move(memory));
+   return aimage;
 }

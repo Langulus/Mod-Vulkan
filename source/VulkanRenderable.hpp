@@ -27,8 +27,8 @@ protected:
    TAny<const A::Instance*> mInstances;
    TRange<Level> mLevelRange;
    Ptr<A::Material> mMaterialContent;
-   Ptr<A::Geometry> mGeometryContent;
-   Ptr<A::Texture> mTextureContent;
+   Ptr<A::Mesh> mGeometryContent;
+   Ptr<A::Image> mTextureContent;
    mutable Ptr<VulkanPipeline> mPredefinedPipeline;
 
    // Precompiled content, updated on Refresh()                         

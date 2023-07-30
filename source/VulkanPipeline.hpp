@@ -82,7 +82,7 @@ private:
    void PrepareFromFile(const A::File&);
    void PrepareFromConstruct(const Construct&);
    void PrepareFromMaterial(const A::Material&);
-   void PrepareFromGeometry(const A::Geometry&);
+   void PrepareFromGeometry(const A::Mesh&);
    void PrepareFromCode(const Text&);
 
 public:

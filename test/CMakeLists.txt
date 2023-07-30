@@ -20,4 +20,5 @@ langulus_copy_dlls_advanced(LangulusModVulkanTest
 	TO			LangulusModVulkanTest
 	FROM		LangulusModGLFW
 				LangulusModVulkan
+				LangulusModAssetsImages
 )

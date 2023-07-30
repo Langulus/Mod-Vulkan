@@ -35,7 +35,7 @@ VulkanGeometry* VulkanRenderable::GetGeometry(const LOD& lod) const {
          Construct::From<VulkanGeometry>(mGeometryContent->GetLOD(lod))
       };
       mProducer->Create(creator);
-      mLOD[i].mGeometry = creator.GetOutput().As<VulkanGeometry*>();
+      mLOD[i].mGeometry = creator->template As<VulkanGeometry*>();
    }
 
    return mLOD[i].mGeometry;
@@ -53,7 +53,7 @@ VulkanTexture* VulkanRenderable::GetTexture(const LOD& lod) const {
          Construct::From<VulkanTexture>(mTextureContent->GetLOD(lod))
       };
       mProducer->Create(creator);
-      mLOD[i].mTexture = creator.GetOutput().As<VulkanTexture*>();
+      mLOD[i].mTexture = creator->template As<VulkanTexture*>();
    }
 
    return mLOD[i].mTexture;
@@ -113,7 +113,7 @@ VulkanPipeline* VulkanRenderable::GetOrCreatePipeline(
    // Get, or create the pipeline                                       
    Verbs::Create creator {&construct};
    GetRenderer()->Create(creator);
-   creator.GetOutput().ForEachDeep([&](VulkanPipeline* p) {
+   creator->ForEachDeep([&](VulkanPipeline* p) {
       if (usingGlobalPipeline)
          mPredefinedPipeline = p;
       else
@@ -170,11 +170,11 @@ void VulkanRenderable::Refresh() {
       return;
    }
 
-   const auto geometry = SeekUnit<A::Geometry, Seek::Here>();
+   const auto geometry = SeekUnit<A::Mesh, Seek::Here>();
    if (geometry)
       mGeometryContent = geometry;
 
-   const auto texture = SeekUnit<A::Texture, Seek::Here>();
+   const auto texture = SeekUnit<A::Image, Seek::Here>();
    if (texture)
       mTextureContent = texture;
 }

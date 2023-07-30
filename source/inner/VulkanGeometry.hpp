@@ -21,7 +21,7 @@ struct VulkanGeometry : A::Graphics, ProducedFrom<VulkanRenderer> {
 
 private:
    // Vertex info                                                       
-   GeometryView mView;
+   MeshView mView;
    DMeta mTopology {};
 
    // The buffers                                                       

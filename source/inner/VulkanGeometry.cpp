@@ -36,7 +36,7 @@ inline bool IsVertexData(const Block& container, bool& indexData) {
 VulkanGeometry::VulkanGeometry(VulkanRenderer* producer, const Any& descriptor)
    : A::Graphics {MetaOf<VulkanGeometry>(), descriptor}
    , ProducedFrom {producer, descriptor} {
-   descriptor.ForEachDeep([&](const A::Geometry& geometry) {
+   descriptor.ForEachDeep([&](const A::Mesh& geometry) {
       VERBOSE_VKGEOMETRY(const auto startTime = SteadyClock::now());
 
       // Create a buffer for each provided type, as long as that type   

@@ -20,7 +20,7 @@ struct VulkanTexture : A::Graphics, ProducedFrom<VulkanRenderer> {
 
 private:
    // Original content texture view                                     
-   TextureView mView;
+   ImageView mView;
    // Image                                                             
    VulkanImage mImage;
    // Image view                                                        
@@ -28,7 +28,7 @@ private:
    // Image sampler                                                     
    Own<VkSampler> mSampler;
 
-   void InitializeFromPixels(const A::Texture&);
+   void Upload(const A::Image&);
 
 public:
    VulkanTexture(VulkanRenderer*, const Any&);

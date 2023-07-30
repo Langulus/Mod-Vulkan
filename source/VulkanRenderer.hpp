@@ -15,6 +15,7 @@
 #include "inner/VulkanSwapchain.hpp"
 #include <Math/Gradients.hpp>
 #include <Flow/Verbs/Create.hpp>
+#include <Flow/Verbs/Interpret.hpp>
 
 
 ///                                                                           
@@ -27,7 +28,7 @@ struct VulkanRenderer : A::Renderer, ProducedFrom<Vulkan> {
    LANGULUS(ABSTRACT) false;
    LANGULUS(PRODUCER) Vulkan;
    LANGULUS_BASES(A::Renderer);
-   LANGULUS_VERBS(Verbs::Create);
+   LANGULUS_VERBS(Verbs::Create, Verbs::Interpret);
 
 protected:
    friend struct UBO;
@@ -109,6 +110,7 @@ public:
    ~VulkanRenderer();
 
    void Create(Verb&);
+   void Interpret(Verb&);
 
    void Draw();
    void Resize(const Scale2&);
@@ -118,4 +120,5 @@ public:
    NOD() const A::Window* GetWindow() const noexcept;
    NOD() Size GetOuterUBOAlignment() const noexcept;
    NOD() VkCommandBuffer GetRenderCB() const noexcept;
+   NOD() const Scale2& GetResolution() const noexcept;
 };

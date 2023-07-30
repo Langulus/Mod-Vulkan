@@ -273,6 +273,15 @@ void VulkanRenderer::Create(Verb& verb) {
    mTextures.Create(verb);
 }
 
+/// Interpret the renderer as an A::Texture, i.e. take a screenshot           
+///   @param verb - interpret verb                                            
+void VulkanRenderer::Interpret(Verb& verb) {
+   verb.ForEach([&](DMeta meta) {
+      if (meta->template CastsTo<A::Image>())
+         verb << mSwapchain.TakeScreenshot();
+   });
+}
+
 /// Resize the swapchain                                                      
 ///   @param size - the new size                                              
 void VulkanRenderer::Resize(const Scale2& size) {
@@ -319,7 +328,7 @@ void VulkanRenderer::Draw() {
       GetRenderCB(), mPass, mSwapchain.GetFramebuffer()
    };
 
-   config.mColorClear.color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+   config.mColorClear.color = {{1.0f, 0.0f, 0.0f, 1.0f}};
    config.mDepthClear.depthStencil = {1.0f, 0};
    config.mDepthSweep.colorAttachment = VK_ATTACHMENT_UNUSED;
    config.mDepthSweep.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
@@ -333,9 +342,26 @@ void VulkanRenderer::Draw() {
    config.mPassBeginInfo.clearValueCount = 2;
    config.mPassBeginInfo.pClearValues = &config.mColorClear;
 
-   // Render all layers                                                 
-   for (const auto& layer : mLayers)
-      layer.Render(config);
+   if (mLayers) {
+      // Render all layers                                              
+      for (const auto& layer : mLayers)
+         layer.Render(config);
+   }
+   else {
+      // No layers available, so just clear screen                      
+      VkViewport viewport {};
+      viewport.width = mResolution[0];
+      viewport.height = mResolution[1];
+
+      VkRect2D scissor {};
+      scissor.extent.width = static_cast<uint32_t>(viewport.width);
+      scissor.extent.height = static_cast<uint32_t>(viewport.height);
+
+      vkCmdBeginRenderPass(config.mCommands, &config.mPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+      vkCmdSetViewport(config.mCommands, 0, 1, &viewport);
+      vkCmdSetScissor(config.mCommands, 0, 1, &scissor);
+      vkCmdEndRenderPass(config.mCommands);
+   }
 
    // Swap buffers and conclude this frame                              
    mSwapchain.EndRendering();
@@ -371,4 +397,10 @@ Size VulkanRenderer::GetOuterUBOAlignment() const noexcept {
 ///   @return the command buffer                                              
 VkCommandBuffer VulkanRenderer::GetRenderCB() const noexcept {
    return mSwapchain.GetRenderCB();
+}
+
+/// Get the current resolution                                                
+///   @return the resolution                                                  
+const Scale2& VulkanRenderer::GetResolution() const noexcept {
+   return mResolution;
 }

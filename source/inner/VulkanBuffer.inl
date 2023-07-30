@@ -70,6 +70,20 @@ const VkBuffer& VulkanBuffer::GetBuffer() const noexcept {
    return mBuffer;
 }
 
+/// Wrap a swapchain image in this structure for more consistent code         
+///   @param device - the device                                              
+///   @param image - the image                                                
+///   @param view - the image view                                            
+///   @return the wrapped vulkan image                                        
+LANGULUS(INLINED)
+VulkanImage VulkanImage::FromSwapchain(const VkDevice& device, const VkImage& image, const ImageView& view) noexcept {
+   VulkanImage result;
+   result.mDevice = device;
+   result.mBuffer = image;
+   result.mView = view;
+   return result;
+}
+
 /// Check if buffer contains valid VRAM allocation                            
 LANGULUS(INLINED)
 bool VulkanImage::IsValid() const noexcept {
@@ -88,7 +102,7 @@ void VulkanImage::Reset() noexcept {
 /// Get the texture view                                                      
 ///   @return a reference to the view                                         
 LANGULUS(INLINED)
-const TextureView& VulkanImage::GetView() const noexcept {
+const ImageView& VulkanImage::GetView() const noexcept {
    return mView;
 }
 

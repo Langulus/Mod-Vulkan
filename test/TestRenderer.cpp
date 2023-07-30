@@ -6,12 +6,12 @@
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
 #include "Main.hpp"
+#include <Flow/Time.hpp>
+#include <Flow/Verbs/Interpret.hpp>
+#include <Flow/Verbs/Compare.hpp>
+#include "Math/Colors.hpp"
 #include <catch2/catch.hpp>
 
-#if LANGULUS_FEATURE(MEMORY_STATISTICS)
-static bool statistics_provided = false;
-static Allocator::Statistics memory_statistics;
-#endif
 
 /// See https://github.com/catchorg/Catch2/blob/devel/docs/tostring.md        
 CATCH_TRANSLATE_EXCEPTION(::Langulus::Exception const& ex) {
@@ -19,17 +19,19 @@ CATCH_TRANSLATE_EXCEPTION(::Langulus::Exception const& ex) {
    return ::std::string {Token {serialized}};
 }
 
-SCENARIO("Renderer creation", "[renderer]") {
+SCENARIO("Renderer creation inside a window", "[renderer]") {
+   Allocator::State memoryState;
+
    for (int repeat = 0; repeat != 10; ++repeat) {
       GIVEN(std::string("Init and shutdown cycle #") + std::to_string(repeat)) {
          // Create root entity                                          
          Thing root;
-         root.SetName("ROOT"_text);
+         root.SetName("ROOT");
 
          // Create runtime at the root                                  
          root.CreateRuntime();
 
-         // Load ImGui module                                           
+         // Load vulkan module                                          
          root.LoadMod("GLFW");
          root.LoadMod("Vulkan");
 
@@ -37,37 +39,67 @@ SCENARIO("Renderer creation", "[renderer]") {
             auto window = root.CreateUnitToken("Window", Traits::Size(640, 480));
             auto renderer = root.CreateUnitToken("Renderer");
 
-            for (int repeat2 = 0; repeat2 != 10; ++repeat2)
-               root.Update(Time::zero());
-
             THEN("Various traits change") {
                root.DumpHierarchy();
                
-               REQUIRE_FALSE(!window);
+               REQUIRE(window);
                REQUIRE(window.IsSparse());
                REQUIRE(window.CastsTo<A::Window>());
 
-               REQUIRE_FALSE(!renderer);
+               REQUIRE(renderer);
                REQUIRE(renderer.IsSparse());
                REQUIRE(renderer.CastsTo<A::Renderer>());
             }
          }
          
-         #if LANGULUS_FEATURE(MEMORY_STATISTICS)
-            Fractalloc.CollectGarbage();
+         // Check for memory leaks after each cycle                     
+         REQUIRE(memoryState.Assert());
+      }
+   }
+}
 
-            // Detect memory leaks                                      
-            if (statistics_provided) {
-               if (memory_statistics != Fractalloc.GetStatistics()) {
-                  Fractalloc.DumpPools();
-                  memory_statistics = Fractalloc.GetStatistics();
-                  FAIL("Memory leak detected");
-               }
+SCENARIO("Drawing an empty window", "[renderer]") {
+   GIVEN("A window with a renderer") {
+      Allocator::State memoryState;
+
+      // Create the scene                                               
+      Thing root;
+      root.SetName("ROOT");
+      root.CreateRuntime();
+      root.LoadMod("GLFW");
+      root.LoadMod("Vulkan");
+      root.LoadMod("AssetsImages");
+      root.CreateUnitToken("Window", Traits::Size(640, 480));
+      root.CreateUnitToken("Renderer");
+
+      for (int repeat = 0; repeat != 10; ++repeat) {
+         WHEN(std::string("Update cycle #") + std::to_string(repeat)) {
+            // Update the scene                                         
+            root.Update(16ms);
+
+            // And interpret the scene as an image, i.e. taking a       
+            // screenshot                                               
+            Verbs::InterpretAs<A::Image> interpret;
+            root.Do(interpret);
+
+            REQUIRE(interpret.IsDone());
+            REQUIRE(interpret->GetCount() == 1);
+            REQUIRE(interpret->IsSparse());
+            REQUIRE(interpret->template CastsTo<A::Image>());
+
+            THEN("The window should be filled with a uniform color") {
+               Verbs::Compare compare {Math::Colors::Black};
+               interpret->Run(compare);
+
+               REQUIRE(compare.IsDone());
+               REQUIRE(compare->GetCount() == 1);
+               REQUIRE(compare->IsDense());
+               REQUIRE(compare.GetOutput() == Compared::Equal);
             }
+         }
 
-            memory_statistics = Fractalloc.GetStatistics();
-            statistics_provided = true;
-         #endif
+         // Check for memory leaks after each cycle                     
+         REQUIRE(memoryState.Assert());
       }
    }
 }

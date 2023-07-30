@@ -38,15 +38,15 @@ public:
    VulkanBuffer CreateBuffer(DMeta, VkDeviceSize, VkBufferUsageFlags, VkMemoryPropertyFlags) const;
    void DestroyBuffer(VulkanBuffer&) const;
 
-   VulkanImage CreateImage(const TextureView&, VkImageUsageFlags) const;
+   VulkanImage CreateImage(const ImageView&, VkImageUsageFlags) const;
    void DestroyImage(VulkanImage&) const;
 
-   VkImageView CreateImageView(const VkImage&, const TextureView&, VkImageAspectFlags);
-   VkImageView CreateImageView(const VulkanImage&, const TextureView&, VkImageAspectFlags);
+   VkImageView CreateImageView(const VkImage&, const ImageView&, VkImageAspectFlags);
+   VkImageView CreateImageView(const VulkanImage&, const ImageView&, VkImageAspectFlags);
    VkImageView CreateImageView(const VulkanImage&);
 
-   void ImageTransfer(VulkanImage&, VkImageLayout from, VkImageLayout to);
-   void ImageTransfer(VkImage&, VkImageLayout from, VkImageLayout to);
+   void ImageTransfer(const VulkanImage&, VkImageLayout from, VkImageLayout to);
+   void ImageTransfer(const VkImage&, VkImageLayout from, VkImageLayout to);
 
    VulkanBuffer Upload(const Block&, VkBufferUsageFlags);
 };

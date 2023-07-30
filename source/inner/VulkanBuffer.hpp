@@ -27,6 +27,9 @@ public:
    bool Upload(Offset, Size, const void*) const;
    Byte* Lock(Offset, Size) const;
    void Unlock() const;
+
+   NOD() const VkDevice& GetDevice() const noexcept { return mDevice; }
+   NOD() const VkDeviceMemory& GetMemory() const noexcept { return mMemory; }
 };
 
 
@@ -58,16 +61,18 @@ protected:
    friend struct VulkanMemory;
 
    // Meta                                                              
-   TextureView mView;
+   ImageView mView;
    // Buffer                                                            
    Own<VkImage> mBuffer;
    // VRAM image info                                                   
    VkImageCreateInfo mInfo {};
 
 public:
+   static VulkanImage FromSwapchain(const VkDevice&, const VkImage&, const ImageView&) noexcept;
+
    NOD() bool IsValid() const noexcept;
    void Reset() noexcept;
-   NOD() const TextureView& GetView() const noexcept;
+   NOD() const ImageView& GetView() const noexcept;
    NOD() VkImage GetImage() const noexcept;
    NOD() const VkImageCreateInfo& GetImageCreateInfo() const noexcept;
 };

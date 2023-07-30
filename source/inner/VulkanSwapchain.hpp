@@ -14,6 +14,7 @@
 ///                                                                           
 struct VulkanSwapchain {
 protected:
+   friend struct VulkanRenderer;
    VulkanRenderer& mRenderer;
    Debug Self() const;
 
@@ -21,15 +22,16 @@ protected:
    Own<VkSurfaceKHR> mSurface;
    // Swap chain                                                        
    Own<VkSwapchainKHR> mSwapChain;
-   // Images for the swap chain framebuffers                            
-   TAny<VkImage> mSwapChainImages;
-   // Swap chain frames                                                 
-   Frames mFrame;
-   // Framebuffers                                                      
-   FrameBuffers mFramebuffer;
 
+   // Images for the swap chain framebuffers                            
+   TAny<VulkanImage> mFrameImages;
+   // Swap chain frame views                                            
+   FrameViews mFrameViews;
+   // Framebuffers                                                      
+   FrameBuffers mFrameBuffers;
    // Fence for each framebuffer                                        
    TAny<VkFence> mNewBufferFence;
+
    // I think this is not used                                          
    Own<VkSemaphore> mNewFrameFence;
    // Frame finished                                                    
@@ -63,4 +65,6 @@ public:
    NOD() VkCommandBuffer GetRenderCB() const noexcept;
    NOD() VkFramebuffer GetFramebuffer() const noexcept;
    NOD() VkSurfaceKHR GetSurface() const noexcept;
+   NOD() const VulkanImage& GetCurrentImage() const noexcept;
+   NOD() Ref<A::Image> TakeScreenshot() const;
 };
