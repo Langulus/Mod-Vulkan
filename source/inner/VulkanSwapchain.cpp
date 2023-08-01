@@ -112,6 +112,9 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamili
    swapInfo.clipped = VK_TRUE;
    swapInfo.oldSwapchain = VK_NULL_HANDLE;
 
+   // Allow us to copy swapchain images when testing                    
+   IF_LANGULUS_TESTING(swapInfo.imageUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+
    if (vkCreateSwapchainKHR(mRenderer.mDevice, &swapInfo, nullptr, &mSwapChain.Get())) {
       Destroy();
       LANGULUS_THROW(Graphics, "Can't create swap chain");
@@ -476,7 +479,7 @@ const VulkanImage& VulkanSwapchain::GetCurrentImage() const noexcept {
 }
 
 /// Take a screenshot                                                         
-Ref<A::Image> VulkanSwapchain::TakeScreenshot() const {
+Ref<A::Image> VulkanSwapchain::TakeScreenshot() {
    // The stager is used to copy from current back buffer               
    // (VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) to a                   
    // VK_BUFFER_USAGE_TRANSFER_DST_BIT buffer, that is later copied to  
@@ -556,13 +559,15 @@ Ref<A::Image> VulkanSwapchain::TakeScreenshot() const {
    // Don't forget to clean up the staging buffer                       
    vram.DestroyBuffer(stager);
 
-   // Finally, produce an image component and return it                 
-   // The image includes current timestamp to make it unique            
-   // It should be destroyed on garbage collection if unused            
-   Verbs::Create creator {Construct::From<A::Image>(
-      source.GetView(), SteadyClock::Now()
-   )};
-   auto aimage = mRenderer.RunIn(creator).As<A::Image*>();
-   aimage->Upload(::std::move(memory));
-   return aimage;
+   if (!mScreenshot) {
+      // Create an image asset if not created yet, otherwise reuse it   
+      // The image includes current timestamp to make it unique         
+      Verbs::Create creator {Construct::From<A::Image>(
+         source.GetView(), SteadyClock::Now()
+      )};
+      mScreenshot = mRenderer.RunIn(creator).As<A::Image*>();
+   }
+
+   mScreenshot->Upload(Abandon(memory));
+   return mScreenshot;
 }
