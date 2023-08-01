@@ -562,8 +562,10 @@ Ref<A::Image> VulkanSwapchain::TakeScreenshot() {
    if (!mScreenshot) {
       // Create an image asset if not created yet, otherwise reuse it   
       // The image includes current timestamp to make it unique         
+      // We also predefine the renderer as parent, because we don't want
+      // the image to be added as a component to a Thing                
       Verbs::Create creator {Construct::From<A::Image>(
-         source.GetView(), SteadyClock::Now()
+         Traits::Parent {&mRenderer}, source.GetView(), SteadyClock::Now()
       )};
       mScreenshot = mRenderer.RunIn(creator).As<A::Image*>();
    }

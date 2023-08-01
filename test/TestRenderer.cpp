@@ -60,8 +60,6 @@ SCENARIO("Renderer creation inside a window", "[renderer]") {
 
 SCENARIO("Drawing an empty window", "[renderer]") {
    GIVEN("A window with a renderer") {
-      Allocator::State memoryState;
-
       // Create the scene                                               
       Thing root;
       root.SetName("ROOT");
@@ -73,6 +71,8 @@ SCENARIO("Drawing an empty window", "[renderer]") {
       root.CreateUnitToken("Renderer");
 
       for (int repeat = 0; repeat != 10; ++repeat) {
+         Allocator::State memoryState;
+
          WHEN(std::string("Update cycle #") + std::to_string(repeat)) {
             // Update the scene                                         
             root.Update(16ms);
@@ -82,6 +82,7 @@ SCENARIO("Drawing an empty window", "[renderer]") {
             Verbs::InterpretAs<A::Image> interpret;
             root.Do(interpret);
 
+            REQUIRE_FALSE(root.HasUnits<A::Image>());
             REQUIRE(interpret.IsDone());
             REQUIRE(interpret->GetCount() == 1);
             REQUIRE(interpret->IsSparse());
@@ -95,6 +96,8 @@ SCENARIO("Drawing an empty window", "[renderer]") {
                REQUIRE(compare->GetCount() == 1);
                REQUIRE(compare->IsDense());
                REQUIRE(compare.GetOutput() == Compared::Equal);
+
+               root.DumpHierarchy();
             }
          }
 
