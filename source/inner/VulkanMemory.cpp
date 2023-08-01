@@ -470,7 +470,7 @@ void VulkanMemory::ImageTransfer(const VkImage& img, VkImageLayout from, VkImage
 ///   @param usage - the intended use for the memory                          
 ///   @return a VRAM buffer wrapper                                           
 VulkanBuffer VulkanMemory::Upload(const Block& memory, VkBufferUsageFlags usage) {
-   const auto bytesize = memory.GetByteSize();
+   const auto bytesize = memory.GetBytesize();
    LANGULUS_ASSERT(bytesize, Graphics, "Can't upload data of size zero");
 
    // Create staging buffer                                             

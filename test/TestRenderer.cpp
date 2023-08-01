@@ -88,7 +88,7 @@ SCENARIO("Drawing an empty window", "[renderer]") {
             REQUIRE(interpret->template CastsTo<A::Image>());
 
             THEN("The window should be filled with a uniform color") {
-               Verbs::Compare compare {Math::Colors::Black};
+               Verbs::Compare compare {Math::Colors::Red};
                interpret->Run(compare);
 
                REQUIRE(compare.IsDone());
