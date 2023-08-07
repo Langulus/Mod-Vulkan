@@ -9,7 +9,8 @@
 #include <Flow/Time.hpp>
 #include <Flow/Verbs/Interpret.hpp>
 #include <Flow/Verbs/Compare.hpp>
-#include "Math/Colors.hpp"
+#include <Math/Colors.hpp>
+#include <Math/Primitives/TBox.hpp>
 #include <catch2/catch.hpp>
 
 
@@ -89,13 +90,65 @@ SCENARIO("Drawing an empty window", "[renderer]") {
             REQUIRE(interpret->template CastsTo<A::Image>());
 
             THEN("The window should be filled with a uniform color") {
-               Verbs::Compare compare {Math::Colors::Red};
+               Verbs::Compare compare {Colors::Red};
                interpret->Run(compare);
 
                REQUIRE(compare.IsDone());
                REQUIRE(compare->GetCount() == 1);
                REQUIRE(compare->IsDense());
                REQUIRE(compare.GetOutput() == Compared::Equal);
+
+               root.DumpHierarchy();
+            }
+         }
+
+         // Check for memory leaks after each cycle                     
+         REQUIRE(memoryState.Assert());
+      }
+   }
+}
+
+SCENARIO("Drawing solid polygons", "[renderer]") {
+   GIVEN("A window with a renderer") {
+      // Create the scene                                               
+      Thing root;
+      root.SetName("ROOT");
+      root.CreateRuntime();
+      root.LoadMod("GLFW");
+      root.LoadMod("Vulkan");
+      root.LoadMod("FileSystem");
+      root.LoadMod("AssetsImages");
+      root.CreateUnitToken("Window", Traits::Size(640, 480));
+      root.CreateUnitToken("Renderer");
+      root.CreateUnitToken("Layer");
+
+      auto rect = root.CreateChild();
+      rect->AddTrait(Traits::Size {100});
+      auto renderable = rect->CreateUnitToken("Renderable");
+      auto mesh = rect->CreateUnitToken("Mesh", Math::Box2 {});
+      auto topLeft  = rect->CreateUnitToken("Instance", Traits::Place(100, 100), Colors::Black);
+      auto topRight = rect->CreateUnitToken("Instance", Traits::Place(540, 100), Colors::Green);
+      auto botLeft  = rect->CreateUnitToken("Instance", Traits::Place(100, 380), Colors::Blue);
+      auto botRight = rect->CreateUnitToken("Instance", Traits::Place(540, 380), Colors::White);
+      root.DumpHierarchy();
+
+      for (int repeat = 0; repeat != 10; ++repeat) {
+         Allocator::State memoryState;
+
+         WHEN(std::string("Update cycle #") + std::to_string(repeat)) {
+            // Update the scene                                         
+            root.Update(16ms);
+
+            // And interpret the scene as an image, i.e. taking a       
+            // screenshot                                               
+            Verbs::InterpretAs<A::Image> interpret;
+            root.Do(interpret);
+
+            THEN("The window should be filled with a uniform color") {
+               /*Verbs::Compare compare {Colors::Red};
+               interpret->Run(compare);
+
+               REQUIRE(compare.GetOutput() == Compared::Equal);*/
 
                root.DumpHierarchy();
             }

@@ -318,7 +318,7 @@ void VulkanPipeline::PrepareFromGeometry(const A::Mesh& geometry) {
    // Geometry can contain 'baked-in' textures in its descriptor        
    // Make sure we utilize them all in the fragment shader              
    Offset textureId {};
-   for (auto texture : geometry.GetDescriptor().mTraits[MetaOf<Traits::Image>()]) {
+   for (auto texture : geometry.GetNormalized().mTraits[MetaOf<Traits::Image>()]) {
       // Add a texture input to the fragment shader                     
       Code code = "Texturize^PerPixel("_code + textureId + ')';
       VERBOSE_PIPELINE("Incorporating: ", code);
@@ -328,7 +328,7 @@ void VulkanPipeline::PrepareFromGeometry(const A::Mesh& geometry) {
 
    // Geometry can contain 'baked-in' solid color in its descriptor     
    // Make sure we utilize it in the fragment shader                    
-   for (auto color : geometry.GetDescriptor().mTraits[MetaOf<Traits::Color>()]) {
+   for (auto color : geometry.GetNormalized().mTraits[MetaOf<Traits::Color>()]) {
       Code code = "Texturize^PerPixel("_code + color.AsCast<RGBA>() + ')';
       VERBOSE_PIPELINE("Incorporating: ", code);
       material << Abandon(code);
