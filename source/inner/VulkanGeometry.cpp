@@ -9,6 +9,7 @@
 
 #define VERBOSE_VKGEOMETRY(...) //Logger::Verbose(Self(), __VA_ARGS__)
 
+
 /// Returns true if container has any vertex data                             
 ///   @param container - container to scan                                    
 ///   @param indexData - [out] whether or not index data is available         
@@ -36,57 +37,82 @@ inline bool IsVertexData(const Block& container, bool& indexData) {
 VulkanGeometry::VulkanGeometry(VulkanRenderer* producer, const Any& descriptor)
    : A::Graphics {MetaOf<VulkanGeometry>(), descriptor}
    , ProducedFrom {producer, descriptor} {
-   descriptor.ForEachDeep([&](const A::Mesh& geometry) {
+   // Scan the descriptor                                               
+   auto& vram = mProducer->mVRAM;
+   descriptor.ForEachDeep([&](const A::Mesh& mesh) {
       VERBOSE_VKGEOMETRY(const auto startTime = SteadyClock::now());
 
-      // Create a buffer for each provided type, as long as that type   
-      // can be decayed into vertices                                   
-      auto& vram = mProducer->mVRAM;
-      for (auto data : geometry.GetDataListMap()) {
-         const auto& group = data.mValue;
-         bool isIndexData = false;
-         if (!IsVertexData(group, isIndexData)) {
-            Logger::Warning(Self(),
-               "Raw content of type ", group.GetToken(),
-               " is not considered vertex data and will not be cloned to VRAM"
-            );
-            continue;
-         }
+      // Create a buffer for each relevant data trait                   
+      // Each data request will generate that data, if it hasn't yet    
+      const auto indices = mesh.GetData<Traits::Index>();
+      if (indices) {
+         VERBOSE_VKGEOMETRY("Uploading indices to VRAM: ",
+            indices->GetCount(), " of ", indices->GetType());
 
-         // Clone the data to VRAM                                      
-         VERBOSE_VKGEOMETRY("Uploading ", group.GetCount(), 
-            " of ", group.GetToken(), " to VRAM...");
-
-         auto final = vram.Upload(group, isIndexData 
-            ? VK_BUFFER_USAGE_INDEX_BUFFER_BIT 
-            : VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
-         );
-
-         // If everything is in order, we save the buffers              
-         if (final.IsValid()) {
-            if (isIndexData) {
-               mIBuffers.push_back(final);
-               mIOffsets.push_back(0);
-            }
-            else {
-               mVBuffers.push_back(final);
-               mVOffsets.push_back(0);
-            }
-
-            VERBOSE_VKGEOMETRY("Uploaded ", group.GetCount(),
-               " of ", group.GetToken(), " to VRAM");
-         }
+         auto buffer = vram.Upload(*indices, VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+         mIBuffers.push_back(buffer);
+         mIOffsets.push_back(0);
       }
 
-      if (mVBuffers.empty())
-         LANGULUS_THROW(Graphics, "Couldn't upload geometry to VRAM");
+      const auto positions = mesh.GetData<Traits::Place>();
+      if (positions) {
+         VERBOSE_VKGEOMETRY("Uploading vertex positions to VRAM: ",
+            positions->GetCount(), " of ", positions->GetType());
+
+         auto buffer = vram.Upload(*positions, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+         mVBuffers.push_back(buffer);
+         mVOffsets.push_back(0);
+      }
+
+      const auto normals = mesh.GetData<Traits::Aim>();
+      if (normals) {
+         VERBOSE_VKGEOMETRY("Uploading vertex normals to VRAM: ",
+            normals->GetCount(), " of ", normals->GetType());
+
+         auto buffer = vram.Upload(*normals, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+         mVBuffers.push_back(buffer);
+         mVOffsets.push_back(0);
+      }
+
+      const auto textureCoords = mesh.GetData<Traits::Sampler>();
+      if (textureCoords) {
+         VERBOSE_VKGEOMETRY("Uploading vertex texture coordinates to VRAM: ",
+            textureCoords->GetCount(), " of ", textureCoords->GetType());
+
+         auto buffer = vram.Upload(*textureCoords, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+         mVBuffers.push_back(buffer);
+         mVOffsets.push_back(0);
+      }
+
+      const auto materialIds = mesh.GetData<Traits::Material>();
+      if (materialIds) {
+         VERBOSE_VKGEOMETRY("Uploading vertex material IDs to VRAM: ",
+            materialIds->GetCount(), " of ", materialIds->GetType());
+
+         auto buffer = vram.Upload(*materialIds, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+         mVBuffers.push_back(buffer);
+         mVOffsets.push_back(0);
+      }
+
+      const auto instances = mesh.GetData<Traits::Transform>();
+      if (instances) {
+         VERBOSE_VKGEOMETRY("Uploading hardware instancing data to VRAM: ",
+            instances->GetCount(), " of ", instances->GetType());
+
+         auto buffer = vram.Upload(*instances, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+         mVBuffers.push_back(buffer);
+         mVOffsets.push_back(0);
+      }
+
+      LANGULUS_ASSERT(not mVBuffers.empty(), Graphics,
+         "Couldn't upload geometry to VRAM");
 
       // Make sure mView.mPCount means vertex count, and not            
-      // primitive count. Decay in order to do that.                    
-      mTopology = geometry.GetTopology();
-      mView = geometry.GetView().Decay();
+      // primitive count - decay in order to do that                    
+      mTopology = mesh.GetTopology();
+      mView = mesh.GetView().Decay();
 
-      VERBOSE_VKGEOMETRY(Logger::Green, "Data uploaded in VRAM for ",
+      VERBOSE_VKGEOMETRY(Logger::Green, "Data uploaded in VRAM in ",
          SteadyClock::now() - startTime);
    });
 }

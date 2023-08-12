@@ -17,35 +17,78 @@
 VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, const Descriptor& descriptor)
    : Graphics {MetaOf<VulkanPipeline>(), descriptor}
    , ProducedFrom {producer, descriptor} {
-   VERBOSE_PIPELINE("Initializing graphics pipeline from ", descriptor);
+   VERBOSE_PIPELINE("Initializing graphics pipeline from: ", descriptor);
    mSubscribers.New();
    mGeometries.New();
 
-   descriptor.ForEachDeep(
-      [this](const A::File& file) {
-         // Create from file                                            
-         PrepareFromFile(file);
-      },
-      [this](const Path& path) {
-         // Create from file path                                       
-         const auto file = GetRuntime()->GetFile(path);
-         if (file)
-            PrepareFromFile(*file);
-      },
-      [this](const A::Material& material) {
-         // Create from predefined material generator                   
-         PrepareFromMaterial(material);
-      },
-      [this](const A::Mesh& geometry) {
-         // Create from predefined material generator                   
-         PrepareFromGeometry(geometry);
-      },
-      [this](const Construct& construct) {
-         // Create from any construct                                   
-         PrepareFromConstruct(construct);
-      }
-   );
+   descriptor.ForEachDeep([&](const VulkanLayer& layer) {
+      // Add layer preferences                                          
+      if (layer.GetStyle() & VulkanLayer::Hierarchical)
+         mDepth = false;
+   });
 
+   const bool predefined = 0 !=
+      descriptor.ForEachDeep([this](const A::Material& material) {
+         // Create from predefined material generator                   
+         GenerateShaders(material);
+         return Flow::Break;
+      });
+
+   if (not predefined) {
+      // We must generate the material ourselves                        
+      Construct material;
+      descriptor.ForEachDeep(
+         [&](const A::File& file) {
+            // Create from file                                         
+            material = FromFile(file);
+            return Flow::Break;
+         },
+         [&](const Text& text) {
+            // Create from any text, including filenames and code       
+            const auto file = GetRuntime()->GetFile(text);
+            material = file ? FromFile(*file) : FromCode(text);
+            return Flow::Break;
+         },
+         [&](const A::Mesh& mesh) {
+            // Adapt to a mesh                                          
+            material = FromMesh(mesh);
+            return Flow::Break;
+         },
+         [&](const A::Image& image) {
+            // Adapt to an image                                        
+            material = FromImage(image);
+            return Flow::Break;
+         }
+      );
+
+      LANGULUS_ASSERT(material, Graphics,
+         "Couldn't generate material request for pipeline");
+
+      // Create the pixel shader output according to the rendering pass 
+      // attachment format requirements                                 
+      for (const auto& attachment : mProducer->mPassAttachments) {
+         switch (attachment.format) {
+         case VK_FORMAT_B8G8R8A8_UNORM:
+            material << Traits::Output {Rate::Pixel, MetaOf<RGBA>()};
+            break;
+         case VK_FORMAT_D32_SFLOAT:
+         case VK_FORMAT_D16_UNORM:
+            // Skip depth                                               
+            break;
+         default:
+            TODO();
+         }
+      }
+         
+      // Now create generator, and the pipeline from it                 
+      VERBOSE_PIPELINE("Pipeline material will be generated from: ", material);
+      Verbs::Create creator {Abandon(material)};
+      Run(creator).ForEach([this](const A::Material& generator) {
+         GenerateShaders(generator);
+      });
+   }
+
+   // Proceed with initializing the pipeline                            
    const auto device = mProducer->mDevice;
 
    // Copy the viewport state                                           
@@ -240,204 +283,115 @@ VulkanPipeline::~VulkanPipeline() {
 
 /// Create a pipeline from a file                                             
 ///   @param file - the file interface                                        
-void VulkanPipeline::PrepareFromFile(const A::File& file) {
+Construct VulkanPipeline::FromFile(const A::File& file) {
    try {
       // Check if file is a text file, and attempt using it             
-      PrepareFromCode(file.ReadAs<Text>());
+      return FromCode(file.ReadAs<Text>());
    }
    catch (...) { throw; }
 
    //TODO handle other kinds of files
 }
 
-/// Create a pipeline from geometry content generator                         
-///   @param geometry - the geometry content interface                        
-void VulkanPipeline::PrepareFromGeometry(const A::Mesh& geometry) {
+/// Create a pipeline capable of rendering a mesh                             
+///   @attention geometry will be generated, in order to access data types    
+///   @param mesh - the mesh content generator                                
+Construct VulkanPipeline::FromMesh(const A::Mesh& mesh) {
    // We use the geometry's properties to define a material             
-   // generator descriptor, which we use to initialize this pipeline    
-   Any material;
-   mPrimitive = AsVkPrimitive(geometry.GetTopology());
+   // generator, which we later use to initialize this pipeline         
+   auto request = Construct::From<A::Material>(
+      Traits::Topology {mesh.GetTopology()}
+   );
+
+   const auto instances = mesh.GetData<Traits::Transform>();
+   if (instances) {
+      // Create geometry shader hardware instancing input               
+      request << Traits::Input {
+         Rate::Primitive, Traits::Transform {instances->GetType()}
+      };
+   }
+
+   const auto positions = mesh.GetData<Traits::Place>();
+   if (positions) {
+      // Create a vertex position input and project it                  
+      request << Traits::Input {Rate::Vertex, Traits::Place {positions->GetType()}}
+              << Traits::Input {Rate::Level,  Traits::View {positions->GetType()}}
+              << Traits::Input {Rate::Camera, Traits::Projection {positions->GetType()}};
+
+      // If not using hardware-instancing, use the Thing's instances    
+      if (!instances) {
+         request << Traits::Input {
+            Rate::Instance, Traits::Transform {positions->GetType()}
+         };
+      }
+   }
          
-   // Scan the input attributes (inside geometry data)                  
-   for (auto data : geometry.GetDataListMap()) {
-      const auto trait = data.mKey;
-      const auto type = data.mValue.GetType();
-
-      if (trait->template Is<Traits::Index>()) {
-         // Skip indices, they are irrelevant for the material          
-         continue;
-      }
-
-      Code code;
-      if (trait->template Is<Traits::Place>()) {
-         // Create a vertex position input and project it               
-         code +=
-            "Create^PerVertex(Input(Place("_code + type + ")))"
-            ".Multiply^PerVertex(ModelTransform * ViewTransform * ProjectTransform)";
-      }
-      else if (trait->template Is<Traits::Aim>()) {
-         // Create a normal/tangent/bitangent vertex input and project  
-         code +=
-            "Create^PerVertex(Input(Aim("_code + type + ")))"
-            ".Multiply^PerVertex(ModelTransform)";
-      }
-      else if (trait->template Is<Traits::Sampler>()) {
-         // Create a texture coordinate input                           
-         code +=
-            "Create^PerVertex(Input(Sampler("_code + type + ")))";
-      }
-      else if (trait->template Is<Traits::Transform>()) {
-         // Create hardware instancing inside geometry shader, by       
-         // streaming the model transformation                          
-         code +=
-            "Create^PerPrimitive(Input(ModelTransform("_code + type + ")))";
-      }
-      else if (trait->template Is<Traits::View>()) {
-         // Create hardware instancing inside geometry shader, by       
-         // streaming the view transformation                           
-         code +=
-            "Create^PerPrimitive(Input(ViewTransform("_code + type + ")))";
-      }
-      else if (trait->template Is<Traits::Projection>()) {
-         // Create hardware instancing inside geometry shader, by       
-         // streaming the projection transformation                     
-         code +=
-            "Create^PerPrimitive(Input(ProjectTransform("_code + type + ")))";
-      }
-      else {
-         // Just forward custom inputs, starting from the vertex stage  
-         const auto serializedData = Flow::Serialize<Code>(data);
-         code +=
-            "Create^PerVertex(Input("_code + trait + '(' + serializedData + ")))";
-      }
-
-      VERBOSE_PIPELINE("Incorporating: ", code);
-      material << Abandon(code);
+   const auto normals = mesh.GetData<Traits::Aim>();
+   if (normals) {
+      // Create a vertex normals input                                  
+      request << Traits::Input {
+         Rate::Vertex, Traits::Aim {normals->GetType()}
+      };
+   }
+         
+   const auto textureCoords = mesh.GetData<Traits::Sampler>();
+   if (textureCoords) {
+      // Create a vertex texture coordinates input                      
+      request << Traits::Input {
+         Rate::Vertex, Traits::Sampler {textureCoords->GetType()}
+      };
+   }
+         
+   const auto materialIds = mesh.GetData<Traits::Material>();
+   if (materialIds) {
+      // Create a vertex material ids input                             
+      request << Traits::Input {
+         Rate::Vertex, Traits::Material {materialIds->GetType()}
+      };
    }
 
-   // Geometry can contain 'baked-in' textures in its descriptor        
-   // Make sure we utilize them all in the fragment shader              
-   Offset textureId {};
-   for (auto texture : geometry.GetNormalized().mTraits[MetaOf<Traits::Image>()]) {
-      // Add a texture input to the fragment shader                     
-      Code code = "Texturize^PerPixel("_code + textureId + ')';
-      VERBOSE_PIPELINE("Incorporating: ", code);
-      material << Abandon(code);
-      ++textureId;
-   }
-
-   // Geometry can contain 'baked-in' solid color in its descriptor     
-   // Make sure we utilize it in the fragment shader                    
-   for (auto color : geometry.GetNormalized().mTraits[MetaOf<Traits::Color>()]) {
-      Code code = "Texturize^PerPixel("_code + color.AsCast<RGBA>() + ')';
-      VERBOSE_PIPELINE("Incorporating: ", code);
-      material << Abandon(code);
-   }
-
-   // Rasterize the geometry, using standard rasterizer                 
-   // i.e. the built-in rasterizer GPUs are notoriously good with       
-   material << "Rasterize^PerPrimitive()"_code;
+   return request;
 }
 
-/// Initialize the pipeline from geometry content                             
-///   @param stuff - the content to use for material generation               
-void VulkanPipeline::PrepareFromConstruct(const Construct& stuff) {
-   // Let's build a material construct                                  
-   VERBOSE_PIPELINE("Generating material from: ", stuff);
+/// Create a pipeline capable of rendering an image                           
+///   @attention image will be generated, in order to access data types       
+///   @param image - the image content generator                              
+Construct VulkanPipeline::FromImage(const A::Image& image) {
+   // We use the image's properties to define a material                
+   // generator, which we later use to initialize this pipeline         
+   auto request = Construct::From<A::Material>(
+      Traits::Topology {MetaOf<A::TriangleStrip>()}
+   );
 
-   Any material;
-   Offset textureId {};
-   stuff.ForEachDeep([&](const Block& group) {
-      group.ForEach([&](const A::Mesh& geometry) {
-         PrepareFromGeometry(geometry);
-         return Flow::Break;  // Only one geometry definition allowed   
-      },
-      [&](const A::Image& texture) {
-         // Add texturization, if construct contains any textures       
-         Code code1 = "Create^PerPixel(Input(Texture("_code + texture.GetFormat() + ")))";
-         Code code2 = "Texturize^PerPixel("_code + textureId + ')';
-         VERBOSE_PIPELINE("Incorporating: ", code1);
-         VERBOSE_PIPELINE("Incorporating: ", code2);
-         material << Abandon(code1) << Abandon(code2);
-         ++textureId;
-      },
-      [&](const Trait& t) {
-         // Add various global traits, such as texture/color            
-         if (t.template TraitIs<Traits::Image>()) {
-            // Add a texture uniform                                    
-            Code code = "Texturize^PerPixel("_code + textureId + ')';
-            VERBOSE_PIPELINE("Incorporating: ", code);
-            material << Abandon(code);
-            ++textureId;
-         }
-         else if (t.template TraitIs<Traits::Color>()) {
-            // Add constant colorization                                
-            Code code = "Texturize^PerPixel("_code + t.AsCast<RGBA>() + ')';
-            VERBOSE_PIPELINE("Incorporating: ", code);
-            material << Abandon(code);
-         }
-      },
-      [&](const RGBA& color) {
-         // Add a constant color                                        
-         Code code = "Texturize^PerPixel("_code + color + ')';
-         VERBOSE_PIPELINE("Incorporating: ", code);
-         material << Abandon(code);
-      },
-      [&](const VulkanLayer& layer) {
-         // Add layer preferences                                       
-         VERBOSE_PIPELINE("Incorporating layer preferences from ", layer);
-         if (layer.GetStyle() & VulkanLayer::Hierarchical)
-            mDepth = false;
-      });
-   });
-
-   if (!material)
-      return;
-
-   // Create the pixel shader output according to the rendering pass    
-   // attachment format requirements                                    
-   for (const auto& attachment : mProducer->mPassAttachments) {
-      switch (attachment.format) {
-      case VK_FORMAT_B8G8R8A8_UNORM: {
-         Code outputCode = "Create^PerPixel(Output(Color(RGBA)))";
-         VERBOSE_PIPELINE("Incorporating: ", outputCode);
-         material << Abandon(outputCode);
-         break;
-      }
-      case VK_FORMAT_D32_SFLOAT:
-      case VK_FORMAT_D16_UNORM:
-         // Skip depth                                                  
-         break;
-      default:
-         TODO();
-      }
+   const auto colors = image.GetData<Traits::Color>();
+   if (colors) {
+      // Create pixel shader texture input with the image view          
+      request << Traits::Input {
+         Rate::Pixel, Traits::Image {image.GetView()}
+      };
    }
 
-   // Now create generator and pipeline from it                         
-   Verbs::Create creator {Construct::From<A::Material>(Abandon(material))};
-   Run(creator).ForEach([this](const A::Material& generator) {
-      PrepareFromMaterial(generator);
-   });
+   return request;
 }
 
 /// Initialize the pipeline from any code                                     
 ///   @param code - the shader code                                           
-void VulkanPipeline::PrepareFromCode(const Text& code) {
-   // Let's build a material generator from available code              
-   VERBOSE_PIPELINE("Generating material from code snippet: ");
-   VERBOSE_PIPELINE(code);
-   Verbs::Create creator {Construct::From<A::Material>(code)};
-   Run(creator).ForEach([this](const A::Material& generator) {
-      PrepareFromMaterial(generator);
-   });
+Construct VulkanPipeline::FromCode(const Text& code) {
+   // We use the code to define a material generator, which we later    
+   // use to initialize this pipeline                                   
+   auto request = Construct::From<A::Material>(
+      Traits::Topology {MetaOf<A::TriangleStrip>()},
+      code
+   );
+
+   return request;
 }
 
-/// Initialize the pipeline from material content                             
+/// Use material generator to generate all shader stages as GLSL              
 ///   @param material - the content to use                                    
-void VulkanPipeline::PrepareFromMaterial(const A::Material& material) {
+void VulkanPipeline::GenerateShaders(const A::Material& material) {
    const auto shaders = material.GetDataList<Traits::Shader>();
-   if (!shaders)
-      LANGULUS_THROW(Graphics, "No shaders provided in material");
+   LANGULUS_ASSERT(shaders, Graphics, "No shaders provided in material");
 
    for (auto stage : *shaders) {
       // Create a vulkan shader for each material-provided shader       

@@ -79,11 +79,11 @@ private:
    TAny<PipeSubscriber> mSubscribers;
    TAny<const VulkanGeometry*> mGeometries;
 
-   void PrepareFromFile(const A::File&);
-   void PrepareFromConstruct(const Construct&);
-   void PrepareFromMaterial(const A::Material&);
-   void PrepareFromGeometry(const A::Mesh&);
-   void PrepareFromCode(const Text&);
+   static Construct FromFile(const A::File&);
+   static Construct FromMesh(const A::Mesh&);
+   static Construct FromImage(const A::Image&);
+   static Construct FromCode(const Text&);
+   void GenerateShaders(const A::Material&);
 
 public:
    VulkanPipeline(VulkanRenderer*, const Descriptor&);
