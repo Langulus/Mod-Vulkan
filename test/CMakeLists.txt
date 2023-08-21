@@ -1,5 +1,3 @@
-project(LangulusModVulkanTest)
-
 add_executable(LangulusModVulkanTest
 	Main.cpp
 	TestRenderer.cpp
