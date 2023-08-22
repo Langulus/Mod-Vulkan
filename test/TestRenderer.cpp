@@ -36,9 +36,28 @@ SCENARIO("Renderer creation inside a window", "[renderer]") {
          root.LoadMod("GLFW");
          root.LoadMod("Vulkan");
 
-         WHEN("The renderer is created") {
+      #if LANGULUS_FEATURE(MANAGED_REFLECTION)
+         WHEN("A renderer is created via tokens") {
             auto window = root.CreateUnitToken("Window", Traits::Size(640, 480));
             auto renderer = root.CreateUnitToken("Renderer");
+
+            THEN("Various traits change") {
+               root.DumpHierarchy();
+               
+               REQUIRE(window);
+               REQUIRE(window.IsSparse());
+               REQUIRE(window.CastsTo<A::Window>());
+
+               REQUIRE(renderer);
+               REQUIRE(renderer.IsSparse());
+               REQUIRE(renderer.CastsTo<A::Renderer>());
+            }
+         }
+      #endif
+         
+         WHEN("A renderer is created via abstractions") {
+            auto window = root.CreateUnit<A::Window>(Traits::Size(640, 480));
+            auto renderer = root.CreateUnit<A::Renderer>();
 
             THEN("Various traits change") {
                root.DumpHierarchy();
@@ -68,8 +87,8 @@ SCENARIO("Drawing an empty window", "[renderer]") {
       root.LoadMod("GLFW");
       root.LoadMod("Vulkan");
       root.LoadMod("AssetsImages");
-      root.CreateUnitToken("Window", Traits::Size(640, 480));
-      root.CreateUnitToken("Renderer");
+      root.CreateUnit<A::Window>(Traits::Size(640, 480));
+      root.CreateUnit<A::Renderer>();
 
       for (int repeat = 0; repeat != 10; ++repeat) {
          Allocator::State memoryState;
@@ -118,18 +137,18 @@ SCENARIO("Drawing solid polygons", "[renderer]") {
       root.LoadMod("Vulkan");
       root.LoadMod("FileSystem");
       root.LoadMod("AssetsImages");
-      root.CreateUnitToken("Window", Traits::Size(640, 480));
-      root.CreateUnitToken("Renderer");
-      root.CreateUnitToken("Layer");
+      root.CreateUnit<A::Window>(Traits::Size(640, 480));
+      root.CreateUnit<A::Renderer>();
+      root.CreateUnit<A::Layer>();
 
       auto rect = root.CreateChild();
       rect->AddTrait(Traits::Size {100});
-      auto renderable = rect->CreateUnitToken("Renderable");
-      auto mesh = rect->CreateUnitToken("Mesh", Math::Box2 {});
-      auto topLeft  = rect->CreateUnitToken("Instance", Traits::Place(100, 100), Colors::Black);
-      auto topRight = rect->CreateUnitToken("Instance", Traits::Place(540, 100), Colors::Green);
-      auto botLeft  = rect->CreateUnitToken("Instance", Traits::Place(100, 380), Colors::Blue);
-      auto botRight = rect->CreateUnitToken("Instance", Traits::Place(540, 380), Colors::White);
+      auto renderable = rect->CreateUnit<A::Renderable>();
+      auto mesh = rect->CreateUnit<A::Mesh>(Math::Box2 {});
+      auto topLeft  = rect->CreateUnit<A::Instance>(Traits::Place(100, 100), Colors::Black);
+      auto topRight = rect->CreateUnit<A::Instance>(Traits::Place(540, 100), Colors::Green);
+      auto botLeft  = rect->CreateUnit<A::Instance>(Traits::Place(100, 380), Colors::Blue);
+      auto botRight = rect->CreateUnit<A::Instance>(Traits::Place(540, 380), Colors::White);
       root.DumpHierarchy();
 
       for (int repeat = 0; repeat != 10; ++repeat) {

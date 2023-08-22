@@ -3,7 +3,6 @@ project(LangulusModVulkan
     VERSION         1.0.0
     DESCRIPTION     "Langulus plug-in module for rendering real-time graphics using the Vulkan API"
     HOMEPAGE_URL    https://langulus.com
-    LANGUAGES       CXX
 )
 
 # Retrieve Vulkan installation, requires CMake 3.24+                            
