@@ -42,7 +42,7 @@ protected:
    void ResetRenderable();
 
 public:
-   VulkanRenderable(VulkanLayer*, const Descriptor&);
+   VulkanRenderable(VulkanLayer*, const Neat&);
 
    NOD() VulkanRenderer* GetRenderer() const noexcept;
    NOD() VulkanGeometry* GetGeometry(const LOD&) const;

@@ -106,7 +106,7 @@ protected:
    void Destroy();
 
 public:
-   VulkanRenderer(Vulkan*, const Descriptor&);
+   VulkanRenderer(Vulkan*, const Neat&);
    ~VulkanRenderer();
 
    void Create(Verb&);

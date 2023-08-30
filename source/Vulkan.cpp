@@ -76,7 +76,7 @@ LANGULUS_DEFINE_MODULE(
 /// Vulkan module construction                                                
 ///   @param system - the system that owns the module instance                
 ///   @param handle - the library handle                                      
-Vulkan::Vulkan(Runtime* runtime, const Descriptor&)
+Vulkan::Vulkan(Runtime* runtime, const Neat&)
    : A::GraphicsModule {MetaOf<Vulkan>(), runtime}
    , mRenderers {this} {
    Logger::Verbose(Self(), "Initializing...");
@@ -197,7 +197,7 @@ Vulkan::Vulkan(Runtime* runtime, const Descriptor&)
 
    // Pick good hardware                                                
    mAdapter = PickAdapter();
-   if (!mAdapter)
+   if (not mAdapter)
       LANGULUS_THROW(Graphics, "Error picking graphics adapter - vulkan module is unusable");
 
    // Show some info                                                    
@@ -218,7 +218,7 @@ Vulkan::Vulkan(Runtime* runtime, const Descriptor&)
 
    uint32_t computeIndex = UINT32_MAX;
    for (uint32_t i = 0; i < queueCount; i++) {
-      if (queueProperties[i].queueFlags & VK_QUEUE_COMPUTE_BIT && computeIndex == UINT32_MAX) {
+      if (queueProperties[i].queueFlags & VK_QUEUE_COMPUTE_BIT and computeIndex == UINT32_MAX) {
          mSupportsComputation = true;
          computeIndex = i;
       }
@@ -328,13 +328,13 @@ unsigned Vulkan::RateDevice(const VkPhysicalDevice& device) const {
    score += deviceProperties.limits.maxImageDimension2D;
 
    // Application can't function without geometry shaders               
-   if (!deviceFeatures.geometryShader) {
+   if (not deviceFeatures.geometryShader) {
       Logger::Error(Self(), "Device doesn't support geometry shaders");
       return 0;
    }
 
    // Application can't function without anistropic filtering           
-   if (!deviceFeatures.samplerAnisotropy) {
+   if (not deviceFeatures.samplerAnisotropy) {
       Logger::Error(Self(), "Device doesn't support anistropic filtering");
       return 0;
    }

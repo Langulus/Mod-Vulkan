@@ -16,5 +16,5 @@ struct VulkanLight : A::Graphics, ProducedFrom<VulkanLayer> {
    LANGULUS(ABSTRACT) false;
    LANGULUS_BASES(A::Graphics);
 
-   VulkanLight(VulkanLayer*, const Descriptor&);
+   VulkanLight(VulkanLayer*, const Neat&);
 };

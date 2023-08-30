@@ -12,7 +12,7 @@
 /// Descriptor constructor                                                    
 ///   @param producer - the renderer producer                                 
 ///   @param descriptor - the renderer descriptor                             
-VulkanRenderer::VulkanRenderer(Vulkan* producer, const Descriptor& descriptor)
+VulkanRenderer::VulkanRenderer(Vulkan* producer, const Neat& descriptor)
    : Renderer {MetaOf<VulkanRenderer>(), descriptor}
    , ProducedFrom {producer, descriptor}
    , mSwapchain {*this}
@@ -74,7 +74,7 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, const Descriptor& descriptor)
          mTransferIndex = i;
    }
 
-   if (mGraphicIndex == UINT32_MAX || mPresentIndex == UINT32_MAX) {
+   if (mGraphicIndex == UINT32_MAX or mPresentIndex == UINT32_MAX) {
       Destroy();
       LANGULUS_THROW(Graphics,
          "Your graphical adapter doesn't support rendering or presenting to screen");
@@ -92,7 +92,7 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, const Descriptor& descriptor)
          "Your graphical adapter doesn't support memory transfer operations. "
          "Is this even possible? Aborting just in case, because you can't use your VRAM...");
    }
-   else if (mTransferIndex == mGraphicIndex || mTransferIndex == mPresentIndex) {
+   else if (mTransferIndex == mGraphicIndex or mTransferIndex == mPresentIndex) {
       Logger::Warning(Self(),
          "Performance warning: you do not have a dedicated memory transfer queue. "
          "This means that VRAM copy operations might wait for other GPU operations to finish first");
@@ -238,7 +238,7 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, const Descriptor& descriptor)
 
 /// Destroy anything created                                                  
 void VulkanRenderer::Destroy() {
-   if (!mDevice)
+   if (not mDevice)
       return;
 
    // Destroy anything that was produced by the VkDevice                
@@ -321,7 +321,7 @@ void VulkanRenderer::Draw() {
    }
 
    // The actual drawing starts here                                    
-   if (!mSwapchain.StartRendering())
+   if (not mSwapchain.StartRendering())
       return;
 
    RenderConfig config {

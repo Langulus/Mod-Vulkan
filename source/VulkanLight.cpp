@@ -10,7 +10,7 @@
 /// Descriptor constructor                                                    
 ///   @param producer - the light producer                                    
 ///   @param descriptor - the light descriptor                                
-VulkanLight::VulkanLight(VulkanLayer* producer, const Descriptor& descriptor)
+VulkanLight::VulkanLight(VulkanLayer* producer, const Neat& descriptor)
    : Graphics {MetaOf<VulkanLight>(), descriptor}
    , ProducedFrom {producer, descriptor} {
    TODO();

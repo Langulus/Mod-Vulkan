@@ -14,21 +14,21 @@
 /// Descriptor constructor                                                    
 ///   @param producer - the pipeline producer                                 
 ///   @param descriptor - the pipeline descriptor                             
-VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, const Descriptor& descriptor)
+VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, const Neat& descriptor)
    : Graphics {MetaOf<VulkanPipeline>(), descriptor}
    , ProducedFrom {producer, descriptor} {
    VERBOSE_PIPELINE("Initializing graphics pipeline from: ", descriptor);
    mSubscribers.New();
    mGeometries.New();
 
-   descriptor.ForEachDeep([&](const VulkanLayer& layer) {
+   descriptor.ForEach([this](const VulkanLayer& layer) {
       // Add layer preferences                                          
       if (layer.GetStyle() & VulkanLayer::Hierarchical)
          mDepth = false;
    });
 
    const bool predefined = 0 !=
-      descriptor.ForEachDeep([this](const A::Material& material) {
+      descriptor.ForEach([this](const A::Material& material) {
          // Create from predefined material generator                   
          GenerateShaders(material);
          return Flow::Break;
@@ -37,7 +37,7 @@ VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, const Descriptor& descr
    if (not predefined) {
       // We must generate the material ourselves                        
       Construct material;
-      descriptor.ForEachDeep(
+      descriptor.ForEach(
          [&](const A::File& file) {
             // Create from file                                         
             material = FromFile(file);
@@ -433,12 +433,12 @@ void VulkanPipeline::CreateDescriptorLayoutAndSet(
 
 /// Create a new sampler set                                                  
 void VulkanPipeline::CreateNewSamplerSet() {
-   if (!mSamplersUBOLayout)
+   if (not mSamplersUBOLayout)
       return;
 
    // If last two samplers match, there is not need to create new one   
    // Just reuse the last one                                           
-   if (mSamplerUBO.GetCount() > 1 && mSamplerUBO[-1] == mSamplerUBO[-2])
+   if (mSamplerUBO.GetCount() > 1 and mSamplerUBO[-1] == mSamplerUBO[-2])
       return;
 
    // Copy the previous sampler set                                     
@@ -469,7 +469,7 @@ void VulkanPipeline::CreateNewSamplerSet() {
 void VulkanPipeline::CreateNewGeometrySet() {
    // If last two geometries match, there is not need to create new one 
    // Just reuse the last one                                           
-   if (mGeometries.GetCount() > 1 && mGeometries[-1] == mGeometries[-2])
+   if (mGeometries.GetCount() > 1 and mGeometries[-1] == mGeometries[-2])
       return;
 
    // For now, only cached geometry is kept, no real set of             
@@ -482,7 +482,7 @@ void VulkanPipeline::CreateNewGeometrySet() {
 /// Create uniform buffers                                                    
 void VulkanPipeline::CreateUniformBuffers() {
    const auto device = mProducer->mDevice;
-   if (!mUniforms)
+   if (not mUniforms)
       LANGULUS_THROW(Graphics, "No uniforms/inputs provided by generator");
 
    // Create descriptor pools                                           
@@ -563,7 +563,7 @@ void VulkanPipeline::CreateUniformBuffers() {
             ubo.mUniforms.Emplace(0, trait);
          }
 
-         if (!ubo.mUniforms)
+         if (not ubo.mUniforms)
             continue;
 
          // Find out where the UBO is used                              
@@ -596,7 +596,7 @@ void VulkanPipeline::CreateUniformBuffers() {
       // Add relevant inputs                                            
       SamplerUBO ubo;
       for (const auto& trait : mUniforms[PerRenderable.GetInputIndex()]) {
-         if (!trait.template TraitIs<Traits::Image>())
+         if (not trait.template TraitIs<Traits::Image>())
             continue;
          ubo.mUniforms << Uniform {0, trait};
       }

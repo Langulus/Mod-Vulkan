@@ -120,7 +120,7 @@ protected:
    Style mStyle = Style::Default;
 
 public:
-   VulkanLayer(VulkanRenderer*, const Descriptor&);
+   VulkanLayer(VulkanRenderer*, const Neat&);
 
    void Create(Verb&);
    bool Generate(PipelineSet&);

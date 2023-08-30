@@ -12,7 +12,7 @@
 /// Descriptor constructor                                                    
 ///   @param producer - the camera producer                                   
 ///   @param descriptor - the camera descriptor                               
-VulkanLayer::VulkanLayer(VulkanRenderer* producer, const Descriptor& descriptor)
+VulkanLayer::VulkanLayer(VulkanRenderer* producer, const Neat& descriptor)
    : A::Layer {MetaOf<VulkanLayer>(), descriptor} 
    , ProducedFrom {producer, descriptor}
    , mCameras {this}
@@ -51,7 +51,7 @@ void VulkanLayer::CompileCameras() {
 VulkanPipeline* VulkanLayer::CompileInstance(
    const VulkanRenderable* renderable, const A::Instance* instance, LOD& lod
 ) {
-   if (!instance) {
+   if (not instance) {
       // No instances, so culling based only on default level           
       if (lod.mLevel != Level::Default)
          return nullptr;
@@ -66,7 +66,7 @@ VulkanPipeline* VulkanLayer::CompileInstance(
 
    // Get relevant pipeline                                             
    auto pipeline = renderable->GetOrCreatePipeline(lod, this);
-   if (!pipeline)
+   if (not pipeline)
       return nullptr;
 
    // Get relevant geometry                                             
@@ -103,7 +103,7 @@ Count VulkanLayer::CompileThing(const Thing* thing, LOD& lod, PipelineSet& pipes
    // Compile the instances associated with these renderables           
    Count renderedInstances {};
    for (auto renderable : relevantRenderables) {
-      if (!renderable->mInstances) {
+      if (not renderable->mInstances) {
          // Imagine a default instance                                  
          auto pipeline = CompileInstance(renderable, nullptr, lod);
          if (pipeline) {
@@ -203,7 +203,7 @@ Count VulkanLayer::CompileLevelBatched(
    // Iterate all renderables                                           
    Count renderedInstances {};
    for (const auto& renderable : mRenderables) {
-      if (!renderable.mInstances) {
+      if (not renderable.mInstances) {
          auto pipeline = CompileInstance(&renderable, nullptr, lod);
          if (pipeline) {
             pipeline->PushUniforms<PerInstance>();
@@ -260,7 +260,7 @@ Count VulkanLayer::CompileLevels() {
       mSubscriberCountPerCamera.New(1);
    }
 
-   if (!mCameras) {
+   if (not mCameras) {
       // No camera, so just render default level on the whole screen    
       PipelineSet pipesPerCamera;
       if (mStyle & Style::Hierarchical)
@@ -347,7 +347,7 @@ void VulkanLayer::RenderBatched(const RenderConfig& config) const {
    // Iterate all valid cameras                                         
    TUnorderedMap<const VulkanPipeline*, Count> done;
 
-   if (!mRelevantCameras) {
+   if (not mRelevantCameras) {
       VkViewport viewport {};
       viewport.width = GetProducer()->mResolution[0];
       viewport.height = GetProducer()->mResolution[1];
@@ -411,7 +411,7 @@ void VulkanLayer::RenderHierarchical(const RenderConfig& config) const {
    auto subscriberCountPerLevel = &mSubscriberCountPerLevel[0];
 
    // Iterate all valid cameras                                         
-   if (!mRelevantCameras) {
+   if (not mRelevantCameras) {
       VkViewport viewport {};
       viewport.width = GetProducer()->mResolution[0];
       viewport.height = GetProducer()->mResolution[1];
