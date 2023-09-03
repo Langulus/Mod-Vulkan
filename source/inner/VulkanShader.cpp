@@ -39,7 +39,7 @@ VulkanShader::VulkanShader(VulkanRenderer* producer, const Any& descriptor)
       [this](const A::Material* material) {
          // Access input mappings                                       
          const auto uniforms = material->template GetDataList<Traits::Trait>();
-         if (uniforms && !*uniforms) {
+         if (uniforms and not *uniforms) {
             // Add relevant inputs                                      
             const auto index = Rate(Rate::StagesBegin + mStage).GetInputIndex();
             auto& inputs = uniforms->template As<TAny<Trait>>(index);
@@ -155,22 +155,22 @@ void VulkanShader::AddInput(const Trait& input) {
    VkFormat vkt = VK_FORMAT_UNDEFINED;
 
    // Single precision                                                  
-   if (meta->GetBase<Vec4f>(0, inputBase) && inputBase.mBinaryCompatible)
+   if (meta->GetBase<Vec4f>(0, inputBase) and inputBase.mBinaryCompatible)
       vkt = AsVkFormat(inputBase.mType);
-   else if (meta->GetBase<Vec3f>(0, inputBase) && inputBase.mBinaryCompatible)
+   else if (meta->GetBase<Vec3f>(0, inputBase) and inputBase.mBinaryCompatible)
       vkt = AsVkFormat(inputBase.mType);
-   else if (meta->GetBase<Vec2f>(0, inputBase) && inputBase.mBinaryCompatible)
+   else if (meta->GetBase<Vec2f>(0, inputBase) and inputBase.mBinaryCompatible)
       vkt = AsVkFormat(inputBase.mType);
-   else if (meta->GetBase<Float>(0, inputBase) && inputBase.mBinaryCompatible)
+   else if (meta->GetBase<Float>(0, inputBase) and inputBase.mBinaryCompatible)
       vkt = AsVkFormat(inputBase.mType);
    // Double precision                                                  
-   else if (meta->GetBase<Vec4d>(0, inputBase) && inputBase.mBinaryCompatible)
+   else if (meta->GetBase<Vec4d>(0, inputBase) and inputBase.mBinaryCompatible)
       vkt = AsVkFormat(inputBase.mType);
-   else if (meta->GetBase<Vec3d>(0, inputBase) && inputBase.mBinaryCompatible)
+   else if (meta->GetBase<Vec3d>(0, inputBase) and inputBase.mBinaryCompatible)
       vkt = AsVkFormat(inputBase.mType);
-   else if (meta->GetBase<Vec2d>(0, inputBase) && inputBase.mBinaryCompatible)
+   else if (meta->GetBase<Vec2d>(0, inputBase) and inputBase.mBinaryCompatible)
       vkt = AsVkFormat(inputBase.mType);
-   else if (meta->GetBase<Double>(0, inputBase) && inputBase.mBinaryCompatible)
+   else if (meta->GetBase<Double>(0, inputBase) and inputBase.mBinaryCompatible)
       vkt = AsVkFormat(inputBase.mType);
    
    if (vkt == VK_FORMAT_UNDEFINED)
