@@ -15,7 +15,7 @@
 /// Descriptor constructor                                                    
 ///   @param producer - the shader producer                                   
 ///   @param descriptor - the shader descriptor                               
-VulkanShader::VulkanShader(VulkanRenderer* producer, const Any& descriptor)
+VulkanShader::VulkanShader(VulkanRenderer* producer, const Neat& descriptor)
    : Graphics {MetaOf<VulkanShader>(), descriptor} 
    , ProducedFrom {producer, descriptor} {
    // Configure the shader, but don't compile it yet                    

@@ -36,7 +36,7 @@ target_include_directories (LangulusModVulkan
     PRIVATE     ${Vulkan_INCLUDE_DIRS}
 )
 
-if(LANGULUS_ENABLE_TESTING)
+if(LANGULUS_TESTING)
     enable_testing()
 	add_subdirectory(test)
 endif()

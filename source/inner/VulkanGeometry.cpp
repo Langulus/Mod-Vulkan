@@ -34,7 +34,7 @@ inline bool IsVertexData(const Block& container, bool& indexData) {
 /// Descriptor constructor                                                    
 ///   @param producer - the producer of the unit                              
 ///   @param descriptor - the unit descriptor                                 
-VulkanGeometry::VulkanGeometry(VulkanRenderer* producer, const Any& descriptor)
+VulkanGeometry::VulkanGeometry(VulkanRenderer* producer, const Neat& descriptor)
    : A::Graphics {MetaOf<VulkanGeometry>(), descriptor}
    , ProducedFrom {producer, descriptor} {
    // Scan the descriptor                                               

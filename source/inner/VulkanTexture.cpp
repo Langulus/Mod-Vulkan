@@ -13,7 +13,7 @@
 /// VRAM texture constructor                                                  
 ///   @param producer - the texture producer                                  
 ///   @param descriptor - the texture descriptor                              
-VulkanTexture::VulkanTexture(VulkanRenderer* producer, const Any& descriptor)
+VulkanTexture::VulkanTexture(VulkanRenderer* producer, const Neat& descriptor)
    : A::Graphics {MetaOf<VulkanTexture>(), descriptor}
    , ProducedFrom {producer, descriptor} {
    descriptor.ForEachDeep([&](const A::Image& content) {
