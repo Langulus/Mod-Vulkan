@@ -50,7 +50,7 @@ void VulkanCamera::Compile() {
       constexpr auto vulkanAdapter = Mat4::Scalar(
          Vec3 {Real {1}, Real {-1}, Real {-1}}
       );
-      mProjection = vulkanAdapter * Mat4::PerspectiveFOV(
+      mProjection = vulkanAdapter * A::Matrix::PerspectiveFOV(
          mFOV, mAspectRatio, mViewport.mMin[2], mViewport.mMax[2]
       );
    }
@@ -66,7 +66,7 @@ void VulkanCamera::Compile() {
       //     v                                                          
       //   +Aspect*Y                                                    
       //                                                                
-      mProjection = Mat4::Orthographic(
+      mProjection = A::Matrix::Orthographic(
          mViewport.mMax[0], mViewport.mMax[1], 
          mViewport.mMin[2], mViewport.mMax[2]
       );
