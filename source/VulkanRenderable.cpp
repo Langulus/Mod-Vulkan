@@ -6,6 +6,7 @@
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
 #include "Vulkan.hpp"
+#include <Math/Level.hpp>
 
 
 /// Descriptor constructor                                                    

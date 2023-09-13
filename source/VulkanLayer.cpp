@@ -7,6 +7,7 @@
 ///                                                                           
 #include "Vulkan.hpp"
 #include <Entity/Thing.hpp>
+#include <Math/Level.hpp>
 
 
 /// Descriptor constructor                                                    

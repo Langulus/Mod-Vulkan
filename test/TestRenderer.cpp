@@ -9,16 +9,16 @@
 #include <Flow/Time.hpp>
 #include <Flow/Verbs/Interpret.hpp>
 #include <Flow/Verbs/Compare.hpp>
-#include <Math/Colors.hpp>
-#include <Math/Primitives/TBox.hpp>
+#include <Math/Color.hpp>
+#include <Math/Primitives/Box.hpp>
 #include <catch2/catch.hpp>
-
 
 /// See https://github.com/catchorg/Catch2/blob/devel/docs/tostring.md        
 CATCH_TRANSLATE_EXCEPTION(::Langulus::Exception const& ex) {
    const Text serialized {ex};
    return ::std::string {Token {serialized}};
 }
+
 
 SCENARIO("Renderer creation inside a window", "[renderer]") {
    Allocator::State memoryState;

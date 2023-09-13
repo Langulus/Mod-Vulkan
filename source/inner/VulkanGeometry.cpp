@@ -6,6 +6,8 @@
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
 #include "../Vulkan.hpp"
+#include <Math/Normal.hpp>
+#include <Math/Sampler.hpp>
 
 #define VERBOSE_VKGEOMETRY(...) //Logger::Verbose(Self(), __VA_ARGS__)
 
@@ -16,9 +18,9 @@
 ///   @return true if container has vectors                                   
 inline bool IsVertexData(const Block& container, bool& indexData) {
    if (  container.CastsTo<A::Topology>()
-      || container.CastsTo<A::Normal>()
-      || container.CastsTo<A::Sampler>()
-      || container.CastsTo<A::Color>()) {
+      or container.CastsTo<A::Normal>()
+      or container.CastsTo<A::Sampler>()
+      or container.CastsTo<A::Color>()) {
       indexData = false;
       return true;
    }

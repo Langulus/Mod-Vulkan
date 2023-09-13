@@ -7,8 +7,7 @@
 ///                                                                           
 #pragma once
 #include <Entity/External.hpp>
-#include <Math/Colors.hpp>
-#include <Math/Primitives.hpp>
+#include <Math/Color.hpp>
 
 LANGULUS_EXCEPTION(Graphics);
 

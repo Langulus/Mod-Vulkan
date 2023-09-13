@@ -13,9 +13,9 @@
 #include "inner/VulkanTexture.hpp"
 #include "inner/VulkanShader.hpp"
 #include "inner/VulkanSwapchain.hpp"
-#include <Math/Gradients.hpp>
 #include <Flow/Verbs/Create.hpp>
 #include <Flow/Verbs/Interpret.hpp>
+#include <Math/Gradient.hpp>
 
 
 ///                                                                           
