@@ -8,6 +8,8 @@
 #include "Vulkan.hpp"
 #include <Entity/Thing.hpp>
 #include <Math/Level.hpp>
+#include <Math/Primitives/Frustum.hpp>
+#include <Math/Primitives/Plane.hpp>
 
 
 /// Descriptor constructor                                                    
