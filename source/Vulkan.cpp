@@ -187,10 +187,10 @@ Vulkan::Vulkan(Runtime* runtime, const Neat&)
 
       // Get the debug relay extension                                  
       auto func = (PFN_vkCreateDebugReportCallbackEXT)
-         vkGetInstanceProcAddr(mInstance, "vkCreateDebugReportCallbackEXT");
+         vkGetInstanceProcAddr(*mInstance, "vkCreateDebugReportCallbackEXT");
 
       if (func)
-         func(mInstance, &relayInfo, nullptr, &mLogRelay);
+         func(*mInstance, &relayInfo, nullptr, &mLogRelay);
       else
          LANGULUS_THROW(Graphics, "vkCreateDebugReportCallbackEXT failed - try building in release mode");
    #endif
@@ -202,19 +202,19 @@ Vulkan::Vulkan(Runtime* runtime, const Neat&)
 
    // Show some info                                                    
    VkPhysicalDeviceProperties adapter_info;
-   vkGetPhysicalDeviceProperties(mAdapter, &adapter_info);
+   vkGetPhysicalDeviceProperties(*mAdapter, &adapter_info);
    VERBOSE_VULKAN(Logger::Verbose(Self(),
       "Best rated adapter: ", adapter_info.deviceName));
 
    // Check adapter functionality                                       
    uint32_t queueCount;
-   vkGetPhysicalDeviceQueueFamilyProperties(mAdapter, &queueCount, nullptr);
+   vkGetPhysicalDeviceQueueFamilyProperties(*mAdapter, &queueCount, nullptr);
    if (queueCount == 0)
       LANGULUS_THROW(Graphics, "vkGetPhysicalDeviceQueueFamilyProperties returned no queues");
 
    TAny<VkQueueFamilyProperties> queueProperties;
    queueProperties.New(queueCount);
-   vkGetPhysicalDeviceQueueFamilyProperties(mAdapter, &queueCount, queueProperties.GetRaw());
+   vkGetPhysicalDeviceQueueFamilyProperties(*mAdapter, &queueCount, queueProperties.GetRaw());
 
    uint32_t computeIndex = UINT32_MAX;
    for (uint32_t i = 0; i < queueCount; i++) {
@@ -269,14 +269,14 @@ Vulkan::Vulkan(Runtime* runtime, const Neat&)
    #endif
 
    // Create the computation device                                     
-   if (vkCreateDevice(mAdapter, &deviceInfo, nullptr, &mDevice.Get())) {
+   if (vkCreateDevice(*mAdapter, &deviceInfo, nullptr, &mDevice.Get())) {
       LANGULUS_THROW(Graphics,
          "Could not create logical device for rendering"
          " - vulkan module is unusable");
    }
 
    // Get computation queue                                             
-   vkGetDeviceQueue(mDevice, computeIndex, 0, &mComputer.Get());
+   vkGetDeviceQueue(*mDevice, computeIndex, 0, &mComputer.Get());
 
    Logger::Verbose(Self(), "Initialized");
 }
@@ -287,21 +287,21 @@ Vulkan::~Vulkan() {
 
    // Destroy the computation device                                    
    if (mDevice) {
-      vkDestroyDevice(mDevice, nullptr);
+      vkDestroyDevice(*mDevice, nullptr);
       mDevice = nullptr;
    }
 
    #if LANGULUS_DEBUG()
       // Destroy debug layers                                           
       auto func = (PFN_vkDestroyDebugReportCallbackEXT)
-         vkGetInstanceProcAddr(mInstance, "vkDestroyDebugReportCallbackEXT");
+         vkGetInstanceProcAddr(*mInstance, "vkDestroyDebugReportCallbackEXT");
       if (func)
-         func(mInstance, mLogRelay, nullptr);
+         func(*mInstance, mLogRelay, nullptr);
    #endif
 
    // Finally, destroy the vulkan instance                              
    if (mInstance) {
-      vkDestroyInstance(mInstance, nullptr);
+      vkDestroyInstance(*mInstance, nullptr);
       mInstance = nullptr;
    }
 }
@@ -346,7 +346,7 @@ unsigned Vulkan::RateDevice(const VkPhysicalDevice& device) const {
 ///   @return the physical device with the best rating                        
 VkPhysicalDevice Vulkan::PickAdapter() const {
    uint32_t deviceCount {};
-   vkEnumeratePhysicalDevices(mInstance, &deviceCount, nullptr);
+   vkEnumeratePhysicalDevices(*mInstance, &deviceCount, nullptr);
 
    if (deviceCount == 0) {
       Logger::Error(Self(), 
@@ -357,7 +357,7 @@ VkPhysicalDevice Vulkan::PickAdapter() const {
    }
 
    std::vector<VkPhysicalDevice> devices(deviceCount);
-   vkEnumeratePhysicalDevices(mInstance, &deviceCount, devices.data());
+   vkEnumeratePhysicalDevices(*mInstance, &deviceCount, devices.data());
 
    // Rate all devices, pick best                                       
    Offset best_rated {};

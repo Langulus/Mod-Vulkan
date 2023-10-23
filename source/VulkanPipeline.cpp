@@ -46,7 +46,7 @@ VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, const Neat& descriptor)
          [&](const Text& text) {
             // Create from any text, including filenames and code       
             const auto file = GetRuntime()->GetFile(text);
-            material = file ? FromFile(*file) : FromCode(text);
+            material = file ? FromFile(**file) : FromCode(text);
             return Flow::Break;
          },
          [&](const A::Mesh& mesh) {
@@ -164,18 +164,18 @@ VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, const Neat& descriptor)
 
    // Create the pipeline layouts                                       
    std::vector<UBOLayout> relevantLayouts {
-      mStaticUBOLayout, mDynamicUBOLayout
+      *mStaticUBOLayout, *mDynamicUBOLayout
    };
 
    if (mSamplersUBOLayout)
-      relevantLayouts.push_back(mSamplersUBOLayout);
+      relevantLayouts.push_back(*mSamplersUBOLayout);
 
    VkPipelineLayoutCreateInfo pipelineLayoutInfo {};
    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
    pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(relevantLayouts.size());
    pipelineLayoutInfo.pSetLayouts = relevantLayouts.data();
 
-   if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &mPipeLayout.Get()))
+   if (vkCreatePipelineLayout(*device, &pipelineLayoutInfo, nullptr, &mPipeLayout.Get()))
       LANGULUS_THROW(Graphics, "Can't create pipeline layout");
 
    // Allow viewport to be dynamically set                              
@@ -226,12 +226,12 @@ VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, const Neat& descriptor)
    pipelineInfo.pVertexInputState = &mInput;
    pipelineInfo.pInputAssemblyState = &mAssembly;
    pipelineInfo.pTessellationState = nullptr;
-   pipelineInfo.layout = mPipeLayout;
-   pipelineInfo.renderPass = mProducer->mPass;
+   pipelineInfo.layout = *mPipeLayout;
+   pipelineInfo.renderPass = *mProducer->mPass;
    pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
    pipelineInfo.pDynamicState = &dynamicState;
 
-   if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &mPipeline.Get()))
+   if (vkCreateGraphicsPipelines(*device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &mPipeline.Get()))
       LANGULUS_THROW(Graphics, "Can't create graphical pipeline");
 }
 
@@ -250,33 +250,33 @@ VulkanPipeline::~VulkanPipeline() {
    // Destroy uniform buffer object pool                                
    const auto device = mProducer->mDevice;
    if (mUBOPool) {
-      vkDestroyDescriptorPool(device, mUBOPool, nullptr);
+      vkDestroyDescriptorPool(*device, *mUBOPool, nullptr);
       mUBOPool.Reset();
    }
 
    // Destroy pipeline                                                  
    if (mPipeline) {
-      vkDestroyPipeline(device, mPipeline, nullptr);
+      vkDestroyPipeline(*device, *mPipeline, nullptr);
       mPipeline.Reset();
    }
 
    // Destroy pipeline layout                                           
    if (mPipeLayout) {
-      vkDestroyPipelineLayout(device, mPipeLayout, nullptr);
+      vkDestroyPipelineLayout(*device, *mPipeLayout, nullptr);
       mPipeLayout.Reset();
    }
 
    // Destroy every UBO layout                                          
    if (mStaticUBOLayout) {
-      vkDestroyDescriptorSetLayout(device, mStaticUBOLayout, nullptr);
+      vkDestroyDescriptorSetLayout(*device, *mStaticUBOLayout, nullptr);
       mStaticUBOLayout.Reset();
    }
    if (mDynamicUBOLayout) {
-      vkDestroyDescriptorSetLayout(device, mDynamicUBOLayout, nullptr);
+      vkDestroyDescriptorSetLayout(*device, *mDynamicUBOLayout, nullptr);
       mDynamicUBOLayout.Reset();
    }
    if (mSamplersUBOLayout) {
-      vkDestroyDescriptorSetLayout(device, mSamplersUBOLayout, nullptr);
+      vkDestroyDescriptorSetLayout(*device, *mSamplersUBOLayout, nullptr);
       mSamplersUBOLayout.Reset();
    }
 }
@@ -417,17 +417,17 @@ void VulkanPipeline::CreateDescriptorLayoutAndSet(
    layoutInfo.bindingCount = static_cast<uint32_t>(bindings.GetCount());
    layoutInfo.pBindings = bindings.GetRaw();
 
-   if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, layout))
+   if (vkCreateDescriptorSetLayout(*device, &layoutInfo, nullptr, layout))
       LANGULUS_THROW(Graphics, "vkCreateDescriptorSetLayout failed");
 
    // Create a descriptor set                                           
    VkDescriptorSetAllocateInfo allocInfo {};
    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-   allocInfo.descriptorPool = mUBOPool;
+   allocInfo.descriptorPool = *mUBOPool;
    allocInfo.descriptorSetCount = 1;
    allocInfo.pSetLayouts = layout;
 
-   if (vkAllocateDescriptorSets(device, &allocInfo, set))
+   if (vkAllocateDescriptorSets(*device, &allocInfo, set))
       LANGULUS_THROW(Graphics, "vkAllocateDescriptorSets failed");
 }
 
@@ -450,11 +450,11 @@ void VulkanPipeline::CreateNewSamplerSet() {
    // Create a new descriptor set                                       
    VkDescriptorSetAllocateInfo allocInfo {};
    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-   allocInfo.descriptorPool = mUBOPool;
+   allocInfo.descriptorPool = *mUBOPool;
    allocInfo.descriptorSetCount = 1;
    allocInfo.pSetLayouts = &mSamplersUBOLayout.Get();
 
-   if (vkAllocateDescriptorSets(mProducer->mDevice, &allocInfo, &ubo.mSamplersUBOSet.Get())) {
+   if (vkAllocateDescriptorSets(*mProducer->mDevice, &allocInfo, &ubo.mSamplersUBOSet.Get())) {
       LANGULUS_THROW(Graphics,
          "vkAllocateDescriptorSets failed - either reserve more "
          "items in descriptor pool, or make more pools on demand"
@@ -502,7 +502,7 @@ void VulkanPipeline::CreateUniformBuffers() {
    pool.maxSets = 8;
    pool.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
-   if (vkCreateDescriptorPool(device, &pool, nullptr, &mUBOPool.Get())) {
+   if (vkCreateDescriptorPool(*device, &pool, nullptr, &mUBOPool.Get())) {
       LANGULUS_THROW(Graphics,
          "Can't create UBO pool, so creation of vulkan material fails");
    }
@@ -604,7 +604,7 @@ void VulkanPipeline::CreateUniformBuffers() {
       if (ubo.mUniforms) {
          // Set any default samplers if available                       
          Bindings bindings;
-         ubo.Create(mProducer, mUBOPool);
+         ubo.Create(mProducer, *mUBOPool);
 
          for (auto& uniform : ubo.mUniforms) {
             // Find out where the UBO is used                           
@@ -648,14 +648,14 @@ void VulkanPipeline::UpdateUniformBuffers() const {
    // Gather required static updates                                    
    uint32_t binding {};
    for (auto& it : mStaticUBO) {
-      it.Update(binding, mStaticUBOSet, writes);
+      it.Update(binding, *mStaticUBOSet, writes);
       ++binding;
    }
 
    // Gather required dynamic updates                                   
    binding = 0;
    for (auto& it : mDynamicUBO) {
-      it.Update(binding, mDynamicUBOSet, writes);
+      it.Update(binding, *mDynamicUBOSet, writes);
       ++binding;
    }
 
@@ -666,7 +666,7 @@ void VulkanPipeline::UpdateUniformBuffers() const {
    if (writes) {
       // Commit all gathered updates to VRAM                            
       vkUpdateDescriptorSets(
-         mProducer->mDevice,
+         *mProducer->mDevice,
          static_cast<uint32_t>(writes.GetCount()),
          writes.GetRaw(), 0, nullptr
       );
@@ -681,14 +681,14 @@ Count VulkanPipeline::RenderLevel(const Offset& offset) const {
    vkCmdBindPipeline(
       mProducer->GetRenderCB(), 
       VK_PIPELINE_BIND_POINT_GRAPHICS,
-      mPipeline
+      *mPipeline
    );
 
    // Bind static uniform buffer (set 0)                                
    vkCmdBindDescriptorSets(
       mProducer->GetRenderCB(),
       VK_PIPELINE_BIND_POINT_GRAPHICS,
-      mPipeLayout, 0, 1, &mStaticUBOSet.Get(), 0, nullptr
+      *mPipeLayout, 0, 1, &mStaticUBOSet.Get(), 0, nullptr
    );
 
    // Get the initial state to check for interrupts                     
@@ -710,7 +710,7 @@ Count VulkanPipeline::RenderLevel(const Offset& offset) const {
       vkCmdBindDescriptorSets(
          mProducer->GetRenderCB(),
          VK_PIPELINE_BIND_POINT_GRAPHICS,
-         mPipeLayout, 1, 1, &mDynamicUBOSet.Get(),
+         *mPipeLayout, 1, 1, &mDynamicUBOSet.Get(),
          static_cast<uint32_t>(mRelevantDynamicDescriptors.GetCount()),
          sub.offsets
       );
@@ -724,7 +724,7 @@ Count VulkanPipeline::RenderLevel(const Offset& offset) const {
          vkCmdBindDescriptorSets(
             mProducer->GetRenderCB(),
             VK_PIPELINE_BIND_POINT_GRAPHICS,
-            mPipeLayout, 2, 1, 
+            *mPipeLayout, 2, 1, 
             &mSamplerUBO[sub.samplerSet].mSamplersUBOSet.Get(),
             0, nullptr
          );
@@ -756,21 +756,21 @@ void VulkanPipeline::RenderSubscriber(const PipeSubscriber& sub) const {
    vkCmdBindPipeline(
       mProducer->GetRenderCB(), 
       VK_PIPELINE_BIND_POINT_GRAPHICS, 
-      mPipeline
+      *mPipeline
    );
 
    // Bind static uniform buffer (set 0)                                
    vkCmdBindDescriptorSets(
       mProducer->GetRenderCB(),
       VK_PIPELINE_BIND_POINT_GRAPHICS,
-      mPipeLayout, 0, 1, &mStaticUBOSet.Get(), 0, nullptr
+      *mPipeLayout, 0, 1, &mStaticUBOSet.Get(), 0, nullptr
    );
 
    // Bind dynamic uniform buffers (set 1)                              
    vkCmdBindDescriptorSets(
       mProducer->GetRenderCB(),
       VK_PIPELINE_BIND_POINT_GRAPHICS,
-      mPipeLayout, 1, 1, &mDynamicUBOSet.Get(),
+      *mPipeLayout, 1, 1, &mDynamicUBOSet.Get(),
       static_cast<uint32_t>(mRelevantDynamicDescriptors.GetCount()),
       sub.offsets
    );
@@ -784,7 +784,7 @@ void VulkanPipeline::RenderSubscriber(const PipeSubscriber& sub) const {
       vkCmdBindDescriptorSets(
          mProducer->GetRenderCB(),
          VK_PIPELINE_BIND_POINT_GRAPHICS,
-         mPipeLayout, 2, 1, 
+         *mPipeLayout, 2, 1, 
          &mSamplerUBO[sub.samplerSet].mSamplersUBOSet.Get(),
          0, nullptr
       );

@@ -30,7 +30,7 @@ VulkanRenderer* VulkanRenderable::GetRenderer() const noexcept {
 ///   @return the VRAM geometry or nullptr if content is not available        
 VulkanGeometry* VulkanRenderable::GetGeometry(const LOD& lod) const {
    const auto i = lod.GetAbsoluteIndex();
-   if (!mLOD[i].mGeometry && mGeometryContent) {
+   if (not mLOD[i].mGeometry and mGeometryContent) {
       // Cache geometry to VRAM                                         
       Verbs::Create creator {
          Construct::From<VulkanGeometry>(mGeometryContent->GetLOD(lod))
@@ -39,7 +39,7 @@ VulkanGeometry* VulkanRenderable::GetGeometry(const LOD& lod) const {
       mLOD[i].mGeometry = creator->template As<VulkanGeometry*>();
    }
 
-   return mLOD[i].mGeometry;
+   return *mLOD[i].mGeometry;
 }
 
 /// Get VRAM texture corresponding to an octave of this renderable            
@@ -48,7 +48,7 @@ VulkanGeometry* VulkanRenderable::GetGeometry(const LOD& lod) const {
 ///   @return the VRAM texture or nullptr if content is not available         
 VulkanTexture* VulkanRenderable::GetTexture(const LOD& lod) const {
    const auto i = lod.GetAbsoluteIndex();
-   if (!mLOD[i].mTexture && mTextureContent) {
+   if (not mLOD[i].mTexture and mTextureContent) {
       // Cache texture to VRAM                                          
       Verbs::Create creator {
          Construct::From<VulkanTexture>(mTextureContent->GetLOD(lod))
@@ -57,7 +57,7 @@ VulkanTexture* VulkanRenderable::GetTexture(const LOD& lod) const {
       mLOD[i].mTexture = creator->template As<VulkanTexture*>();
    }
 
-   return mLOD[i].mTexture;
+   return *mLOD[i].mTexture;
 }
 
 /// Create GPU pipeline able to utilize geometry, textures and shaders        
@@ -69,12 +69,12 @@ VulkanPipeline* VulkanRenderable::GetOrCreatePipeline(
 ) const {
    // Always return the predefined pipeline if available                
    if (mPredefinedPipeline)
-      return mPredefinedPipeline;
+      return *mPredefinedPipeline;
 
    // Always return the cached pipeline if available                    
    const auto i = lod.GetAbsoluteIndex();
    if (mLOD[i].mPipeline)
-      return mLOD[i].mPipeline;
+      return *mLOD[i].mPipeline;
 
    // Construct a pipeline                                              
    bool usingGlobalPipeline {};
@@ -101,7 +101,7 @@ VulkanPipeline* VulkanRenderable::GetOrCreatePipeline(
       construct << color;
 
    // If at this point the construct is empty, then nothing to draw     
-   if (!construct) {
+   if (not construct) {
       Logger::Warning(Self(), "No contents available for generating pipeline");
       return nullptr;
    }
@@ -122,9 +122,9 @@ VulkanPipeline* VulkanRenderable::GetOrCreatePipeline(
    });
 
    if (mPredefinedPipeline)
-      return mPredefinedPipeline;
+      return *mPredefinedPipeline;
    else
-      return mLOD[i].mPipeline;
+      return *mLOD[i].mPipeline;
 }
 
 /// Reset the renderable, releasing all used content and pipelines            

@@ -18,7 +18,7 @@ VulkanSwapchain::VulkanSwapchain(VulkanRenderer& renderer) noexcept
 ///   @param window - the window                                              
 void VulkanSwapchain::CreateSurface(const A::Window* window) {
    // Create surface                                                    
-   if (!CreateNativeVulkanSurfaceKHR(mRenderer.GetVulkanInstance(), window, mSurface))
+   if (not CreateNativeVulkanSurfaceKHR(mRenderer.GetVulkanInstance(), window, *mSurface))
       LANGULUS_THROW(Graphics, "Error creating window surface");
 }
 
@@ -28,8 +28,8 @@ void VulkanSwapchain::CreateSurface(const A::Window* window) {
 void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamilies& families) {
    // Resolution                                                        
    const auto adapter = mRenderer.GetAdapter();
-   const Real resx = mRenderer.mResolution[0];
-   const Real resy = mRenderer.mResolution[1];
+   const Real resx = (*mRenderer.mResolution)[0];
+   const Real resy = (*mRenderer.mResolution)[1];
    const auto resxuint = static_cast<uint32_t>(resx);
    const auto resyuint = static_cast<uint32_t>(resy);
    if (resxuint == 0 || resyuint == 0) {
@@ -41,21 +41,21 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamili
    VkSurfaceCapabilitiesKHR surface_caps;
    memset(&surface_caps, 0, sizeof(VkSurfaceCapabilitiesKHR));
    std::vector<VkPresentModeKHR> surface_presentModes;
-   if (vkGetPhysicalDeviceSurfaceCapabilitiesKHR(adapter, mSurface, &surface_caps)) {
+   if (vkGetPhysicalDeviceSurfaceCapabilitiesKHR(adapter, *mSurface, &surface_caps)) {
       Destroy();
       LANGULUS_THROW(Graphics, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR failed");
    }
 
    // Check supported present modes                                     
    uint32_t presentModeCount;
-   if (vkGetPhysicalDeviceSurfacePresentModesKHR(adapter, mSurface, &presentModeCount, nullptr)) {
+   if (vkGetPhysicalDeviceSurfacePresentModesKHR(adapter, *mSurface, &presentModeCount, nullptr)) {
       Destroy();
       LANGULUS_THROW(Graphics, "vkGetPhysicalDeviceSurfacePresentModesKHR failed");
    }
 
    if (presentModeCount != 0) {
       surface_presentModes.resize(presentModeCount);
-      if (vkGetPhysicalDeviceSurfacePresentModesKHR(adapter, mSurface, &presentModeCount, surface_presentModes.data())) {
+      if (vkGetPhysicalDeviceSurfacePresentModesKHR(adapter, *mSurface, &presentModeCount, surface_presentModes.data())) {
          Destroy();
          LANGULUS_THROW(Graphics, "vkGetPhysicalDeviceSurfacePresentModesKHR failed");
       }
@@ -88,13 +88,13 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamili
    }
 
    uint32_t imageCount = surface_caps.minImageCount + 1;
-   if (surface_caps.maxImageCount > 0 && imageCount > surface_caps.maxImageCount)
+   if (surface_caps.maxImageCount > 0 and imageCount > surface_caps.maxImageCount)
       imageCount = surface_caps.maxImageCount;
 
    // Setup the swapchain                                               
    VkSwapchainCreateInfoKHR swapInfo {};
    swapInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-   swapInfo.surface = mSurface;
+   swapInfo.surface = *mSurface;
    swapInfo.minImageCount = imageCount;
    swapInfo.imageFormat = format.format;
    swapInfo.imageColorSpace = format.colorSpace;
@@ -115,20 +115,20 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamili
    // Allow us to copy swapchain images when testing                    
    IF_LANGULUS_TESTING(swapInfo.imageUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
 
-   if (vkCreateSwapchainKHR(mRenderer.mDevice, &swapInfo, nullptr, &mSwapChain.Get())) {
+   if (vkCreateSwapchainKHR(*mRenderer.mDevice, &swapInfo, nullptr, &mSwapChain.Get())) {
       Destroy();
       LANGULUS_THROW(Graphics, "Can't create swap chain");
    }
 
    // Get images from swapchain                                         
-   if (vkGetSwapchainImagesKHR(mRenderer.mDevice, mSwapChain, &imageCount, nullptr)) {
+   if (vkGetSwapchainImagesKHR(*mRenderer.mDevice, *mSwapChain, &imageCount, nullptr)) {
       Destroy();
       LANGULUS_THROW(Graphics, "vkGetSwapchainImagesKHR fails");
    }
 
    TAny<VkImage> swapChainImages;
    swapChainImages.New(imageCount);
-   if (vkGetSwapchainImagesKHR(mRenderer.mDevice, mSwapChain, &imageCount, swapChainImages.GetRaw())) {
+   if (vkGetSwapchainImagesKHR(*mRenderer.mDevice, *mSwapChain, &imageCount, swapChainImages.GetRaw())) {
       Destroy();
       LANGULUS_THROW(Graphics, "vkGetSwapchainImagesKHR fails");
    }
@@ -165,7 +165,7 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamili
 
       // Add the image                                                  
       mFrameImages[i] = VulkanImage::FromSwapchain(
-         mRenderer.mDevice, image, colorview
+         *mRenderer.mDevice, image, colorview
       );
    }
    
@@ -185,17 +185,17 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamili
    // Create framebuffers                                               
    mFrameBuffers.New(count);
    for (Offset i = 0; i < count; ++i) {
-      VkImageView attachments[] {mFrameViews[i], mDepthImageView};
+      VkImageView attachments[] {mFrameViews[i], *mDepthImageView};
       VkFramebufferCreateInfo framebufferInfo {};
       framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-      framebufferInfo.renderPass = mRenderer.mPass;
+      framebufferInfo.renderPass = *mRenderer.mPass;
       framebufferInfo.attachmentCount = 2;
       framebufferInfo.pAttachments = attachments;
       framebufferInfo.width = resxuint;
       framebufferInfo.height = resyuint;
       framebufferInfo.layers = 1;
 
-      if (vkCreateFramebuffer(mRenderer.mDevice, &framebufferInfo, nullptr, &mFrameBuffers[i])) {
+      if (vkCreateFramebuffer(*mRenderer.mDevice, &framebufferInfo, nullptr, &mFrameBuffers[i])) {
          Destroy();
          LANGULUS_THROW(Graphics, "Can't create framebuffer");
       }
@@ -205,17 +205,17 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamili
    mCommandBuffer.resize(count);
    VkCommandBufferAllocateInfo allocInfo {};
    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-   allocInfo.commandPool = mRenderer.mCommandPool;
+   allocInfo.commandPool = *mRenderer.mCommandPool;
    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
    allocInfo.commandBufferCount = count;
 
-   if (vkAllocateCommandBuffers(mRenderer.mDevice, &allocInfo, mCommandBuffer.data())) {
+   if (vkAllocateCommandBuffers(*mRenderer.mDevice, &allocInfo, mCommandBuffer.data())) {
       Destroy();
       LANGULUS_THROW(Graphics, "Can't create command buffers");
    }
 
    // Create command buffer fences                                      
-   if (!mNewBufferFence) {
+   if (not mNewBufferFence) {
       TAny<VkFenceCreateInfo> fenceInfo;
       fenceInfo.New(count);
       mNewBufferFence.Reserve(count);
@@ -223,7 +223,7 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamili
       for (auto& it : fenceInfo) {
          it.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
          VkFence result {};
-         if (vkCreateFence(mRenderer.mDevice, &it, nullptr, &result)) {
+         if (vkCreateFence(*mRenderer.mDevice, &it, nullptr, &result)) {
             Destroy();
             LANGULUS_THROW(Graphics, "Can't create buffer fence");
          }
@@ -236,7 +236,7 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamili
    VkSemaphoreCreateInfo fenceInfo {};
    fenceInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-   if (vkCreateSemaphore(mRenderer.mDevice, &fenceInfo, nullptr, &mNewFrameFence.Get())) {
+   if (vkCreateSemaphore(*mRenderer.mDevice, &fenceInfo, nullptr, &mNewFrameFence.Get())) {
       Destroy();
       LANGULUS_THROW(Graphics, "Can't create new frame semaphore");
    }
@@ -244,7 +244,7 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamili
    VkSemaphoreCreateInfo semaphoreInfo {};
    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-   if (vkCreateSemaphore(mRenderer.mDevice, &semaphoreInfo, nullptr, &mFrameFinished.Get())) {
+   if (vkCreateSemaphore(*mRenderer.mDevice, &semaphoreInfo, nullptr, &mFrameFinished.Get())) {
       Destroy();
       LANGULUS_THROW(Graphics, "Can't create frame finished semaphore");
    }
@@ -255,7 +255,7 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamili
 /// Recreate the swapchain (usually on window resize)                         
 ///   @param families - a set of queue families                               
 void VulkanSwapchain::Recreate(const QueueFamilies& families) {
-   vkDeviceWaitIdle(mRenderer.mDevice);
+   vkDeviceWaitIdle(*mRenderer.mDevice);
    Destroy();
    Create(GetSurfaceFormat(), families);
 }
@@ -263,35 +263,35 @@ void VulkanSwapchain::Recreate(const QueueFamilies& families) {
 /// Destroy the current swapchain                                             
 void VulkanSwapchain::Destroy() {
    if (mFrameFinished) {
-      vkDestroySemaphore(mRenderer.mDevice, mFrameFinished, nullptr);
+      vkDestroySemaphore(*mRenderer.mDevice, *mFrameFinished, nullptr);
       mFrameFinished.Reset();
    }
 
    if (mNewFrameFence) {
-      vkDestroySemaphore(mRenderer.mDevice, mNewFrameFence, nullptr);
+      vkDestroySemaphore(*mRenderer.mDevice, *mNewFrameFence, nullptr);
       mNewFrameFence.Reset();
    }
 
    // Destroy fences                                                    
    for (auto& it : mNewBufferFence)
-      vkDestroyFence(mRenderer.mDevice, it, nullptr);
+      vkDestroyFence(*mRenderer.mDevice, it, nullptr);
    mNewBufferFence.Clear();
 
    // Destroy the depth buffer images                                   
-   vkDestroyImageView(mRenderer.mDevice, mDepthImageView, nullptr);
+   vkDestroyImageView(*mRenderer.mDevice, *mDepthImageView, nullptr);
    mDepthImageView.Reset();
    mRenderer.mVRAM.DestroyImage(mDepthImage);
 
    // Destroy framebuffers                                              
-   for (auto &it : mFrameBuffers)
-      vkDestroyFramebuffer(mRenderer.mDevice, it, nullptr);
+   for (auto& it : mFrameBuffers)
+      vkDestroyFramebuffer(*mRenderer.mDevice, it, nullptr);
    mFrameBuffers.Clear();
    
    // Destroy command buffers                                           
    if (mCommandBuffer.size()) {
       vkFreeCommandBuffers(
-         mRenderer.mDevice,
-         mRenderer.mCommandPool,
+         *mRenderer.mDevice,
+         *mRenderer.mCommandPool,
          static_cast<uint32_t>(mCommandBuffer.size()),
          mCommandBuffer.data()
       );
@@ -299,19 +299,20 @@ void VulkanSwapchain::Destroy() {
    }
    
    // Destroy image views                                               
-   for (auto &it : mFrameViews)
-      vkDestroyImageView(mRenderer.mDevice, it, nullptr);
+   for (auto& it : mFrameViews)
+      vkDestroyImageView(*mRenderer.mDevice, it, nullptr);
    mFrameViews.Clear();
    
    // Destroy swapchain                                                 
-   vkDestroySwapchainKHR(mRenderer.mDevice, mSwapChain, nullptr);
+   vkDestroySwapchainKHR(*mRenderer.mDevice, *mSwapChain, nullptr);
    mSwapChain.Reset();
    mFrameImages.Clear();
 }
 
+/// Destructor                                                                
 VulkanSwapchain::~VulkanSwapchain() {
    if (mSurface)
-      vkDestroySurfaceKHR(mRenderer.GetVulkanInstance(), mSurface, nullptr);
+      vkDestroySurfaceKHR(mRenderer.GetVulkanInstance(), *mSurface, nullptr);
 }
 
 /// Get backbuffer surface format                                             
@@ -325,12 +326,12 @@ VkSurfaceFormatKHR VulkanSwapchain::GetSurfaceFormat() const noexcept {
    const auto adapter = mRenderer.GetAdapter();
    std::vector<VkSurfaceFormatKHR> surface_formats;
    uint32_t formatCount;
-   if (vkGetPhysicalDeviceSurfaceFormatsKHR(adapter, mSurface, &formatCount, nullptr))
+   if (vkGetPhysicalDeviceSurfaceFormatsKHR(adapter, *mSurface, &formatCount, nullptr))
       LANGULUS_THROW(Graphics, "vkGetPhysicalDeviceSurfaceFormatsKHR failed");
 
    if (formatCount != 0) {
       surface_formats.resize(formatCount);
-      if (vkGetPhysicalDeviceSurfaceFormatsKHR(adapter, mSurface, &formatCount, surface_formats.data()))
+      if (vkGetPhysicalDeviceSurfaceFormatsKHR(adapter, *mSurface, &formatCount, surface_formats.data()))
          LANGULUS_THROW(Graphics, "vkGetPhysicalDeviceSurfaceFormatsKHR failed");
    }
 
@@ -344,7 +345,7 @@ VkSurfaceFormatKHR VulkanSwapchain::GetSurfaceFormat() const noexcept {
       VK_FORMAT_MAX_ENUM, VK_COLOR_SPACE_MAX_ENUM_KHR
    };
 
-   if (surface_formats.size() == 1 && surface_formats[0].format == VK_FORMAT_UNDEFINED) {
+   if (surface_formats.size() == 1 and surface_formats[0].format == VK_FORMAT_UNDEFINED) {
       surfaceFormat = {
          VK_FORMAT_B8G8R8A8_UNORM,
          VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
@@ -369,12 +370,12 @@ bool VulkanSwapchain::StartRendering() {
    // Set next frame from the swapchain                                 
    // This changes mCurrentFrame globally for this renderer             
    auto result = vkAcquireNextImageKHR(
-      mRenderer.mDevice, mSwapChain, VK_INDEFINITELY,
-      mFrameFinished, VK_NULL_HANDLE, &mCurrentFrame
+      *mRenderer.mDevice, *mSwapChain, VK_INDEFINITELY,
+      *mFrameFinished, VK_NULL_HANDLE, &mCurrentFrame
    );
 
    // Check if resolution has changed                                   
-   if (result == VK_ERROR_OUT_OF_DATE_KHR || (result && result != VK_SUBOPTIMAL_KHR)) {
+   if (result == VK_ERROR_OUT_OF_DATE_KHR or (result and result != VK_SUBOPTIMAL_KHR)) {
       // Le strange error occurs                                        
       Logger::Error(Self(), "Vulkan failed to resize swapchain");
       return false;
@@ -405,8 +406,8 @@ bool VulkanSwapchain::EndRendering() {
    }
 
    // Submit command buffer to GPU                                      
-   VkSemaphore waitSemaphores[] {mFrameFinished};
-   VkSemaphore signalSemaphores[] {mNewFrameFence};
+   VkSemaphore waitSemaphores[]   {*mFrameFinished};
+   VkSemaphore signalSemaphores[] {*mNewFrameFence};
    VkPipelineStageFlags waitStages[] {
       VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
    };
@@ -421,13 +422,13 @@ bool VulkanSwapchain::EndRendering() {
    submitInfo.signalSemaphoreCount = 1;
    submitInfo.pSignalSemaphores = signalSemaphores;
 
-   if (vkQueueSubmit(mRenderer.mRenderQueue, 1, &submitInfo, VK_NULL_HANDLE)) {
+   if (vkQueueSubmit(*mRenderer.mRenderQueue, 1, &submitInfo, VK_NULL_HANDLE)) {
       Logger::Error(Self(), "Vulkan failed to submit render buffer");
       return false;
    }
 
    // Present and return                                                
-   VkSwapchainKHR swapChains[] {mSwapChain};
+   VkSwapchainKHR swapChains[] {*mSwapChain};
    VkPresentInfoKHR presentInfo {};
    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
    presentInfo.waitSemaphoreCount = 1;
@@ -442,7 +443,7 @@ bool VulkanSwapchain::EndRendering() {
       VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
    );
 
-   if (vkQueuePresentKHR(mRenderer.mPresentQueue, &presentInfo)) {
+   if (vkQueuePresentKHR(*mRenderer.mPresentQueue, &presentInfo)) {
       Logger::Error(Self(), "Vulkan failed to present - the frame will be lost");
    }
 
@@ -469,7 +470,7 @@ VkFramebuffer VulkanSwapchain::GetFramebuffer() const noexcept {
 /// Get the native surface                                                    
 ///   @return the surface                                                     
 VkSurfaceKHR VulkanSwapchain::GetSurface() const noexcept {
-   return mSurface;
+   return *mSurface;
 }
 
 /// Get currently bound swapchain image                                       
@@ -565,7 +566,9 @@ Ref<A::Image> VulkanSwapchain::TakeScreenshot() {
       // We also predefine the renderer as parent, because we don't want
       // the image to be added as a component to a Thing                
       Verbs::Create creator {Construct::From<A::Image>(
-         Traits::Parent {&mRenderer}, source.GetView(), SteadyClock::Now()
+         Traits::Parent {&mRenderer},
+         source.GetView(),
+         SteadyClock::Now()
       )};
       mScreenshot = mRenderer.RunIn(creator).As<A::Image*>();
    }

@@ -90,7 +90,7 @@ protected:
    Own<VkQueue> mPresentQueue;
 
    // Previous resolution (for detecting change)                        
-   Pinnable<Scale2> mResolution;
+   Pin<Scale2> mResolution;
 
    // Layers                                                            
    TFactory<VulkanLayer> mLayers;

@@ -173,6 +173,25 @@ void DataUBO<false>::Update(uint32_t binding, const VkDescriptorSet& set, Buffer
    mBuffer.Upload(0, mStride, mRAM.GetRaw());
 }
 
+/// Explicit abandon-construction                                             
+///   @param other - the sampler UBO to abandon                               
+SamplerUBO::SamplerUBO(Abandoned<SamplerUBO>&& other) noexcept
+   : mRenderer {other->mRenderer}
+   , mPool {other->mPool}
+   , mSamplersUBOSet {other->mSamplersUBOSet}
+   , mSamplers {Abandon(other->mSamplers)}
+   , mUniforms {Abandon(other->mUniforms)} {
+   other->mSamplersUBOSet = nullptr;
+}
+
+/// Free up a sampler set                                                     
+SamplerUBO::~SamplerUBO() {
+   if (mSamplersUBOSet) {
+      vkFreeDescriptorSets(*mRenderer->mDevice, mPool, 1, &mSamplersUBOSet.Get());
+      mSamplersUBOSet.Reset();
+   }
+}
+
 /// Initialize a sampler uniform buffer object                                
 ///   @param renderer - the renderer                                          
 ///   @param pool - the pool used for UBOs                                    
@@ -201,21 +220,13 @@ void SamplerUBO::Update(BufferUpdates& output) const {
 
       auto& write = output.Last();
       write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-      write.dstSet = mSamplersUBOSet;
+      write.dstSet = *mSamplersUBOSet;
       write.dstBinding = static_cast<uint32_t>(i);
       write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
       write.descriptorCount = 1;
       write.pBufferInfo = nullptr;
       write.pImageInfo = &mSamplers[i];
       write.pTexelBufferView = nullptr;
-   }
-}
-
-/// Free up a sampler set                                                     
-SamplerUBO::~SamplerUBO() {
-   if (mSamplersUBOSet) {
-      vkFreeDescriptorSets(mRenderer->mDevice, mPool, 1, &mSamplersUBOSet.Get());
-      mSamplersUBOSet.Reset();
    }
 }
 

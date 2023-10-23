@@ -31,7 +31,7 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, const Neat& descriptor)
    SeekTraitAux<Traits::MouseScroll>(descriptor, mMouseScroll);
 
    // Create native surface                                             
-   mSwapchain.CreateSurface(mWindow);
+   mSwapchain.CreateSurface(*mWindow);
 
    // Check adapter functionality                                       
    const auto adapter = GetAdapter();
@@ -142,10 +142,10 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, const Neat& descriptor)
       LANGULUS_THROW(Graphics, "Could not create logical device for rendering");
    }
 
-   mVRAM.Initialize(adapter, mDevice, mTransferIndex);
+   mVRAM.Initialize(adapter, *mDevice, mTransferIndex);
 
-   vkGetDeviceQueue(mDevice, mGraphicIndex, 0, &mRenderQueue.Get());
-   vkGetDeviceQueue(mDevice, mPresentIndex, 0, &mPresentQueue.Get());
+   vkGetDeviceQueue(*mDevice, mGraphicIndex, 0, &mRenderQueue.Get());
+   vkGetDeviceQueue(*mDevice, mPresentIndex, 0, &mPresentQueue.Get());
 
    // Create command pool for rendering                                 
    VkCommandPoolCreateInfo poolInfo {};
@@ -153,7 +153,7 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, const Neat& descriptor)
    poolInfo.queueFamilyIndex = mGraphicIndex;
    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-   if (vkCreateCommandPool(mDevice, &poolInfo, nullptr, &mCommandPool.Get())) {
+   if (vkCreateCommandPool(*mDevice, &poolInfo, nullptr, &mCommandPool.Get())) {
       Destroy();
       LANGULUS_THROW(Graphics, "Can't create command pool for rendering");
    }
@@ -217,7 +217,7 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, const Neat& descriptor)
    renderPassInfo.dependencyCount = 1;
    renderPassInfo.pDependencies = &dependency;
 
-   if (vkCreateRenderPass(mDevice, &renderPassInfo, nullptr, &mPass.Get())) {
+   if (vkCreateRenderPass(*mDevice, &renderPassInfo, nullptr, &mPass.Get())) {
       Destroy();
       LANGULUS_THROW(Graphics, "Can't create main rendering pass");
    }
@@ -242,19 +242,19 @@ void VulkanRenderer::Destroy() {
       return;
 
    // Destroy anything that was produced by the VkDevice                
-   vkDeviceWaitIdle(mDevice);
+   vkDeviceWaitIdle(*mDevice);
 
    mSwapchain.Destroy();
 
    if (mPass)
-      vkDestroyRenderPass(mDevice, mPass, nullptr);
+      vkDestroyRenderPass(*mDevice, *mPass, nullptr);
 
    if (mCommandPool)
-      vkDestroyCommandPool(mDevice, mCommandPool, nullptr);
+      vkDestroyCommandPool(*mDevice, *mCommandPool, nullptr);
 
    mVRAM.Destroy();
 
-   vkDestroyDevice(mDevice, nullptr);
+   vkDestroyDevice(*mDevice, nullptr);
 }
 
 /// Renderer destruction                                                      
@@ -285,10 +285,10 @@ void VulkanRenderer::Interpret(Verb& verb) {
 /// Resize the swapchain                                                      
 ///   @param size - the new size                                              
 void VulkanRenderer::Resize(const Scale2& size) {
-   if (mResolution != size) {
+   if (*mResolution != size) {
       mResolution = size;
       mSwapchain.Recreate(mFamilies);
-      vkDeviceWaitIdle(mDevice);
+      vkDeviceWaitIdle(*mDevice);
    }
 }
 
@@ -299,7 +299,7 @@ void VulkanRenderer::Draw() {
       return;
 
    // Wait for previous present to finish                               
-   vkQueueWaitIdle(mPresentQueue);
+   vkQueueWaitIdle(*mPresentQueue);
 
    // Reset all pipelines that already exist                            
    for (auto& pipe : mPipelines)
@@ -325,7 +325,7 @@ void VulkanRenderer::Draw() {
       return;
 
    RenderConfig config {
-      GetRenderCB(), mPass, mSwapchain.GetFramebuffer()
+      GetRenderCB(), *mPass, mSwapchain.GetFramebuffer()
    };
 
    config.mColorClear.color = {{1.0f, 0.0f, 0.0f, 1.0f}};
@@ -337,8 +337,8 @@ void VulkanRenderer::Draw() {
    config.mPassBeginInfo.renderPass = config.mPass;
    config.mPassBeginInfo.framebuffer = config.mFrame;
    config.mPassBeginInfo.renderArea.offset = {0, 0};
-   config.mPassBeginInfo.renderArea.extent.width = static_cast<uint32_t>(mResolution[0]);
-   config.mPassBeginInfo.renderArea.extent.height = static_cast<uint32_t>(mResolution[1]);
+   config.mPassBeginInfo.renderArea.extent.width = static_cast<uint32_t>((*mResolution)[0]);
+   config.mPassBeginInfo.renderArea.extent.height = static_cast<uint32_t>((*mResolution)[1]);
    config.mPassBeginInfo.clearValueCount = 2;
    config.mPassBeginInfo.pClearValues = &config.mColorClear;
 
@@ -350,8 +350,8 @@ void VulkanRenderer::Draw() {
    else {
       // No layers available, so just clear screen                      
       VkViewport viewport {};
-      viewport.width = mResolution[0];
-      viewport.height = mResolution[1];
+      viewport.width = (*mResolution)[0];
+      viewport.height = (*mResolution)[1];
 
       VkRect2D scissor {};
       scissor.extent.width = static_cast<uint32_t>(viewport.width);
@@ -370,19 +370,19 @@ void VulkanRenderer::Draw() {
 /// Get the vulkan library instance                                           
 ///   @return the instance handle                                             
 VkInstance VulkanRenderer::GetVulkanInstance() const noexcept {
-   return mProducer->mInstance;
+   return *mProducer->mInstance;
 }
 
 /// Get the chosen GPU adapter                                                
 ///   @return the physical device handle                                      
 VkPhysicalDevice VulkanRenderer::GetAdapter() const noexcept {
-   return mProducer->mAdapter;
+   return *mProducer->mAdapter;
 }
 
 /// Get the window interface                                                  
 ///   @return the window interface                                            
 const A::Window* VulkanRenderer::GetWindow() const noexcept {
-   return mWindow;
+   return *mWindow;
 }
 
 /// Get hardware dependent UBO outer alignment for dynamic buffers            
@@ -402,5 +402,5 @@ VkCommandBuffer VulkanRenderer::GetRenderCB() const noexcept {
 /// Get the current resolution                                                
 ///   @return the resolution                                                  
 const Scale2& VulkanRenderer::GetResolution() const noexcept {
-   return mResolution;
+   return *mResolution;
 }

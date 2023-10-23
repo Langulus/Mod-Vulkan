@@ -148,7 +148,7 @@ Count VulkanLayer::CompileThing(const Thing* thing, LOD& lod, PipelineSet& pipes
 
    // Nest to children                                                  
    for (auto child : thing->GetChildren())
-      renderedInstances += CompileThing(child, lod, pipesPerCamera);
+      renderedInstances += CompileThing(*child, lod, pipesPerCamera);
 
    return renderedInstances > 0;
 }
@@ -169,7 +169,7 @@ Count VulkanLayer::CompileLevelHierarchical(
    // Nest-iterate all children of the layer owner                      
    Count renderedEntities {};
    for (const auto& owner : GetOwners())
-      renderedEntities += CompileThing(owner, lod, pipesPerCamera);
+      renderedEntities += CompileThing(*owner, lod, pipesPerCamera);
    
    if (renderedEntities) {
       for (auto pipeline : pipesPerCamera) {
@@ -352,8 +352,8 @@ void VulkanLayer::RenderBatched(const RenderConfig& config) const {
 
    if (not mRelevantCameras) {
       VkViewport viewport {};
-      viewport.width = GetProducer()->mResolution[0];
-      viewport.height = GetProducer()->mResolution[1];
+      viewport.width = (*GetProducer()->mResolution)[0];
+      viewport.height = (*GetProducer()->mResolution)[1];
 
       VkRect2D scissor {};
       scissor.extent.width = static_cast<uint32_t>(viewport.width);
@@ -416,8 +416,8 @@ void VulkanLayer::RenderHierarchical(const RenderConfig& config) const {
    // Iterate all valid cameras                                         
    if (not mRelevantCameras) {
       VkViewport viewport {};
-      viewport.width = GetProducer()->mResolution[0];
-      viewport.height = GetProducer()->mResolution[1];
+      viewport.width = (*GetProducer()->mResolution)[0];
+      viewport.height = (*GetProducer()->mResolution)[1];
 
       VkRect2D scissor {};
       scissor.extent.width = static_cast<uint32_t>(viewport.width);

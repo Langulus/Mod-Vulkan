@@ -54,7 +54,7 @@ VulkanShader::VulkanShader(VulkanRenderer* producer, const Neat& descriptor)
 VulkanShader::~VulkanShader() {
    if (mStageDescription.module) {
       vkDestroyShaderModule(
-         mProducer->mDevice, 
+         *mProducer->mDevice, 
          mStageDescription.module, 
          nullptr
       );
@@ -67,7 +67,7 @@ const Shader& VulkanShader::Compile() const {
    if (mCompiled)
       return mStageDescription;
 
-   const auto device = mProducer->mDevice;
+   const auto device = *mProducer->mDevice;
    const auto startTime = SteadyClock::Now();
 
    // Compiling with optimizing                                         

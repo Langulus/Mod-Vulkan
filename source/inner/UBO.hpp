@@ -126,6 +126,7 @@ struct SamplerUBO {
    SamplerUBO() = default;
    SamplerUBO(const SamplerUBO&) noexcept = default;
    SamplerUBO(SamplerUBO&&) noexcept = default;
+   SamplerUBO(Abandoned<SamplerUBO>&&) noexcept;
    ~SamplerUBO();
 
    bool operator == (const SamplerUBO&) const noexcept;
