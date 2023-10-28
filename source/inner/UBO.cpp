@@ -15,7 +15,7 @@ UBO::~UBO() {
 
 /// Free uniform buffer                                                       
 void UBO::Destroy() {
-   if (!mBuffer.IsValid())
+   if (not mBuffer.IsValid())
       return;
 
    mRenderer->mVRAM.DestroyBuffer(mBuffer);
@@ -40,8 +40,8 @@ void UBO::CalculateSizes() {
       //  15.6.4. Offset and Stride Assignment - Alignment Requirements 
       Size baseAlignment;
       if (  it.mTrait.CastsTo<A::Number>(1)
-         || it.mTrait.CastsTo<A::Number>(2)
-         || it.mTrait.CastsTo<A::Number>(4)
+         or it.mTrait.CastsTo<A::Number>(2)
+         or it.mTrait.CastsTo<A::Number>(4)
       ) {
          // 1. A scalar has a base alignment equal to its scalar        
          // alignment. A scalar of size N has a scalar alignment of N   
@@ -77,7 +77,7 @@ void UBO::CalculateSizes() {
 /// Reallocate a dynamic uniform buffer object                                
 ///   @param elements - the number of buffer elements to allocate             
 void UBO::Reallocate(Count elements) {
-   if (!IsValid() || mAllocated >= elements) {
+   if (not IsValid() or mAllocated >= elements) {
       // Once allocated enough size, don't do it again                  
       return;
    }
@@ -120,7 +120,7 @@ void DataUBO<false>::Create(VulkanRenderer* renderer) {
 
    // Set predefined data if available                                  
    for (auto& it : mUniforms) {
-      if (!it.mTrait)
+      if (not it.mTrait)
          continue;
 
       ::std::memcpy(
@@ -137,7 +137,7 @@ void DataUBO<false>::Create(VulkanRenderer* renderer) {
 ///   @param output - [out] where updates are registered                      
 template<>
 void DataUBO<true>::Update(uint32_t binding, const VkDescriptorSet& set, BufferUpdates& output) const {
-   if (!IsValid() || !mUsedCount)
+   if (not IsValid() or not mUsedCount)
       return;
 
    output.New();
@@ -158,7 +158,7 @@ void DataUBO<true>::Update(uint32_t binding, const VkDescriptorSet& set, BufferU
 ///   @param output - [out] where updates are registered                      
 template<>
 void DataUBO<false>::Update(uint32_t binding, const VkDescriptorSet& set, BufferUpdates& output) const {
-   if (!IsValid())
+   if (not IsValid())
       return;
 
    output.New();
@@ -181,7 +181,7 @@ SamplerUBO::SamplerUBO(Abandoned<SamplerUBO>&& other) noexcept
    , mSamplersUBOSet {other->mSamplersUBOSet}
    , mSamplers {Abandon(other->mSamplers)}
    , mUniforms {Abandon(other->mUniforms)} {
-   other->mSamplersUBOSet = nullptr;
+   other->mSamplersUBOSet = VkDescriptorSet {};
 }
 
 /// Free up a sampler set                                                     
@@ -202,7 +202,7 @@ void SamplerUBO::Create(VulkanRenderer* renderer, VkDescriptorPool pool) {
 
    for (Offset id = 0; id < mUniforms.GetCount(); ++id) {
       auto& it = mUniforms[id];
-      if (!it.mTrait)
+      if (not it.mTrait)
          continue;
 
       Set(it.mTrait.As<VulkanTexture*>(), id);
@@ -213,7 +213,7 @@ void SamplerUBO::Create(VulkanRenderer* renderer, VkDescriptorPool pool) {
 ///   @param output - [out] where updates are registered                      
 void SamplerUBO::Update(BufferUpdates& output) const {
    for (Offset i = 0; i < mSamplers.GetCount(); ++i) {
-      if (!mSamplers[i].sampler)
+      if (not mSamplers[i].sampler)
          continue;
 
       output.New();
@@ -232,7 +232,7 @@ void SamplerUBO::Update(BufferUpdates& output) const {
 
 /// Check if two sampler sets are functionally the same                       
 bool SamplerUBO::operator == (const SamplerUBO& rhs) const noexcept {
-   return mSamplers.Compare(rhs.mSamplers) && mUniforms == rhs.mUniforms;
+   return mSamplers.Compare(rhs.mSamplers) and mUniforms == rhs.mUniforms;
 }
 
 /// Set a sampler                                                             

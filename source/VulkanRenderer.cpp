@@ -25,10 +25,10 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, const Neat& descriptor)
    mWindow = SeekUnitAux<A::Window>(descriptor);
    LANGULUS_ASSERT(mWindow, Construct,
       "No window available for renderer");
-   SeekTraitAux<Traits::Size>(descriptor, mResolution);
-   SeekTraitAux<Traits::Time>(descriptor, mTime);
-   SeekTraitAux<Traits::MousePosition>(descriptor, mMousePosition);
-   SeekTraitAux<Traits::MouseScroll>(descriptor, mMouseScroll);
+   SeekValueAux<Traits::Size>(descriptor, mResolution);
+   SeekValueAux<Traits::Time>(descriptor, mTime);
+   SeekValueAux<Traits::MousePosition>(descriptor, mMousePosition);
+   SeekValueAux<Traits::MouseScroll>(descriptor, mMouseScroll);
 
    // Create native surface                                             
    mSwapchain.CreateSurface(*mWindow);
