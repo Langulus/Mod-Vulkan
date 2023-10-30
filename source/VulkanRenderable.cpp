@@ -101,7 +101,7 @@ VulkanPipeline* VulkanRenderable::GetOrCreatePipeline(
       construct << color;
 
    // If at this point the construct is empty, then nothing to draw     
-   if (not construct) {
+   if (not construct.GetDescriptor()) {
       Logger::Warning(Self(), "No contents available for generating pipeline");
       return nullptr;
    }

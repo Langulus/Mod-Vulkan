@@ -61,7 +61,7 @@ VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, const Neat& descriptor)
          }
       );
 
-      LANGULUS_ASSERT(material, Graphics,
+      LANGULUS_ASSERT(material.GetDescriptor(), Graphics,
          "Couldn't generate material request for pipeline");
 
       // Create the pixel shader output according to the rendering pass 
