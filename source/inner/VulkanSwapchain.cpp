@@ -32,7 +32,7 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamili
    const Real resy = (*mRenderer.mResolution)[1];
    const auto resxuint = static_cast<uint32_t>(resx);
    const auto resyuint = static_cast<uint32_t>(resy);
-   if (resxuint == 0 || resyuint == 0) {
+   if (resxuint == 0 or resyuint == 0) {
       Destroy();
       LANGULUS_THROW(Graphics, "Bad resolution");
    }
@@ -375,7 +375,8 @@ bool VulkanSwapchain::StartRendering() {
    );
 
    // Check if resolution has changed                                   
-   if (result == VK_ERROR_OUT_OF_DATE_KHR or (result and result != VK_SUBOPTIMAL_KHR)) {
+   if (result == VK_ERROR_OUT_OF_DATE_KHR
+   or (result and result != VK_SUBOPTIMAL_KHR)) {
       // Le strange error occurs                                        
       Logger::Error(Self(), "Vulkan failed to resize swapchain");
       return false;
@@ -560,11 +561,13 @@ Ref<A::Image> VulkanSwapchain::TakeScreenshot() {
    // Don't forget to clean up the staging buffer                       
    vram.DestroyBuffer(stager);
 
-   if (!mScreenshot) {
+   if (not mScreenshot) {
       // Create an image asset if not created yet, otherwise reuse it   
       // The image includes current timestamp to make it unique         
-      // We also predefine the renderer as parent, because we don't want
-      // the image to be added as a component to a Thing                
+      // We also predefine the renderer as parent, because we don't     
+      // want the image to be added as a component to a Thing. Parent   
+      // will otherwise be added implicitly, by producing the image in  
+      // the context of Thing that owns this renderer.                  
       Verbs::Create creator {Construct::From<A::Image>(
          Traits::Parent {&mRenderer},
          source.GetView(),
