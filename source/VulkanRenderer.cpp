@@ -278,7 +278,7 @@ void VulkanRenderer::Create(Verb& verb) {
 void VulkanRenderer::Interpret(Verb& verb) {
    verb.ForEach([&](DMeta meta) {
       if (meta->template CastsTo<A::Image>())
-         verb << mSwapchain.TakeScreenshot();
+         verb << mSwapchain.TakeScreenshot().Get();
    });
 }
 
