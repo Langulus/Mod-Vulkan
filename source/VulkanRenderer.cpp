@@ -25,7 +25,9 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, const Neat& descriptor)
    mWindow = SeekUnitAux<A::Window>(descriptor);
    LANGULUS_ASSERT(mWindow, Construct,
       "No window available for renderer");
-   SeekValueAux<Traits::Size>(descriptor, mResolution);
+   if (not SeekValueAux<Traits::Size>(descriptor, mResolution))
+      mResolution = mWindow->GetSize();
+
    SeekValueAux<Traits::Time>(descriptor, mTime);
    SeekValueAux<Traits::MousePosition>(descriptor, mMousePosition);
    SeekValueAux<Traits::MouseScroll>(descriptor, mMouseScroll);
@@ -262,6 +264,24 @@ VulkanRenderer::~VulkanRenderer() {
    Destroy();
 }
 
+/// React to changes in environment                                           
+void VulkanRenderer::Refresh() {
+   // Resize swapchain from the environment                             
+   const Scale2 previousResolution = *mResolution;
+   if (not SeekValue<Traits::Size>(mResolution))
+      mResolution = mWindow->GetSize();
+
+   if (*mResolution != previousResolution) {
+      mSwapchain.Recreate(mFamilies);
+      vkDeviceWaitIdle(*mDevice);
+   }
+
+   // Refresh time and mouse properties                                 
+   SeekValue<Traits::Time>(mTime);
+   SeekValue<Traits::MousePosition>(mMousePosition);
+   SeekValue<Traits::MouseScroll>(mMouseScroll);
+}
+
 /// Introduce renderables, cameras, lights, shaders, textures, geometry       
 /// Also initialized the renderer if a window is provided                     
 ///   @param verb - creation verb                                             
@@ -280,16 +300,6 @@ void VulkanRenderer::Interpret(Verb& verb) {
       if (meta->template CastsTo<A::Image>())
          verb << mSwapchain.TakeScreenshot().Get();
    });
-}
-
-/// Resize the swapchain                                                      
-///   @param size - the new size                                              
-void VulkanRenderer::Resize(const Scale2& size) {
-   if (*mResolution != size) {
-      mResolution = size;
-      mSwapchain.Recreate(mFamilies);
-      vkDeviceWaitIdle(*mDevice);
-   }
 }
 
 /// Render an object, along with all of its children                          

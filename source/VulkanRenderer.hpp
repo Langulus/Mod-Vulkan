@@ -109,11 +109,12 @@ public:
    VulkanRenderer(Vulkan*, const Neat&);
    ~VulkanRenderer();
 
+   void Refresh() override;
+
    void Create(Verb&);
    void Interpret(Verb&);
 
    void Draw();
-   void Resize(const Scale2&);
 
    NOD() VkInstance GetVulkanInstance() const noexcept;
    NOD() VkPhysicalDevice GetAdapter() const noexcept;
