@@ -51,7 +51,7 @@ public:
    Vulkan(Runtime*, const Neat&);
    ~Vulkan();
 
-   void Update(Time);
+   bool Update(Time);
    void Create(Verb&);
 
    unsigned RateDevice(const VkPhysicalDevice&) const;

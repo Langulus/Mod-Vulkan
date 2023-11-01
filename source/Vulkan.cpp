@@ -378,9 +378,10 @@ VkPhysicalDevice Vulkan::PickAdapter() const {
 
 /// Module update routine                                                     
 ///   @param dt - time from last update                                       
-void Vulkan::Update(Time) {
+bool Vulkan::Update(Time) {
    for (auto& renderer : mRenderers)
       renderer.Draw();
+   return true;
 }
 
 /// Create/destroy renderers                                                  
