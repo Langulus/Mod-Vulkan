@@ -137,7 +137,7 @@ public:
    NOD() auto PushUniforms() {
       if constexpr (RATE.IsStaticUniform()) {
          // Pushing static uniforms does nothing                        
-         SAFETY(Logger::Warning(
+         IF_SAFE(Logger::Warning(
             "Trying to push a static uniform block"
             " - although not fatal, it's suboptimal doing that"
          ));
