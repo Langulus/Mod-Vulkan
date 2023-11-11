@@ -1,7 +1,10 @@
-add_executable(LangulusModVulkanTest
-	Main.cpp
-	TestRenderer.cpp
+file(GLOB_RECURSE
+	LANGULUS_MOD_VULKAN_TEST_SOURCES 
+	LIST_DIRECTORIES FALSE CONFIGURE_DEPENDS
+	*.cpp *.hpp
 )
+
+add_executable(LangulusModVulkanTest ${LANGULUS_MOD_VULKAN_TEST_SOURCES})
 
 target_link_libraries(LangulusModVulkanTest
 	PRIVATE		Langulus

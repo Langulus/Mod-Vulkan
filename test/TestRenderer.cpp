@@ -38,7 +38,7 @@ SCENARIO("Renderer creation inside a window", "[renderer]") {
 
       #if LANGULUS_FEATURE(MANAGED_REFLECTION)
          WHEN("A renderer is created via tokens") {
-            auto window = root.CreateUnitToken("Window", Traits::Size(640, 480));
+            auto window = root.CreateUnitToken("A::Window", Traits::Size(640, 480));
             auto renderer = root.CreateUnitToken("Renderer");
 
             THEN("Various traits change") {
