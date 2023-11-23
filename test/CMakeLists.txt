@@ -16,15 +16,6 @@ add_test(
 	COMMAND		LangulusModVulkanTest
 )
 
-langulus_copy_dlls(LangulusModVulkanTest ON LangulusModVulkanTest)
-langulus_copy_dlls_advanced(LangulusModVulkanTest
-	TO			LangulusModVulkanTest
-	FROM		LangulusModGLFW
-				LangulusModVulkan
-				LangulusModAssetsImages
-				LangulusModFileSystem
-)
-
 # Make the write and read data dir for PhysFS, because it doesn't have access   
 add_custom_command(
     TARGET LangulusModVulkanTest POST_BUILD
