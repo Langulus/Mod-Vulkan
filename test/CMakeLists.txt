@@ -14,6 +14,7 @@ target_link_libraries(LangulusModVulkanTest
 add_test(
 	NAME		LangulusModVulkanTest
 	COMMAND		LangulusModVulkanTest
+	WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
 )
 
 # Make the write and read data dir for PhysFS, because it doesn't have access   
