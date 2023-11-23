@@ -39,7 +39,7 @@ VulkanGeometry* VulkanRenderable::GetGeometry(const LOD& lod) const {
       mLOD[i].mGeometry = creator->template As<VulkanGeometry*>();
    }
 
-   return *mLOD[i].mGeometry;
+   return mLOD[i].mGeometry;
 }
 
 /// Get VRAM texture corresponding to an octave of this renderable            
@@ -57,7 +57,7 @@ VulkanTexture* VulkanRenderable::GetTexture(const LOD& lod) const {
       mLOD[i].mTexture = creator->template As<VulkanTexture*>();
    }
 
-   return *mLOD[i].mTexture;
+   return mLOD[i].mTexture;
 }
 
 /// Create GPU pipeline able to utilize geometry, textures and shaders        
@@ -69,12 +69,12 @@ VulkanPipeline* VulkanRenderable::GetOrCreatePipeline(
 ) const {
    // Always return the predefined pipeline if available                
    if (mPredefinedPipeline)
-      return *mPredefinedPipeline;
+      return mPredefinedPipeline;
 
    // Always return the cached pipeline if available                    
    const auto i = lod.GetAbsoluteIndex();
    if (mLOD[i].mPipeline)
-      return *mLOD[i].mPipeline;
+      return mLOD[i].mPipeline;
 
    // Construct a pipeline                                              
    bool usingGlobalPipeline {};
@@ -122,9 +122,9 @@ VulkanPipeline* VulkanRenderable::GetOrCreatePipeline(
    });
 
    if (mPredefinedPipeline)
-      return *mPredefinedPipeline;
+      return mPredefinedPipeline;
    else
-      return *mLOD[i].mPipeline;
+      return mLOD[i].mPipeline;
 }
 
 /// Reset the renderable, releasing all used content and pipelines            

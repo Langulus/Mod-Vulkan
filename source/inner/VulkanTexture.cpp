@@ -24,9 +24,9 @@ VulkanTexture::VulkanTexture(VulkanRenderer* producer, const Neat& descriptor)
 /// VRAM texture destructor                                                   
 VulkanTexture::~VulkanTexture() {
    if (mSampler)
-      vkDestroySampler(*mProducer->mDevice, *mSampler, nullptr);
+      vkDestroySampler(mProducer->mDevice, mSampler, nullptr);
    if (mImageView)
-      vkDestroyImageView(*mProducer->mDevice, *mImageView, nullptr);
+      vkDestroyImageView(mProducer->mDevice, mImageView, nullptr);
    if (mImage.GetImage())
       mProducer->mVRAM.DestroyImage(mImage);
 }
@@ -198,7 +198,7 @@ void VulkanTexture::Upload(const A::Image& content) {
    samplerInfo.minLod = 0.0f;
    samplerInfo.maxLod = 0.0f;
 
-   if (vkCreateSampler(*mProducer->mDevice, &samplerInfo, nullptr, &mSampler.Get()))
+   if (vkCreateSampler(mProducer->mDevice, &samplerInfo, nullptr, &mSampler.Get()))
       LANGULUS_THROW(Graphics, "Can't create vulkan sampler");
 
    VERBOSE_VKTEXTURE(Logger::Green, "Data uploaded in VRAM for ",
@@ -208,11 +208,11 @@ void VulkanTexture::Upload(const A::Image& content) {
 /// Get the VkImageView                                                       
 ///   @return the image view                                                  
 VkImageView VulkanTexture::GetImageView() const noexcept {
-   return *mImageView;
+   return mImageView;
 }
 
 /// Get the VkSampler                                                         
 ///   @return the sampler                                                     
 VkSampler VulkanTexture::GetSampler() const noexcept {
-   return *mSampler;
+   return mSampler;
 }

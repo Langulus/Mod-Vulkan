@@ -36,14 +36,14 @@ bool VRAM::Upload(Offset offset, Size bytes, const void* data) const {
 LANGULUS(INLINED)
 Byte* VRAM::Lock(Offset offset, Size bytes) const {
    void* raw;
-   vkMapMemory(*mDevice, *mMemory, offset, bytes, 0, &raw);
+   vkMapMemory(mDevice, mMemory, offset, bytes, 0, &raw);
    return static_cast<Byte*>(raw);
 }
 
 /// Unlock VRAM                                                               
 LANGULUS(INLINED)
 void VRAM::Unlock() const {
-   vkUnmapMemory(*mDevice, *mMemory);
+   vkUnmapMemory(mDevice, mMemory);
 }
 
 /// Check if buffer contains valid VRAM allocation                            
@@ -67,7 +67,7 @@ DMeta VulkanBuffer::GetMeta() const noexcept {
 
 LANGULUS(INLINED)
 const VkBuffer& VulkanBuffer::GetBuffer() const noexcept {
-   return *mBuffer;
+   return mBuffer;
 }
 
 /// Wrap a swapchain image in this structure for more consistent code         
@@ -110,7 +110,7 @@ const ImageView& VulkanImage::GetView() const noexcept {
 ///   @return a VkImage                                                       
 LANGULUS(INLINED)
 VkImage VulkanImage::GetImage() const noexcept {
-   return *mBuffer;
+   return mBuffer;
 }
 
 /// Get the VkImageCreateInfo                                                 

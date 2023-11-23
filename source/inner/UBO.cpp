@@ -187,7 +187,7 @@ SamplerUBO::SamplerUBO(Abandoned<SamplerUBO>&& other) noexcept
 /// Free up a sampler set                                                     
 SamplerUBO::~SamplerUBO() {
    if (mSamplersUBOSet) {
-      vkFreeDescriptorSets(*mRenderer->mDevice, mPool, 1, &mSamplersUBOSet.Get());
+      vkFreeDescriptorSets(mRenderer->mDevice, mPool, 1, &mSamplersUBOSet.Get());
       mSamplersUBOSet.Reset();
    }
 }
@@ -220,7 +220,7 @@ void SamplerUBO::Update(BufferUpdates& output) const {
 
       auto& write = output.Last();
       write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-      write.dstSet = *mSamplersUBOSet;
+      write.dstSet = mSamplersUBOSet;
       write.dstBinding = static_cast<uint32_t>(i);
       write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
       write.descriptorCount = 1;

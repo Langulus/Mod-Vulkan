@@ -58,9 +58,9 @@ void VulkanMemory::Destroy() {
 void VulkanMemory::DestroyBuffer(VulkanBuffer& buffer) const {
    if (buffer.mDevice) {
       if (buffer.mBuffer)
-         vkDestroyBuffer(*buffer.mDevice, *buffer.mBuffer, nullptr);
+         vkDestroyBuffer(buffer.mDevice, buffer.mBuffer, nullptr);
       if (buffer.mMemory)
-         vkFreeMemory(*buffer.mDevice, *buffer.mMemory, nullptr);
+         vkFreeMemory(buffer.mDevice, buffer.mMemory, nullptr);
    }
 
    buffer.Reset();
@@ -185,7 +185,7 @@ VulkanImage VulkanMemory::CreateImage(const ImageView& view, VkImageUsageFlags f
 
    // Allocate VRAM                                                     
    VkMemoryRequirements memRequirements;
-   vkGetImageMemoryRequirements(mDevice, *image.mBuffer, &memRequirements);
+   vkGetImageMemoryRequirements(mDevice, image.mBuffer, &memRequirements);
 
    VkMemoryAllocateInfo allocInfo {};
    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -196,12 +196,12 @@ VulkanImage VulkanMemory::CreateImage(const ImageView& view, VkImageUsageFlags f
    );
 
    if (vkAllocateMemory(mDevice, &allocInfo, nullptr, &image.mMemory.Get())) {
-      vkDestroyImage(mDevice, *image.mBuffer, nullptr);
+      vkDestroyImage(mDevice, image.mBuffer, nullptr);
       LANGULUS_THROW(Graphics, "Couldn't allocate VRAM");
    }
 
    // Bind memory with the image                                        
-   vkBindImageMemory(mDevice, *image.mBuffer, *image.mMemory, 0);
+   vkBindImageMemory(mDevice, image.mBuffer, image.mMemory, 0);
    return image;
 }
 
@@ -210,9 +210,9 @@ VulkanImage VulkanMemory::CreateImage(const ImageView& view, VkImageUsageFlags f
 void VulkanMemory::DestroyImage(VulkanImage& buffer) const {
    if (buffer.mDevice) {
       if (buffer.mBuffer)
-         vkDestroyImage(*buffer.mDevice, *buffer.mBuffer, nullptr);
+         vkDestroyImage(buffer.mDevice, buffer.mBuffer, nullptr);
       if (buffer.mMemory)
-         vkFreeMemory(*buffer.mDevice, *buffer.mMemory, nullptr);
+         vkFreeMemory(buffer.mDevice, buffer.mMemory, nullptr);
    }
 
    buffer.Reset();
@@ -309,7 +309,7 @@ VulkanBuffer VulkanMemory::CreateBuffer(DMeta meta, VkDeviceSize size, VkBufferU
 
    // Get memory requirements                                           
    VkMemoryRequirements memRequirements;
-   vkGetBufferMemoryRequirements(mDevice, *result.mBuffer, &memRequirements);
+   vkGetBufferMemoryRequirements(mDevice, result.mBuffer, &memRequirements);
 
    // Allocate VRAM                                                     
    VkMemoryAllocateInfo allocInfo {};
@@ -317,12 +317,12 @@ VulkanBuffer VulkanMemory::CreateBuffer(DMeta meta, VkDeviceSize size, VkBufferU
    allocInfo.allocationSize = memRequirements.size;
    allocInfo.memoryTypeIndex = ChooseMemory(memRequirements.memoryTypeBits, properties);
    if (vkAllocateMemory(mDevice, &allocInfo, nullptr, &result.mMemory.Get())) {
-      vkDestroyBuffer(mDevice, *result.mBuffer, nullptr);
+      vkDestroyBuffer(mDevice, result.mBuffer, nullptr);
       LANGULUS_THROW(Graphics, "Can't create VRAM buffer");
    }
 
    // Associate memory with the buffer                                  
-   vkBindBufferMemory(mDevice, *result.mBuffer, *result.mMemory, 0);
+   vkBindBufferMemory(mDevice, result.mBuffer, result.mMemory, 0);
    result.mMeta = meta;
    return result;
 }
@@ -332,7 +332,7 @@ VulkanBuffer VulkanMemory::CreateBuffer(DMeta meta, VkDeviceSize size, VkBufferU
 ///   @param from - starting layout                                           
 ///   @param to - ending layout                                               
 void VulkanMemory::ImageTransfer(const VulkanImage& img, VkImageLayout from, VkImageLayout to) {
-   ImageTransfer(*img.mBuffer, from, to);
+   ImageTransfer(img.mBuffer, from, to);
 }
 
 /// Transfer a VRAM image from one layout to another                          
@@ -509,7 +509,7 @@ VulkanBuffer VulkanMemory::Upload(const Block& memory, VkBufferUsageFlags usage)
 
    // Copy bytes                                                        
    vkBeginCommandBuffer(mTransferBuffer, &beginInfo);
-   vkCmdCopyBuffer(mTransferBuffer, *stager.mBuffer, *final.mBuffer, 1, &copyRegion);
+   vkCmdCopyBuffer(mTransferBuffer, stager.mBuffer, final.mBuffer, 1, &copyRegion);
    vkEndCommandBuffer(mTransferBuffer);
 
    // Submit                                                            

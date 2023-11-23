@@ -28,8 +28,8 @@ public:
    Byte* Lock(Offset, Size) const;
    void Unlock() const;
 
-   NOD() const VkDevice& GetDevice() const noexcept { return *mDevice; }
-   NOD() const VkDeviceMemory& GetMemory() const noexcept { return *mMemory; }
+   NOD() auto& GetDevice() const noexcept { return mDevice; }
+   NOD() auto& GetMemory() const noexcept { return mMemory; }
 };
 
 

@@ -148,7 +148,7 @@ Count VulkanLayer::CompileThing(const Thing* thing, LOD& lod, PipelineSet& pipes
 
    // Nest to children                                                  
    for (auto child : thing->GetChildren())
-      renderedInstances += CompileThing(*child, lod, pipesPerCamera);
+      renderedInstances += CompileThing(child, lod, pipesPerCamera);
 
    return renderedInstances > 0;
 }
@@ -169,7 +169,7 @@ Count VulkanLayer::CompileLevelHierarchical(
    // Nest-iterate all children of the layer owner                      
    Count renderedEntities {};
    for (const auto& owner : GetOwners())
-      renderedEntities += CompileThing(*owner, lod, pipesPerCamera);
+      renderedEntities += CompileThing(owner, lod, pipesPerCamera);
    
    if (renderedEntities) {
       for (auto pipeline : pipesPerCamera) {
