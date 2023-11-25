@@ -156,22 +156,22 @@ void VulkanShader::AddInput(const Trait& input) {
 
    // Single precision                                                  
    if (meta->GetBase<Vec4f>(0, inputBase) and inputBase.mBinaryCompatible)
-      vkt = AsVkFormat(inputBase.mType);
+      vkt = AsVkFormat(inputBase.GetType());
    else if (meta->GetBase<Vec3f>(0, inputBase) and inputBase.mBinaryCompatible)
-      vkt = AsVkFormat(inputBase.mType);
+      vkt = AsVkFormat(inputBase.GetType());
    else if (meta->GetBase<Vec2f>(0, inputBase) and inputBase.mBinaryCompatible)
-      vkt = AsVkFormat(inputBase.mType);
+      vkt = AsVkFormat(inputBase.GetType());
    else if (meta->GetBase<Float>(0, inputBase) and inputBase.mBinaryCompatible)
-      vkt = AsVkFormat(inputBase.mType);
+      vkt = AsVkFormat(inputBase.GetType());
    // Double precision                                                  
    else if (meta->GetBase<Vec4d>(0, inputBase) and inputBase.mBinaryCompatible)
-      vkt = AsVkFormat(inputBase.mType);
+      vkt = AsVkFormat(inputBase.GetType());
    else if (meta->GetBase<Vec3d>(0, inputBase) and inputBase.mBinaryCompatible)
-      vkt = AsVkFormat(inputBase.mType);
+      vkt = AsVkFormat(inputBase.GetType());
    else if (meta->GetBase<Vec2d>(0, inputBase) and inputBase.mBinaryCompatible)
-      vkt = AsVkFormat(inputBase.mType);
+      vkt = AsVkFormat(inputBase.GetType());
    else if (meta->GetBase<Double>(0, inputBase) and inputBase.mBinaryCompatible)
-      vkt = AsVkFormat(inputBase.mType);
+      vkt = AsVkFormat(inputBase.GetType());
    
    if (vkt == VK_FORMAT_UNDEFINED)
       LANGULUS_THROW(Graphics, "Unsupported base for shader attribute");
@@ -180,7 +180,7 @@ void VulkanShader::AddInput(const Trait& input) {
    VertexBinding bindingDescription {};
    bindingDescription.binding = uidx;
    bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-   bindingDescription.stride = static_cast<uint32_t>(inputBase.mType->mSize);
+   bindingDescription.stride = static_cast<uint32_t>(inputBase.GetType()->mSize);
    mBindings.push_back(bindingDescription);
 
    VertexAttribute attributeDescription {};

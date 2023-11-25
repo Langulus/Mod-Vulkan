@@ -11,6 +11,10 @@ target_link_libraries(LangulusModVulkanTest
 				Catch2
 )
 
+add_dependencies(LangulusModVulkanTest
+	LangulusModVulkan
+)
+
 add_test(
 	NAME		LangulusModVulkanTest
 	COMMAND		LangulusModVulkanTest
@@ -20,6 +24,9 @@ add_test(
 # Make the write and read data dir for PhysFS, because it doesn't have access   
 add_custom_command(
     TARGET LangulusModVulkanTest POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:LangulusModVulkanTest>/data/assets/images"
-    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/polygons.png" "$<TARGET_FILE_DIR:LangulusModVulkanTest>/data/assets/images/polygons.png"
+    COMMAND ${CMAKE_COMMAND} -E make_directory
+		"$<TARGET_FILE_DIR:LangulusModVulkanTest>/data/assets/images"
+    COMMAND ${CMAKE_COMMAND} -E copy
+		"${CMAKE_CURRENT_SOURCE_DIR}/polygons.png"
+		"$<TARGET_FILE_DIR:LangulusModVulkanTest>/data/assets/images/polygons.png"
 )
