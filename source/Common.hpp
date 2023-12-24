@@ -12,10 +12,6 @@
 LANGULUS_EXCEPTION(Graphics);
 
 using namespace Langulus;
-using namespace Langulus::Flow;
-using namespace Langulus::Anyness;
-using namespace Langulus::Entity;
-using namespace Langulus::Math;
 
 struct Vulkan;
 struct VulkanMemory;
