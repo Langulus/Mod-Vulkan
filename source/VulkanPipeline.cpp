@@ -519,7 +519,7 @@ void VulkanPipeline::CreateUniformBuffers() {
          for (const auto& trait : mUniforms[index]) {
             if (trait.template TraitIs<Traits::Image>())
                continue;
-            ubo.mUniforms.Emplace(0u, trait);
+            ubo.mUniforms.Emplace(IndexBack, 0, trait);
          }
 
          if (!ubo.mUniforms)
@@ -560,7 +560,7 @@ void VulkanPipeline::CreateUniformBuffers() {
          for (const auto& trait : mUniforms[index]) {
             if (trait.template TraitIs<Traits::Image>())
                continue;
-            ubo.mUniforms.Emplace(0, trait);
+            ubo.mUniforms.Emplace(IndexBack, 0, trait);
          }
 
          if (not ubo.mUniforms)
@@ -598,7 +598,7 @@ void VulkanPipeline::CreateUniformBuffers() {
       for (const auto& trait : mUniforms[PerRenderable.GetInputIndex()]) {
          if (not trait.template TraitIs<Traits::Image>())
             continue;
-         ubo.mUniforms << Uniform {0, trait};
+         ubo.mUniforms.Emplace(IndexBack, 0, trait);
       }
 
       if (ubo.mUniforms) {
