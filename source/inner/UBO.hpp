@@ -39,7 +39,7 @@ struct UBO {
    ~UBO();
 
    void CalculateSizes();
-   void Reallocate(Size);
+   void Reallocate(Count);
    void Destroy();
    NOD() bool IsValid() const noexcept {
       return mStride > 0;

@@ -299,35 +299,42 @@ VkPrimitiveTopology AsVkPrimitive(DMeta meta) {
 ///   @return a floating point RGBA vector                                    
 LANGULUS(INLINED)
 RGBAf AnyColorToVector(const Any& color) {
+   const auto ctype = color.GetType();
+   LANGULUS_ASSERT(ctype, Meta, "No color type");
+   const auto rmember = ctype->GetMember(MetaOf<Traits::R>());
+   const auto gmember = ctype->GetMember(MetaOf<Traits::G>());
+   const auto bmember = ctype->GetMember(MetaOf<Traits::B>());
+   const auto amember = ctype->GetMember(MetaOf<Traits::A>());
+
    // Inspect the data pack, what color components does it contain?     
-   const auto redChannel = color.GetMember(MetaOf<Traits::R>());
-   const auto greenChannel = color.GetMember(MetaOf<Traits::G>());
-   const auto blueChannel = color.GetMember(MetaOf<Traits::B>());
-   const auto alphaChannel = color.GetMember(MetaOf<Traits::A>());
+   const auto rChannel = color.GetMember(*rmember, 0);
+   const auto gChannel = color.GetMember(*gmember, 0);
+   const auto bChannel = color.GetMember(*bmember, 0);
+   const auto aChannel = color.GetMember(*amember, 0);
 
    // Get the values (and normalize them if we have to)                 
    RGBAf result;
-   if (redChannel) {
-      result[0] = redChannel.AsCast<Real>();
-      if (redChannel.CastsTo<A::Integer>())
+   if (rChannel) {
+      result[0] = rChannel.AsCast<Real>();
+      if (rChannel.CastsTo<A::Integer>())
          result[0] /= 255.0f;
    }
    
-   if (greenChannel) {
-      result[1] = greenChannel.AsCast<Real>();
-      if (greenChannel.CastsTo<A::Integer>())
+   if (gChannel) {
+      result[1] = gChannel.AsCast<Real>();
+      if (gChannel.CastsTo<A::Integer>())
          result[1] /= 255.0f;
    }
 
-   if (blueChannel) {
-      result[2] = blueChannel.AsCast<Real>();
-      if (blueChannel.CastsTo<A::Integer>())
+   if (bChannel) {
+      result[2] = bChannel.AsCast<Real>();
+      if (bChannel.CastsTo<A::Integer>())
          result[2] /= 255.0f;
    }
 
-   if (alphaChannel) {
-      result[3] = alphaChannel.AsCast<Real>();
-      if (alphaChannel.CastsTo<A::Integer>())
+   if (aChannel) {
+      result[3] = aChannel.AsCast<Real>();
+      if (aChannel.CastsTo<A::Integer>())
          result[3] /= 255.0f;
    }
 

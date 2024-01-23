@@ -397,8 +397,8 @@ const A::Window* VulkanRenderer::GetWindow() const noexcept {
 
 /// Get hardware dependent UBO outer alignment for dynamic buffers            
 ///   @return the alignment                                                   
-Size VulkanRenderer::GetOuterUBOAlignment() const noexcept {
-   return static_cast<Size>(
+Offset VulkanRenderer::GetOuterUBOAlignment() const noexcept {
+   return static_cast<Offset>(
       mPhysicalProperties.limits.minUniformBufferOffsetAlignment
    );
 }

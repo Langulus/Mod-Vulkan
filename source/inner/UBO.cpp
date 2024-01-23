@@ -25,7 +25,7 @@ void UBO::Destroy() {
 /// Calculate aligned range, as well as individual uniform byte offsets       
 void UBO::CalculateSizes() {
    // Calculate required UBO buffer sizes for the whole pipeline        
-   Offset range {};
+   Offset range = 0;
    for (auto& it : mUniforms) {
       auto concrete = it.mTrait.GetType()->GetMostConcrete();
 
@@ -38,7 +38,7 @@ void UBO::CalculateSizes() {
 
       // Info about base alignment in Vulkan Spec                       
       //  15.6.4. Offset and Stride Assignment - Alignment Requirements 
-      Size baseAlignment;
+      Offset baseAlignment;
       if (  it.mTrait.CastsTo<A::Number>(1)
          or it.mTrait.CastsTo<A::Number>(2)
          or it.mTrait.CastsTo<A::Number>(4)
@@ -52,7 +52,8 @@ void UBO::CalculateSizes() {
       else if (it.mTrait.CastsTo<A::Number>(3)) {
          // A three- or four-component vector has a base alignment      
          // equal to four times its scalar alignment                    
-         baseAlignment = 4 * it.mTrait.GetMember(nullptr, 0u).GetStride();
+         auto firstMember = it.mTrait.GetType()->GetMember({}, {}, 0);
+         baseAlignment = 4 * firstMember->GetType()->mSize;
       }
       else {
          // A structure has a base alignment equal to the largest base  
@@ -61,9 +62,7 @@ void UBO::CalculateSizes() {
          baseAlignment = it.mTrait.GetType()->mAlignment;
       }
 
-      LANGULUS_ASSERT(baseAlignment != 0, Graphics,
-         "Bad uniform alignment");
-
+      LANGULUS_ASSERT(baseAlignment, Graphics, "Bad uniform alignment");
       it.mPosition = Align(range, baseAlignment);
       range = it.mPosition + it.mTrait.GetStride();
    }
@@ -76,7 +75,7 @@ void UBO::CalculateSizes() {
 
 /// Reallocate a dynamic uniform buffer object                                
 ///   @param elements - the number of buffer elements to allocate             
-void UBO::Reallocate(Count elements) {
+void UBO::Reallocate(const Count elements) {
    if (not IsValid() or mAllocated >= elements) {
       // Once allocated enough size, don't do it again                  
       return;

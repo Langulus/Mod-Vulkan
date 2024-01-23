@@ -16,7 +16,7 @@ struct VulkanSwapchain {
 protected:
    friend struct VulkanRenderer;
    VulkanRenderer& mRenderer;
-   Debug Self() const;
+   Text Self() const;
 
    // Rendering surface                                                 
    Own<VkSurfaceKHR> mSurface;

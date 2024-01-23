@@ -452,7 +452,7 @@ bool VulkanSwapchain::EndRendering() {
 }
 
 ///                                                                           
-Debug VulkanSwapchain::Self() const {
+Text VulkanSwapchain::Self() const {
    return mRenderer.Self();
 }
 

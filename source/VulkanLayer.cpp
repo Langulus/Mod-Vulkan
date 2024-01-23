@@ -36,7 +36,7 @@ void VulkanLayer::Create(Verb& verb) {
 bool VulkanLayer::Generate(PipelineSet& pipelines) {
    CompileCameras();
    CompileLevels();
-   return pipelines.Merge(mRelevantPipelines);
+   return 0 != pipelines.InsertBlock(mRelevantPipelines);
 }
 
 /// Compile the camera transformations                                        
@@ -369,7 +369,7 @@ void VulkanLayer::RenderBatched(const RenderConfig& config) const {
          for (auto pipeline : mRelevantPipelines)
             done[pipeline] = pipeline->RenderLevel(done[pipeline]);
 
-         if (level != mRelevantLevels.Last()) {
+         if (level != *mRelevantLevels.last()) {
             // Clear depth after rendering this level (if not last)     
             const VkClearRect rect {scissor, 0, 1};
             vkCmdClearAttachments(config.mCommands, 1, &config.mDepthSweep, 1, &rect);
@@ -393,7 +393,7 @@ void VulkanLayer::RenderBatched(const RenderConfig& config) const {
          for (auto pipeline : mRelevantPipelines)
             done[pipeline] = pipeline->RenderLevel(done[pipeline]);
 
-         if (level != mRelevantLevels.Last()) {
+         if (level != *mRelevantLevels.last()) {
             // Clear depth after rendering this level (if not last)     
             const VkClearRect rect {camera->mVulkanScissor, 0, 1};
             vkCmdClearAttachments(config.mCommands, 1, &config.mDepthSweep, 1, &rect);
@@ -435,7 +435,7 @@ void VulkanLayer::RenderHierarchical(const RenderConfig& config) const {
             subscriber.pipeline->RenderSubscriber(subscriber.sub);
          }
 
-         if (level != mRelevantLevels.Last()) {
+         if (level != *mRelevantLevels.last()) {
             // Clear depth after rendering this level (if not last)     
             const VkClearRect rect {scissor, 0, 1};
             vkCmdClearAttachments(config.mCommands, 1, &config.mDepthSweep, 1, &rect);
@@ -465,7 +465,7 @@ void VulkanLayer::RenderHierarchical(const RenderConfig& config) const {
             subscriber.pipeline->RenderSubscriber(subscriber.sub);
          }
 
-         if (level != mRelevantLevels.Last()) {
+         if (level != *mRelevantLevels.last()) {
             // Clear depth after rendering this level (if not last)     
             const VkClearRect rect {camera->mVulkanScissor, 0, 1};
             vkCmdClearAttachments(config.mCommands, 1, &config.mDepthSweep, 1, &rect);

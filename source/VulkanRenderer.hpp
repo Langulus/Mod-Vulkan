@@ -119,7 +119,7 @@ public:
    NOD() VkInstance GetVulkanInstance() const noexcept;
    NOD() VkPhysicalDevice GetAdapter() const noexcept;
    NOD() const A::Window* GetWindow() const noexcept;
-   NOD() Size GetOuterUBOAlignment() const noexcept;
+   NOD() Offset GetOuterUBOAlignment() const noexcept;
    NOD() VkCommandBuffer GetRenderCB() const noexcept;
    NOD() const Scale2& GetResolution() const noexcept;
 };
