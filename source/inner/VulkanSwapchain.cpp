@@ -556,7 +556,7 @@ Ref<A::Image> VulkanSwapchain::TakeScreenshot() {
    );
    LANGULUS_ASSERT(err == VK_SUCCESS, Graphics, "Failed to map memory for temp image");
 
-   Bytes memory {input, bytesize};
+   auto memory = Bytes::From(input, bytesize);
 
    // Don't forget to clean up the staging buffer                       
    vram.DestroyBuffer(stager);
