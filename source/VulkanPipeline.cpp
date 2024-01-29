@@ -21,43 +21,46 @@ VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, const Neat& descriptor)
    mSubscribers.New();
    mGeometries.New();
 
-   descriptor.ForEach([this](const VulkanLayer& layer) {
-      // Add layer preferences                                          
-      if (layer.GetStyle() & VulkanLayer::Hierarchical)
-         mDepth = false;
-   });
-
-   const bool predefined = 0 !=
-      descriptor.ForEach([this](const A::Material& material) {
+   bool predefinedMaterial = false;
+   descriptor.ForEach(
+      [this](const VulkanLayer& layer) {
+         // Add layer preferences                                       
+         if (layer.GetStyle() & VulkanLayer::Hierarchical)
+            mDepth = false;
+         return Loop::NextLoop;
+      },
+      [this, &predefinedMaterial](const A::Material& material) {
          // Create from predefined material generator                   
          GenerateShaders(material);
-         return Flow::Break;
-      });
+         predefinedMaterial = true;
+         return Loop::Break;
+      }
+   );
 
-   if (not predefined) {
+   if (not predefinedMaterial) {
       // We must generate the material ourselves                        
       Construct material;
       descriptor.ForEach(
          [&](const A::File& file) {
             // Create from file                                         
             material = FromFile(file);
-            return Flow::Break;
+            return Loop::Break;
          },
          [&](const Text& text) {
             // Create from any text, including filenames and code       
             const auto file = GetRuntime()->GetFile(text);
             material = file ? FromFile(*file) : FromCode(text);
-            return Flow::Break;
+            return Loop::Break;
          },
          [&](const A::Mesh& mesh) {
             // Adapt to a mesh                                          
             material = FromMesh(mesh);
-            return Flow::Break;
+            return Loop::Break;
          },
          [&](const A::Image& image) {
             // Adapt to an image                                        
             material = FromImage(image);
-            return Flow::Break;
+            return Loop::Break;
          }
       );
 

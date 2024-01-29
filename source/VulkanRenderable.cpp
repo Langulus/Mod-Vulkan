@@ -114,11 +114,11 @@ VulkanPipeline* VulkanRenderable::GetOrCreatePipeline(
    // Get, or create the pipeline                                       
    Verbs::Create creator {&construct};
    GetRenderer()->Create(creator);
-   creator->ForEachDeep([&](VulkanPipeline* p) {
+   creator->ForEachDeep([&](VulkanPipeline& p) {
       if (usingGlobalPipeline)
-         mPredefinedPipeline = p;
+         mPredefinedPipeline = &p;
       else
-         mLOD[i].mPipeline = p;
+         mLOD[i].mPipeline = &p;
    });
 
    if (mPredefinedPipeline)
