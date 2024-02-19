@@ -520,7 +520,7 @@ void VulkanPipeline::CreateUniformBuffers() {
          // Add relevant inputs                                         
          const auto index = Rate(Rate::StaticUniformBegin + rate).GetInputIndex();
          for (const auto& trait : mUniforms[index]) {
-            if (trait.template TraitIs<Traits::Image>())
+            if (trait.template IsTrait<Traits::Image>())
                continue;
             ubo.mUniforms.Emplace(IndexBack, 0, trait);
          }
@@ -561,7 +561,7 @@ void VulkanPipeline::CreateUniformBuffers() {
          // Add relevant inputs                                         
          const auto index = Rate(Rate::DynamicUniformBegin + rate).GetInputIndex();
          for (const auto& trait : mUniforms[index]) {
-            if (trait.template TraitIs<Traits::Image>())
+            if (trait.template IsTrait<Traits::Image>())
                continue;
             ubo.mUniforms.Emplace(IndexBack, 0, trait);
          }
@@ -599,7 +599,7 @@ void VulkanPipeline::CreateUniformBuffers() {
       // Add relevant inputs                                            
       SamplerUBO ubo;
       for (const auto& trait : mUniforms[PerRenderable.GetInputIndex()]) {
-         if (not trait.template TraitIs<Traits::Image>())
+         if (not trait.template IsTrait<Traits::Image>())
             continue;
          ubo.mUniforms.Emplace(IndexBack, 0, trait);
       }
