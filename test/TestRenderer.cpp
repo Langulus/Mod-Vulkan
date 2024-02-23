@@ -13,65 +13,55 @@
 #include <Math/Primitives/Box.hpp>
 #include <catch2/catch.hpp>
 
+
 /// See https://github.com/catchorg/Catch2/blob/devel/docs/tostring.md        
 CATCH_TRANSLATE_EXCEPTION(::Langulus::Exception const& ex) {
    const Text serialized {ex};
    return ::std::string {Token {serialized}};
 }
 
-
 SCENARIO("Renderer creation inside a window", "[renderer]") {
-   Allocator::State memoryState;
+   static Allocator::State memoryState;
 
    for (int repeat = 0; repeat != 10; ++repeat) {
       GIVEN(std::string("Init and shutdown cycle #") + std::to_string(repeat)) {
          // Create root entity                                          
          Thing root;
          root.SetName("ROOT");
-
-         // Create runtime at the root                                  
          root.CreateRuntime();
-
-         // Load vulkan module                                          
          root.LoadMod("GLFW");
          root.LoadMod("Vulkan");
+         
+         WHEN("A renderer is created via abstractions") {
+            auto window = root.CreateUnit<A::Window>(Traits::Size(640, 480));
+            auto renderer = root.CreateUnit<A::Renderer>();
+            root.DumpHierarchy();
+               
+            REQUIRE(window);
+            REQUIRE(window.IsSparse());
+            REQUIRE(window.CastsTo<A::Window>());
+
+            REQUIRE(renderer);
+            REQUIRE(renderer.IsSparse());
+            REQUIRE(renderer.CastsTo<A::Renderer>());
+         }
 
       #if LANGULUS_FEATURE(MANAGED_REFLECTION)
          WHEN("A renderer is created via tokens") {
             auto window = root.CreateUnitToken("A::Window", Traits::Size(640, 480));
             auto renderer = root.CreateUnitToken("Renderer");
-
-            THEN("Various traits change") {
-               root.DumpHierarchy();
+            root.DumpHierarchy();
                
-               REQUIRE(window);
-               REQUIRE(window.IsSparse());
-               REQUIRE(window.CastsTo<A::Window>());
+            REQUIRE(window);
+            REQUIRE(window.IsSparse());
+            REQUIRE(window.CastsTo<A::Window>());
 
-               REQUIRE(renderer);
-               REQUIRE(renderer.IsSparse());
-               REQUIRE(renderer.CastsTo<A::Renderer>());
-            }
+            REQUIRE(renderer);
+            REQUIRE(renderer.IsSparse());
+            REQUIRE(renderer.CastsTo<A::Renderer>());
          }
       #endif
-         
-         WHEN("A renderer is created via abstractions") {
-            auto window = root.CreateUnit<A::Window>(Traits::Size(640, 480));
-            auto renderer = root.CreateUnit<A::Renderer>();
 
-            THEN("Various traits change") {
-               root.DumpHierarchy();
-               
-               REQUIRE(window);
-               REQUIRE(window.IsSparse());
-               REQUIRE(window.CastsTo<A::Window>());
-
-               REQUIRE(renderer);
-               REQUIRE(renderer.IsSparse());
-               REQUIRE(renderer.CastsTo<A::Renderer>());
-            }
-         }
-         
          // Check for memory leaks after each cycle                     
          REQUIRE(memoryState.Assert());
       }
@@ -79,6 +69,8 @@ SCENARIO("Renderer creation inside a window", "[renderer]") {
 }
 
 SCENARIO("Drawing an empty window", "[renderer]") {
+   static Allocator::State memoryState;
+
    GIVEN("A window with a renderer") {
       // Create the scene                                               
       Thing root;
@@ -91,8 +83,6 @@ SCENARIO("Drawing an empty window", "[renderer]") {
       root.CreateUnit<A::Renderer>();
 
       for (int repeat = 0; repeat != 10; ++repeat) {
-         Allocator::State memoryState;
-
          WHEN(std::string("Update cycle #") + std::to_string(repeat)) {
             // Update the scene                                         
             root.Update(16ms);
@@ -108,17 +98,15 @@ SCENARIO("Drawing an empty window", "[renderer]") {
             REQUIRE(interpret->IsSparse());
             REQUIRE(interpret->template CastsTo<A::Image>());
 
-            THEN("The window should be filled with a uniform color") {
-               Verbs::Compare compare {Colors::Red};
-               interpret->Run(compare);
+            Verbs::Compare compare {Colors::Red};
+            interpret->Run(compare);
 
-               REQUIRE(compare.IsDone());
-               REQUIRE(compare->GetCount() == 1);
-               REQUIRE(compare->IsDense());
-               REQUIRE(compare.GetOutput() == Compared::Equal);
+            REQUIRE(compare.IsDone());
+            REQUIRE(compare->GetCount() == 1);
+            REQUIRE(compare->IsDense());
+            REQUIRE(compare.GetOutput() == Compared::Equal);
 
-               root.DumpHierarchy();
-            }
+            root.DumpHierarchy();
          }
 
          // Check for memory leaks after each cycle                     
@@ -128,6 +116,8 @@ SCENARIO("Drawing an empty window", "[renderer]") {
 }
 
 SCENARIO("Drawing solid polygons", "[renderer]") {
+   static Allocator::State memoryState;
+
    GIVEN("A window with a renderer") {
       // Create the scene                                               
       Thing root;
@@ -152,8 +142,6 @@ SCENARIO("Drawing solid polygons", "[renderer]") {
       root.DumpHierarchy();
 
       for (int repeat = 0; repeat != 10; ++repeat) {
-         Allocator::State memoryState;
-
          WHEN(std::string("Update cycle #") + std::to_string(repeat)) {
             // Update the scene                                         
             root.Update(16ms);
@@ -163,14 +151,12 @@ SCENARIO("Drawing solid polygons", "[renderer]") {
             Verbs::InterpretAs<A::Image> interpret;
             root.Do(interpret);
 
-            THEN("The window should be filled with a uniform color") {
-               /*Verbs::Compare compare {Colors::Red};
-               interpret->Run(compare);
+            /*Verbs::Compare compare {Colors::Red};
+            interpret->Run(compare);
 
-               REQUIRE(compare.GetOutput() == Compared::Equal);*/
+            REQUIRE(compare.GetOutput() == Compared::Equal);*/
 
-               root.DumpHierarchy();
-            }
+            root.DumpHierarchy();
          }
 
          // Check for memory leaks after each cycle                     
