@@ -35,7 +35,7 @@ VulkanTexture::~VulkanTexture() {
 ///   @param content - the abstract texture content interface                 
 void VulkanTexture::Upload(const A::Image& content) {
    // Check if any data was found                                       
-   const auto startTime = SteadyClock::Now();
+   //const auto startTime = SteadyClock::Now();
    const auto pixels = content.GetDataList<Traits::Color>();
    LANGULUS_ASSERT(pixels && *pixels, Graphics,
       "Can't generate texture - no color data found");
