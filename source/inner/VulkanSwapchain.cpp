@@ -573,7 +573,7 @@ Ref<A::Image> VulkanSwapchain::TakeScreenshot() {
          source.GetView(),
          SteadyClock::Now()
       )};
-      mScreenshot = mRenderer.RunIn(creator).As<A::Image*>();
+      mScreenshot = mRenderer.RunIn(creator)->As<A::Image*>();
    }
 
    mScreenshot->Upload(Abandon(memory));

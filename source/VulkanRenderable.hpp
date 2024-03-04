@@ -27,16 +27,16 @@ protected:
    // Precompiled instances and levels, updated on Refresh()            
    TAny<const A::Instance*> mInstances;
    TRange<Level> mLevelRange;
-   Ptr<A::Material> mMaterialContent;
-   Ptr<A::Mesh> mGeometryContent;
-   Ptr<A::Image> mTextureContent;
-   mutable Ptr<VulkanPipeline> mPredefinedPipeline;
+   Ref<A::Material> mMaterialContent;
+   Ref<A::Mesh> mGeometryContent;
+   Ref<A::Image> mTextureContent;
+   mutable Ref<VulkanPipeline> mPredefinedPipeline;
 
    // Precompiled content, updated on Refresh()                         
    mutable struct {
-      Ptr<VulkanGeometry> mGeometry;
-      Ptr<VulkanTexture> mTexture;
-      Ptr<VulkanPipeline> mPipeline;
+      Ref<VulkanGeometry> mGeometry;
+      Ref<VulkanTexture> mTexture;
+      Ref<VulkanPipeline> mPipeline;
    } mLOD[LOD::IndexCount];
 
    void ResetRenderable();

@@ -47,13 +47,13 @@ protected:
    //                                                                   
    
    // The platform window, where the renderer is created                
-   Ptr<const A::Window> mWindow;
+   Ref<const A::Window> mWindow;
    // The time gradient, used for animations                            
-   Ptr<TGradient<Time>> mTime;
+   Ref<TGradient<Time>> mTime;
    // Mouse position, can be passed to shaders                          
-   Ptr<Grad2v2> mMousePosition;
+   Ref<Grad2v2> mMousePosition;
    // Mouse scroll, can be passed to shaders                            
-   Ptr<Grad2v2> mMouseScroll;
+   Ref<Grad2v2> mMouseScroll;
 
 protected:
    // The logical device                                                

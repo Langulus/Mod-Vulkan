@@ -38,7 +38,7 @@ private:
    TAny<TAny<Trait>> mUniforms;
 
    // Shaders                                                           
-   Ptr<const VulkanShader> mStages[ShaderStage::Counter];
+   Ref<const VulkanShader> mStages[ShaderStage::Counter];
    // The graphics pipeline                                             
    Own<VkPipeline> mPipeline;
    // The rendering pipeline layout                                     
