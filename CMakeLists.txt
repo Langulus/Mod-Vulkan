@@ -11,7 +11,7 @@ find_package(Vulkan REQUIRED COMPONENTS shaderc_combined)
 file(GLOB_RECURSE
 	LANGULUS_MOD_VULKAN_SOURCES 
 	LIST_DIRECTORIES FALSE CONFIGURE_DEPENDS
-	source/*.cpp source/*.hpp
+	source/*.cpp
 )
 
 # Build the module                                                              
