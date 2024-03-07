@@ -44,6 +44,8 @@ SCENARIO("Renderer creation inside a window", "[renderer]") {
             REQUIRE(renderer);
             REQUIRE(renderer.IsSparse());
             REQUIRE(renderer.CastsTo<A::Renderer>());
+
+            REQUIRE(root.GetUnits().GetCount() == 2);
          }
 
       #if LANGULUS_FEATURE(MANAGED_REFLECTION)
@@ -59,6 +61,8 @@ SCENARIO("Renderer creation inside a window", "[renderer]") {
             REQUIRE(renderer);
             REQUIRE(renderer.IsSparse());
             REQUIRE(renderer.CastsTo<A::Renderer>());
+
+            REQUIRE(root.GetUnits().GetCount() == 2);
          }
       #endif
 
@@ -92,6 +96,7 @@ SCENARIO("Drawing an empty window", "[renderer]") {
             Verbs::InterpretAs<A::Image> interpret;
             root.Do(interpret);
 
+            REQUIRE(root.GetUnits().GetCount() == 2);
             REQUIRE_FALSE(root.HasUnits<A::Image>());
             REQUIRE(interpret.IsDone());
             REQUIRE(interpret->GetCount() == 1);
