@@ -29,7 +29,7 @@
       auto CreateWin32SurfaceKHR = (PFN_vkCreateWin32SurfaceKHR)
          vkGetInstanceProcAddr(instance, "vkCreateWin32SurfaceKHR");
 
-      if (!CreateWin32SurfaceKHR || CreateWin32SurfaceKHR(instance, &createInfo, nullptr, &surface) != VK_SUCCESS)
+      if (not CreateWin32SurfaceKHR or CreateWin32SurfaceKHR(instance, &createInfo, nullptr, &surface) != VK_SUCCESS)
          return false;
       return true;
    }
@@ -42,7 +42,7 @@
       auto CreateXLIBSurfaceKHR = (PFN_vkCreateXlibSurfaceKHR)
          vkGetInstanceProcAddr(instance, "PFN_vkCreateXlibSurfaceKHR");
 
-      if (!CreateXLIBSurfaceKHR || CreateXLIBSurfaceKHR(instance, &createInfo, nullptr, &surface) != VK_SUCCESS)
+      if (not CreateXLIBSurfaceKHR or CreateXLIBSurfaceKHR(instance, &createInfo, nullptr, &surface) != VK_SUCCESS)
          return false;
       return true;
    }

@@ -82,9 +82,12 @@ SCENARIO("Drawing an empty window", "[renderer]") {
       root.CreateRuntime();
       root.LoadMod("GLFW");
       root.LoadMod("Vulkan");
+      root.LoadMod("FileSystem");
       root.LoadMod("AssetsImages");
       root.CreateUnit<A::Window>(Traits::Size(640, 480));
       root.CreateUnit<A::Renderer>();
+
+      static Allocator::State memoryState2;
 
       for (int repeat = 0; repeat != 10; ++repeat) {
          WHEN(std::string("Update cycle #") + std::to_string(repeat)) {
@@ -94,7 +97,7 @@ SCENARIO("Drawing an empty window", "[renderer]") {
             // And interpret the scene as an image, i.e. taking a       
             // screenshot                                               
             Verbs::InterpretAs<A::Image> interpret;
-            root.Do(interpret);
+            root.Run(interpret);
 
             REQUIRE(root.GetUnits().GetCount() == 2);
             REQUIRE_FALSE(root.HasUnits<A::Image>());
@@ -104,7 +107,7 @@ SCENARIO("Drawing an empty window", "[renderer]") {
             REQUIRE(interpret->template CastsTo<A::Image>());
 
             Verbs::Compare compare {Colors::Red};
-            interpret->Run(compare);
+            interpret.Then(compare);
 
             REQUIRE(compare.IsDone());
             REQUIRE(compare->GetCount() == 1);
@@ -112,12 +115,15 @@ SCENARIO("Drawing an empty window", "[renderer]") {
             REQUIRE(compare.GetOutput() == Compared::Equal);
 
             root.DumpHierarchy();
-         }
 
-         // Check for memory leaks after each cycle                     
-         REQUIRE(memoryState.Assert());
+            // Check for memory leaks after each update cycle           
+            REQUIRE(memoryState2.Assert());
+         }
       }
    }
+
+   // Check for memory leaks after each initialization cycle            
+   REQUIRE(memoryState.Assert());
 }
 
 SCENARIO("Drawing solid polygons", "[renderer]") {

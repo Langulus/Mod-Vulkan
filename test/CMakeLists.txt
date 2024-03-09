@@ -13,6 +13,8 @@ target_link_libraries(LangulusModVulkanTest
 
 add_dependencies(LangulusModVulkanTest
 	LangulusModVulkan
+	LangulusModGLFW
+	LangulusModAssetsImages
 )
 
 add_test(

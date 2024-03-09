@@ -14,14 +14,6 @@
 VulkanSwapchain::VulkanSwapchain(VulkanRenderer& renderer) noexcept
    : mRenderer {renderer} {}
 
-/// Create a surface inside a native window                                   
-///   @param window - the window                                              
-void VulkanSwapchain::CreateSurface(const A::Window* window) {
-   // Create surface                                                    
-   if (not CreateNativeVulkanSurfaceKHR(mRenderer.GetVulkanInstance(), window, mSurface))
-      LANGULUS_THROW(Graphics, "Error creating window surface");
-}
-
 /// Create the swapchain                                                      
 ///   @param format - surface format                                          
 ///   @param families - set of queue families to use                          
@@ -32,39 +24,29 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamili
    const Real resy = (*mRenderer.mResolution)[1];
    const auto resxuint = static_cast<uint32_t>(resx);
    const auto resyuint = static_cast<uint32_t>(resy);
-   if (resxuint == 0 or resyuint == 0) {
-      Destroy();
-      LANGULUS_THROW(Graphics, "Bad resolution");
-   }
+   if (resxuint == 0 or resyuint == 0)
+      LANGULUS_OOPS(Graphics, "Bad resolution");
 
    // Create swap chain                                                 
    VkSurfaceCapabilitiesKHR surface_caps;
    memset(&surface_caps, 0, sizeof(VkSurfaceCapabilitiesKHR));
    std::vector<VkPresentModeKHR> surface_presentModes;
-   if (vkGetPhysicalDeviceSurfaceCapabilitiesKHR(adapter, mSurface, &surface_caps)) {
-      Destroy();
-      LANGULUS_THROW(Graphics, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR failed");
-   }
+   if (vkGetPhysicalDeviceSurfaceCapabilitiesKHR(adapter, mRenderer.GetSurface(), &surface_caps))
+      LANGULUS_OOPS(Graphics, "vkGetPhysicalDeviceSurfaceCapabilitiesKHR failed");
 
    // Check supported present modes                                     
    uint32_t presentModeCount;
-   if (vkGetPhysicalDeviceSurfacePresentModesKHR(adapter, mSurface, &presentModeCount, nullptr)) {
-      Destroy();
-      LANGULUS_THROW(Graphics, "vkGetPhysicalDeviceSurfacePresentModesKHR failed");
-   }
+   if (vkGetPhysicalDeviceSurfacePresentModesKHR(adapter, mRenderer.GetSurface(), &presentModeCount, nullptr))
+      LANGULUS_OOPS(Graphics, "vkGetPhysicalDeviceSurfacePresentModesKHR failed");
 
    if (presentModeCount != 0) {
       surface_presentModes.resize(presentModeCount);
-      if (vkGetPhysicalDeviceSurfacePresentModesKHR(adapter, mSurface, &presentModeCount, surface_presentModes.data())) {
-         Destroy();
-         LANGULUS_THROW(Graphics, "vkGetPhysicalDeviceSurfacePresentModesKHR failed");
-      }
+      if (vkGetPhysicalDeviceSurfacePresentModesKHR(adapter, mRenderer.GetSurface(), &presentModeCount, surface_presentModes.data()))
+         LANGULUS_OOPS(Graphics, "vkGetPhysicalDeviceSurfacePresentModesKHR failed");
    }
    
-   if (surface_presentModes.empty()) {
-      Destroy();
-      LANGULUS_THROW(Graphics, "Could not create swap chain");
-   }
+   if (surface_presentModes.empty())
+      LANGULUS_OOPS(Graphics, "Could not create swap chain");
 
    // Choose present mode                                               
    auto surfacePresentMode = VkPresentModeKHR::VK_PRESENT_MODE_FIFO_KHR;
@@ -94,7 +76,7 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamili
    // Setup the swapchain                                               
    VkSwapchainCreateInfoKHR swapInfo {};
    swapInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-   swapInfo.surface = mSurface;
+   swapInfo.surface = mRenderer.GetSurface();
    swapInfo.minImageCount = imageCount;
    swapInfo.imageFormat = format.format;
    swapInfo.imageColorSpace = format.colorSpace;
@@ -115,23 +97,17 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamili
    // Allow us to copy swapchain images when testing                    
    IF_LANGULUS_TESTING(swapInfo.imageUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
 
-   if (vkCreateSwapchainKHR(mRenderer.mDevice, &swapInfo, nullptr, &mSwapChain.Get())) {
-      Destroy();
-      LANGULUS_THROW(Graphics, "Can't create swap chain");
-   }
+   if (vkCreateSwapchainKHR(mRenderer.mDevice, &swapInfo, nullptr, &mSwapChain.Get()))
+      LANGULUS_OOPS(Graphics, "Can't create swap chain");
 
    // Get images from swapchain                                         
-   if (vkGetSwapchainImagesKHR(mRenderer.mDevice, mSwapChain, &imageCount, nullptr)) {
-      Destroy();
-      LANGULUS_THROW(Graphics, "vkGetSwapchainImagesKHR fails");
-   }
+   if (vkGetSwapchainImagesKHR(mRenderer.mDevice, mSwapChain, &imageCount, nullptr))
+      LANGULUS_OOPS(Graphics, "vkGetSwapchainImagesKHR fails");
 
    TAny<VkImage> swapChainImages;
    swapChainImages.New(imageCount);
-   if (vkGetSwapchainImagesKHR(mRenderer.mDevice, mSwapChain, &imageCount, swapChainImages.GetRaw())) {
-      Destroy();
-      LANGULUS_THROW(Graphics, "vkGetSwapchainImagesKHR fails");
-   }
+   if (vkGetSwapchainImagesKHR(mRenderer.mDevice, mSwapChain, &imageCount, swapChainImages.GetRaw()))
+      LANGULUS_OOPS(Graphics, "vkGetSwapchainImagesKHR fails");
 
    // Create the image views for the swap chain. They will all be       
    // single layer, 2D images, with no mipmaps                          
@@ -195,10 +171,8 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamili
       framebufferInfo.height = resyuint;
       framebufferInfo.layers = 1;
 
-      if (vkCreateFramebuffer(mRenderer.mDevice, &framebufferInfo, nullptr, &mFrameBuffers[i])) {
-         Destroy();
-         LANGULUS_THROW(Graphics, "Can't create framebuffer");
-      }
+      if (vkCreateFramebuffer(mRenderer.mDevice, &framebufferInfo, nullptr, &mFrameBuffers[i]))
+         LANGULUS_OOPS(Graphics, "Can't create framebuffer");
    }
 
    // Create a command buffer for each framebuffer                      
@@ -209,10 +183,8 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamili
    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
    allocInfo.commandBufferCount = count;
 
-   if (vkAllocateCommandBuffers(mRenderer.mDevice, &allocInfo, mCommandBuffer.data())) {
-      Destroy();
-      LANGULUS_THROW(Graphics, "Can't create command buffers");
-   }
+   if (vkAllocateCommandBuffers(mRenderer.mDevice, &allocInfo, mCommandBuffer.data()))
+      LANGULUS_OOPS(Graphics, "Can't create command buffers");
 
    // Create command buffer fences                                      
    if (not mNewBufferFence) {
@@ -223,10 +195,8 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamili
       for (auto& it : fenceInfo) {
          it.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
          VkFence result {};
-         if (vkCreateFence(mRenderer.mDevice, &it, nullptr, &result)) {
-            Destroy();
-            LANGULUS_THROW(Graphics, "Can't create buffer fence");
-         }
+         if (vkCreateFence(mRenderer.mDevice, &it, nullptr, &result))
+            LANGULUS_OOPS(Graphics, "Can't create buffer fence");
 
          mNewBufferFence << result;
       }
@@ -236,18 +206,14 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamili
    VkSemaphoreCreateInfo fenceInfo {};
    fenceInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-   if (vkCreateSemaphore(mRenderer.mDevice, &fenceInfo, nullptr, &mNewFrameFence.Get())) {
-      Destroy();
-      LANGULUS_THROW(Graphics, "Can't create new frame semaphore");
-   }
+   if (vkCreateSemaphore(mRenderer.mDevice, &fenceInfo, nullptr, &mNewFrameFence.Get()))
+      LANGULUS_OOPS(Graphics, "Can't create new frame semaphore");
 
    VkSemaphoreCreateInfo semaphoreInfo {};
    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-   if (vkCreateSemaphore(mRenderer.mDevice, &semaphoreInfo, nullptr, &mFrameFinished.Get())) {
-      Destroy();
-      LANGULUS_THROW(Graphics, "Can't create frame finished semaphore");
-   }
+   if (vkCreateSemaphore(mRenderer.mDevice, &semaphoreInfo, nullptr, &mFrameFinished.Get()))
+      LANGULUS_OOPS(Graphics, "Can't create frame finished semaphore");
 
    mCurrentFrame = 0;
 }
@@ -255,13 +221,22 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamili
 /// Recreate the swapchain (usually on window resize)                         
 ///   @param families - a set of queue families                               
 void VulkanSwapchain::Recreate(const QueueFamilies& families) {
-   vkDeviceWaitIdle(mRenderer.mDevice);
    Destroy();
-   Create(GetSurfaceFormat(), families);
+
+   try { Create(GetSurfaceFormat(), families); }
+   catch (...) {
+      Destroy();
+      throw;
+   }
 }
 
-/// Destroy the current swapchain                                             
+/// Destroy the current swapchain and release all resource, that would        
+/// otherwise cause circular references                                       
 void VulkanSwapchain::Destroy() {
+   mScreenshot.Reset();
+
+   vkDeviceWaitIdle(mRenderer.mDevice);
+
    if (mFrameFinished) {
       vkDestroySemaphore(mRenderer.mDevice, mFrameFinished, nullptr);
       mFrameFinished.Reset();
@@ -309,12 +284,6 @@ void VulkanSwapchain::Destroy() {
    mFrameImages.Clear();
 }
 
-/// Destructor                                                                
-VulkanSwapchain::~VulkanSwapchain() {
-   if (mSurface)
-      vkDestroySurfaceKHR(mRenderer.GetVulkanInstance(), mSurface, nullptr);
-}
-
 /// Get backbuffer surface format                                             
 ///   @return the surface format of the swap chain                            
 VkSurfaceFormatKHR VulkanSwapchain::GetSurfaceFormat() const noexcept {
@@ -326,13 +295,13 @@ VkSurfaceFormatKHR VulkanSwapchain::GetSurfaceFormat() const noexcept {
    const auto adapter = mRenderer.GetAdapter();
    std::vector<VkSurfaceFormatKHR> surface_formats;
    uint32_t formatCount;
-   if (vkGetPhysicalDeviceSurfaceFormatsKHR(adapter, mSurface, &formatCount, nullptr))
-      LANGULUS_THROW(Graphics, "vkGetPhysicalDeviceSurfaceFormatsKHR failed");
+   if (vkGetPhysicalDeviceSurfaceFormatsKHR(adapter, mRenderer.GetSurface(), &formatCount, nullptr))
+      LANGULUS_OOPS(Graphics, "vkGetPhysicalDeviceSurfaceFormatsKHR failed");
 
    if (formatCount != 0) {
       surface_formats.resize(formatCount);
-      if (vkGetPhysicalDeviceSurfaceFormatsKHR(adapter, mSurface, &formatCount, surface_formats.data()))
-         LANGULUS_THROW(Graphics, "vkGetPhysicalDeviceSurfaceFormatsKHR failed");
+      if (vkGetPhysicalDeviceSurfaceFormatsKHR(adapter, mRenderer.GetSurface(), &formatCount, surface_formats.data()))
+         LANGULUS_OOPS(Graphics, "vkGetPhysicalDeviceSurfaceFormatsKHR failed");
    }
 
    if (surface_formats.empty()) {
@@ -359,7 +328,7 @@ VkSurfaceFormatKHR VulkanSwapchain::GetSurfaceFormat() const noexcept {
    }
 
    if (surfaceFormat.colorSpace == VK_COLOR_SPACE_MAX_ENUM_KHR)
-      LANGULUS_THROW(Graphics, "Incompatible surface format and color space for swap chain");
+      LANGULUS_OOPS(Graphics, "Incompatible surface format and color space for swap chain");
 
    return surfaceFormat;
 }
@@ -468,12 +437,6 @@ VkFramebuffer VulkanSwapchain::GetFramebuffer() const noexcept {
    return mFrameBuffers[mCurrentFrame];
 }
 
-/// Get the native surface                                                    
-///   @return the surface                                                     
-VkSurfaceKHR VulkanSwapchain::GetSurface() const noexcept {
-   return mSurface;
-}
-
 /// Get currently bound swapchain image                                       
 ///   @return the image                                                       
 const VulkanImage& VulkanSwapchain::GetCurrentImage() const noexcept {
@@ -554,7 +517,8 @@ Ref<A::Image> VulkanSwapchain::TakeScreenshot() {
       0, VK_WHOLE_SIZE, 0,
       reinterpret_cast<void**>(&input)
    );
-   LANGULUS_ASSERT(err == VK_SUCCESS, Graphics, "Failed to map memory for temp image");
+   LANGULUS_ASSERT(err == VK_SUCCESS, Graphics,
+      "Failed to map memory for temp image");
 
    auto memory = Bytes::From(input, bytesize);
 
@@ -569,7 +533,7 @@ Ref<A::Image> VulkanSwapchain::TakeScreenshot() {
       // will otherwise be added implicitly, by producing the image in  
       // the context of Thing that owns this renderer.                  
       Verbs::Create creator {Construct::From<A::Image>(
-         Traits::Parent {&mRenderer},
+         Traits::Parent {Ref {&mRenderer}},
          source.GetView(),
          SteadyClock::Now()
       )};

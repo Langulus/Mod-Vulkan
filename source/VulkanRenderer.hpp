@@ -56,6 +56,8 @@ protected:
    Ref<Grad2v2> mMouseScroll;
 
 protected:
+   // Rendering surface                                                 
+   Own<VkSurfaceKHR> mSurface;
    // The logical device                                                
    Own<VkDevice> mDevice;
    // VRAM memory properties                                            
@@ -103,12 +105,11 @@ protected:
    // Texture content mirror, keeps RAM/VRAM synchronized               
    TFactoryUnique<VulkanTexture> mTextures;
 
-   void Destroy();
-
 public:
    VulkanRenderer(Vulkan*, const Neat&);
    ~VulkanRenderer();
 
+   void Detach();
    void Refresh() override;
 
    void Create(Verb&);
@@ -122,4 +123,5 @@ public:
    NOD() Offset GetOuterUBOAlignment() const noexcept;
    NOD() VkCommandBuffer GetRenderCB() const noexcept;
    NOD() const Scale2& GetResolution() const noexcept;
+   NOD() VkSurfaceKHR GetSurface() const noexcept;
 };

@@ -21,10 +21,13 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, const Neat& descriptor)
    , mShaders {this}
    , mGeometries {this}
    , mTextures {this} {
+   VERBOSE_VULKAN("Initializing...");
+
    // Retrieve relevant traits from the environment                     
    mWindow = SeekUnitAux<A::Window>(descriptor);
    LANGULUS_ASSERT(mWindow, Construct,
-      "No window available for renderer");
+      "No window available for renderer - did you create a window component "
+      "_before_ creating the renderer?");
    if (not SeekValueAux<Traits::Size>(descriptor, mResolution))
       mResolution = mWindow->GetSize();
 
@@ -33,15 +36,18 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, const Neat& descriptor)
    SeekValueAux<Traits::MouseScroll>(descriptor, mMouseScroll);
 
    // Create native surface                                             
-   mSwapchain.CreateSurface(mWindow);
+   if (not CreateNativeVulkanSurfaceKHR(GetVulkanInstance(), mWindow, mSurface)) {
+      Detach();
+      LANGULUS_OOPS(Graphics, "Error creating window surface");
+   }
 
    // Check adapter functionality                                       
    const auto adapter = GetAdapter();
    uint32_t queueCount;
    vkGetPhysicalDeviceQueueFamilyProperties(adapter, &queueCount, nullptr);
    if (queueCount == 0) {
-      Destroy();
-      LANGULUS_THROW(Graphics, "No queue families");
+      Detach();
+      LANGULUS_OOPS(Graphics, "No queue families");
    }
 
    std::vector<VkQueueFamilyProperties> queueProperties(queueCount);
@@ -50,9 +56,9 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, const Neat& descriptor)
    // Not all queues support presenting. Find one that does.            
    std::vector<VkBool32> supportsPresent(queueCount);
    for (uint32_t i = 0; i < queueCount; i++) {
-      if (vkGetPhysicalDeviceSurfaceSupportKHR(adapter, i, mSwapchain.GetSurface(), &supportsPresent[i])) {
-         Destroy();
-         LANGULUS_THROW(Graphics, "vkGetPhysicalDeviceSurfaceSupportKHR failed");
+      if (vkGetPhysicalDeviceSurfaceSupportKHR(adapter, i, mSurface, &supportsPresent[i])) {
+         Detach();
+         LANGULUS_OOPS(Graphics, "vkGetPhysicalDeviceSurfaceSupportKHR failed");
       }
    }
 
@@ -77,8 +83,8 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, const Neat& descriptor)
    }
 
    if (mGraphicIndex == UINT32_MAX or mPresentIndex == UINT32_MAX) {
-      Destroy();
-      LANGULUS_THROW(Graphics,
+      Detach();
+      LANGULUS_OOPS(Graphics,
          "Your graphical adapter doesn't support rendering or presenting to screen");
    }
 
@@ -89,8 +95,8 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, const Neat& descriptor)
    }
 
    if (mTransferIndex == UINT32_MAX) {
-      Destroy();
-      LANGULUS_THROW(Graphics,
+      Detach();
+      LANGULUS_OOPS(Graphics,
          "Your graphical adapter doesn't support memory transfer operations. "
          "Is this even possible? Aborting just in case, because you can't use your VRAM...");
    }
@@ -140,8 +146,8 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, const Neat& descriptor)
 
    // Create the logical device                                         
    if (vkCreateDevice(adapter, &deviceInfo, nullptr, &mDevice.Get())) {
-      Destroy();
-      LANGULUS_THROW(Graphics, "Could not create logical device for rendering");
+      Detach();
+      LANGULUS_OOPS(Graphics, "Could not create logical device for rendering");
    }
 
    mVRAM.Initialize(adapter, mDevice, mTransferIndex);
@@ -156,8 +162,8 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, const Neat& descriptor)
    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
    if (vkCreateCommandPool(mDevice, &poolInfo, nullptr, &mCommandPool.Get())) {
-      Destroy();
-      LANGULUS_THROW(Graphics, "Can't create command pool for rendering");
+      Detach();
+      LANGULUS_OOPS(Graphics, "Can't create command pool for rendering");
    }
 
    const auto format = mSwapchain.GetSurfaceFormat();
@@ -220,14 +226,14 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, const Neat& descriptor)
    renderPassInfo.pDependencies = &dependency;
 
    if (vkCreateRenderPass(mDevice, &renderPassInfo, nullptr, &mPass.Get())) {
-      Destroy();
-      LANGULUS_THROW(Graphics, "Can't create main rendering pass");
+      Detach();
+      LANGULUS_OOPS(Graphics, "Can't create main rendering pass");
    }
 
    // Create the swap chain                                             
    try { mSwapchain.Create(format, mFamilies); }
    catch (...) {
-      Destroy();
+      Detach();
       throw;
    }
 
@@ -236,32 +242,36 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, const Neat& descriptor)
 
    // Get device features                                               
    vkGetPhysicalDeviceFeatures(adapter, &mPhysicalFeatures);
+
+   Couple(descriptor);
+   VERBOSE_VULKAN("Initialized");
 }
 
 /// Destroy anything created                                                  
-void VulkanRenderer::Destroy() {
-   if (not mDevice)
-      return;
+void VulkanRenderer::Detach() {
+   if (mDevice) {
+      vkDeviceWaitIdle(mDevice);
+      mSwapchain.Destroy();
+      if (mPass)
+         vkDestroyRenderPass(mDevice, mPass, nullptr);
+      if (mCommandPool)
+         vkDestroyCommandPool(mDevice, mCommandPool, nullptr);
+      mVRAM.Destroy();
+      vkDestroyDevice(mDevice, nullptr);
+      mDevice = nullptr;
+   }
 
-   // Destroy anything that was produced by the VkDevice                
-   vkDeviceWaitIdle(mDevice);
+   if (mSurface) {
+      vkDestroySurfaceKHR(GetVulkanInstance(), mSurface, nullptr);
+      mSurface = nullptr;
+   }
 
-   mSwapchain.Destroy();
-
-   if (mPass)
-      vkDestroyRenderPass(mDevice, mPass, nullptr);
-
-   if (mCommandPool)
-      vkDestroyCommandPool(mDevice, mCommandPool, nullptr);
-
-   mVRAM.Destroy();
-
-   vkDestroyDevice(mDevice, nullptr);
+   ProducedFrom<Vulkan>::Detach();
 }
 
 /// Renderer destruction                                                      
 VulkanRenderer::~VulkanRenderer() {
-   Destroy();
+   Detach();
 }
 
 /// React to changes in environment                                           
@@ -324,9 +334,12 @@ void VulkanRenderer::Draw() {
    // Upload any uniform buffer changes to VRAM                         
    // Once this data is uploaded, we're free to prepare the next frame  
    for (auto pipe : relevantPipes) {
-      pipe->SetUniform<PerTick, Traits::Time>(mTime->Current());
-      pipe->SetUniform<PerTick, Traits::MousePosition>(mMousePosition->Current());
-      pipe->SetUniform<PerTick, Traits::MouseScroll>(mMouseScroll->Current());
+      pipe->SetUniform<PerTick, Traits::Time>(
+         mTime->Current());
+      pipe->SetUniform<PerTick, Traits::MousePosition>(
+         mMousePosition->Current());
+      pipe->SetUniform<PerTick, Traits::MouseScroll>(
+         mMouseScroll->Current());
       pipe->UpdateUniformBuffers();
    }
 
@@ -413,4 +426,10 @@ VkCommandBuffer VulkanRenderer::GetRenderCB() const noexcept {
 ///   @return the resolution                                                  
 const Scale2& VulkanRenderer::GetResolution() const noexcept {
    return *mResolution;
+}
+
+/// Get the native surface                                                    
+///   @return the surface                                                     
+VkSurfaceKHR VulkanRenderer::GetSurface() const noexcept {
+   return mSurface;
 }

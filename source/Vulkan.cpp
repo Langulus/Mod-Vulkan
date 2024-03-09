@@ -14,9 +14,6 @@ LANGULUS_DEFINE_MODULE(
    Vulkan, VulkanRenderer, VulkanLayer, VulkanCamera, VulkanRenderable, VulkanLight
 )
 
-/// Whether or not to enable verbose and info logging of vulkan messages      
-#define VERBOSE_VULKAN(a) //a
-
 #if LANGULUS(DEBUG)
    /// Debug relay for vulkan messages                                        
    static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanLogRelay(
@@ -26,14 +23,15 @@ LANGULUS_DEFINE_MODULE(
       // Different message types will be colored in a different way     
       if (flags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
          Logger::Error("Vulkan: ", msg);
-      else if ((flags & VK_DEBUG_REPORT_WARNING_BIT_EXT) || (flags & VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT))
+      else if ((flags & VK_DEBUG_REPORT_WARNING_BIT_EXT)
+      or (flags & VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT))
          Logger::Warning("Vulkan: ", msg);
-      VERBOSE_VULKAN(
+      #if VERBOSE_VULKAN_ENABLED()
          else if (flags & VK_DEBUG_REPORT_INFORMATION_BIT_EXT)
             Logger::Info("Vulkan: ", msg);
          else if (flags & VK_DEBUG_REPORT_DEBUG_BIT_EXT)
             Logger::Verbose("Vulkan: ", msg);
-      )
+      #endif
       return VK_FALSE;
    }
 
@@ -58,9 +56,9 @@ LANGULUS_DEFINE_MODULE(
             }
          }
 
-         if (!found) {
-            Logger::Error("Missing validation layer for debugging: ", layerName);
-            LANGULUS_THROW(Graphics, "Vulkan module failed to initialize");
+         if (not found) {
+            LANGULUS_OOPS(Graphics,
+               "Missing validation layer for debugging: ", layerName);
          }
       }
    }
@@ -140,7 +138,7 @@ Vulkan::Vulkan(Runtime* runtime, const Neat&)
                }
             }
 
-            if (!found)
+            if (not found)
                Logger::Error(Self(), " - Missing extension: ", test);
          }
       }
@@ -155,7 +153,7 @@ Vulkan::Vulkan(Runtime* runtime, const Neat&)
          Logger::Error(Self(), "Your driver is incompatible");
       }
 
-      LANGULUS_THROW(Graphics, "Vulkan couldn't setup");
+      LANGULUS_OOPS(Graphics, "Vulkan couldn't setup");
    }
 
    VERBOSE_VULKAN(Logger::Verbose(Self(),
@@ -191,14 +189,16 @@ Vulkan::Vulkan(Runtime* runtime, const Neat&)
 
       if (func)
          func(mInstance, &relayInfo, nullptr, &mLogRelay);
-      else
-         LANGULUS_THROW(Graphics, "vkCreateDebugReportCallbackEXT failed - try building in release mode");
+      else {
+         LANGULUS_OOPS(Graphics,
+            "vkCreateDebugReportCallbackEXT failed - try building in release mode");
+      }
    #endif
 
    // Pick good hardware                                                
    mAdapter = PickAdapter();
-   if (not mAdapter)
-      LANGULUS_THROW(Graphics, "Error picking graphics adapter - vulkan module is unusable");
+   LANGULUS_ASSERT(mAdapter, Graphics,
+      "Error picking graphics adapter - vulkan module is unusable");
 
    // Show some info                                                    
    VkPhysicalDeviceProperties adapter_info;
@@ -209,8 +209,8 @@ Vulkan::Vulkan(Runtime* runtime, const Neat&)
    // Check adapter functionality                                       
    uint32_t queueCount;
    vkGetPhysicalDeviceQueueFamilyProperties(mAdapter, &queueCount, nullptr);
-   if (queueCount == 0)
-      LANGULUS_THROW(Graphics, "vkGetPhysicalDeviceQueueFamilyProperties returned no queues");
+   LANGULUS_ASSERT(queueCount, Graphics,
+      "vkGetPhysicalDeviceQueueFamilyProperties returned no queues");
 
    TAny<VkQueueFamilyProperties> queueProperties;
    queueProperties.New(queueCount);
@@ -270,7 +270,7 @@ Vulkan::Vulkan(Runtime* runtime, const Neat&)
 
    // Create the computation device                                     
    if (vkCreateDevice(mAdapter, &deviceInfo, nullptr, &mDevice.Get())) {
-      LANGULUS_THROW(Graphics,
+      LANGULUS_OOPS(Graphics,
          "Could not create logical device for rendering"
          " - vulkan module is unusable");
    }

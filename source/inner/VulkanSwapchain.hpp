@@ -18,8 +18,6 @@ protected:
    VulkanRenderer& mRenderer;
    Text Self() const;
 
-   // Rendering surface                                                 
-   Own<VkSurfaceKHR> mSurface;
    // Swap chain                                                        
    Own<VkSwapchainKHR> mSwapChain;
 
@@ -53,13 +51,10 @@ protected:
 public:
    VulkanSwapchain() = delete;
    VulkanSwapchain(VulkanRenderer&) noexcept;
-   ~VulkanSwapchain();
 
-   void CreateSurface(const A::Window*);
    void Create(const VkSurfaceFormatKHR&, const QueueFamilies&);
    void Recreate(const QueueFamilies&);
    void Destroy();
-   void DestroySurface();
 
    bool StartRendering();
    bool EndRendering();
@@ -67,7 +62,6 @@ public:
    NOD() VkSurfaceFormatKHR GetSurfaceFormat() const noexcept;
    NOD() VkCommandBuffer GetRenderCB() const noexcept;
    NOD() VkFramebuffer GetFramebuffer() const noexcept;
-   NOD() VkSurfaceKHR GetSurface() const noexcept;
    NOD() const VulkanImage& GetCurrentImage() const noexcept;
    NOD() Ref<A::Image> TakeScreenshot();
 };
