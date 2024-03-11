@@ -77,8 +77,7 @@ LANGULUS_DEFINE_MODULE(
 Vulkan::Vulkan(Runtime* runtime, const Neat&)
    : A::GraphicsModule {MetaOf<Vulkan>(), runtime}
    , mRenderers {this} {
-   Logger::Verbose(Self(), "Initializing...");
-
+   VERBOSE_VULKAN("Initializing...");
    VkApplicationInfo appInfo {};
    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
    appInfo.pApplicationName = "Langulus";
@@ -278,7 +277,7 @@ Vulkan::Vulkan(Runtime* runtime, const Neat&)
    // Get computation queue                                             
    vkGetDeviceQueue(mDevice, computeIndex, 0, &mComputer.Get());
 
-   Logger::Verbose(Self(), "Initialized");
+   VERBOSE_VULKAN("Initialized");
 }
 
 /// Vulkan module destruction                                                 

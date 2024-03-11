@@ -120,10 +120,12 @@ protected:
 
 public:
    VulkanLayer(VulkanRenderer*, const Neat&);
+   ~VulkanLayer();
 
    void Create(Verb&);
    bool Generate(PipelineSet&);
    void Render(const RenderConfig&) const;
+   void Detach();
 
    NOD() Style GetStyle() const noexcept;
    NOD() const A::Window* GetWindow() const noexcept;

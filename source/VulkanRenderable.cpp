@@ -13,9 +13,31 @@
 ///   @param producer - the renderable producer                               
 ///   @param descriptor - the renderable descriptor                           
 VulkanRenderable::VulkanRenderable(VulkanLayer* producer, const Neat& descriptor)
-   : A::Renderable {MetaOf<VulkanRenderable>(), descriptor} 
+   : A::Renderable {MetaOf<VulkanRenderable>()} 
    , ProducedFrom {producer, descriptor} {
-   TODO();
+   VERBOSE_VULKAN("Initializing...");
+   Couple(descriptor);
+   VERBOSE_VULKAN("Initialized");
+}
+
+VulkanRenderable::~VulkanRenderable() {
+   Detach();
+}
+
+/// Reset the renderable, releasing all used content and pipelines            
+void VulkanRenderable::Detach() {
+   for (auto& lod : mLOD) {
+      lod.mGeometry.Reset();
+      lod.mTexture.Reset();
+      lod.mPipeline.Reset();
+   }
+
+   mMaterialContent.Reset();
+   mGeometryContent.Reset();
+   mTextureContent.Reset();
+   mInstances.Reset();
+   mPredefinedPipeline.Reset();
+   ProducedFrom<VulkanLayer>::Detach();
 }
 
 /// Get the renderer                                                          
@@ -127,26 +149,11 @@ VulkanPipeline* VulkanRenderable::GetOrCreatePipeline(
       return mLOD[i].mPipeline;
 }
 
-/// Reset the renderable, releasing all used content and pipelines            
-void VulkanRenderable::ResetRenderable() {
-   for (auto& lod : mLOD) {
-      lod.mGeometry.Reset();
-      lod.mTexture.Reset();
-      lod.mPipeline.Reset();
-   }
-
-   mMaterialContent.Reset();
-   mGeometryContent.Reset();
-   mTextureContent.Reset();
-   mInstances.Reset();
-   mPredefinedPipeline.Reset();
-}
-
 /// Called when owner changes components/traits                               
 void VulkanRenderable::Refresh() {
    // Just reset - new resources will be regenerated or reused upon     
    // request if they need be                                           
-   ResetRenderable();
+   Detach();
 
    // Gather all instances for this renderable, and calculate levels    
    mInstances = GatherUnits<A::Instance, Seek::Here>();

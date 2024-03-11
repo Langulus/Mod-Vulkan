@@ -39,10 +39,9 @@ protected:
       Ref<VulkanPipeline> mPipeline;
    } mLOD[LOD::IndexCount];
 
-   void ResetRenderable();
-
 public:
    VulkanRenderable(VulkanLayer*, const Neat&);
+   ~VulkanRenderable();
 
    NOD() VulkanRenderer* GetRenderer() const noexcept;
    NOD() VulkanGeometry* GetGeometry(const LOD&) const;
@@ -50,4 +49,5 @@ public:
    NOD() VulkanPipeline* GetOrCreatePipeline(const LOD&, const VulkanLayer*) const;
 
    void Refresh();
+   void Detach();
 };

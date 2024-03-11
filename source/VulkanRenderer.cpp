@@ -13,7 +13,7 @@
 ///   @param producer - the renderer producer                                 
 ///   @param descriptor - the renderer descriptor                             
 VulkanRenderer::VulkanRenderer(Vulkan* producer, const Neat& descriptor)
-   : Renderer {MetaOf<VulkanRenderer>(), descriptor}
+   : Renderer {MetaOf<VulkanRenderer>()}
    , ProducedFrom {producer, descriptor}
    , mSwapchain {*this}
    , mLayers {this}
@@ -249,6 +249,9 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, const Neat& descriptor)
 
 /// Destroy anything created                                                  
 void VulkanRenderer::Detach() {
+   mLayers.Reset();
+   mWindow.Reset();
+
    if (mDevice) {
       vkDeviceWaitIdle(mDevice);
       mSwapchain.Destroy();

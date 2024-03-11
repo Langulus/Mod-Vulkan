@@ -16,11 +16,32 @@
 ///   @param producer - the camera producer                                   
 ///   @param descriptor - the camera descriptor                               
 VulkanLayer::VulkanLayer(VulkanRenderer* producer, const Neat& descriptor)
-   : A::Layer {MetaOf<VulkanLayer>(), descriptor} 
+   : A::Layer {MetaOf<VulkanLayer>()} 
    , ProducedFrom {producer, descriptor}
    , mCameras {this}
    , mRenderables {this}
-   , mLights {this} {}
+   , mLights {this} {
+   VERBOSE_VULKAN("Initializing...");
+   Couple(descriptor);
+   VERBOSE_VULKAN("Initialized");
+}
+
+VulkanLayer::~VulkanLayer() {
+   Detach();
+}
+
+void VulkanLayer::Detach() {
+   mSubscribers.Reset();
+   mRelevantCameras.Reset();
+   mRelevantLevels.Reset();
+   mRelevantPipelines.Reset();
+
+   mCameras.Reset();
+   mRenderables.Reset();
+   mLights.Reset();
+
+   ProducedFrom<VulkanRenderer>::Detach();
+}
 
 /// Create/destroy renderables, cameras, lights                               
 ///   @param verb - creation verb                                             

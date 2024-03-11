@@ -20,8 +20,9 @@ VkIndexType AsVkIndexType(DMeta meta) {
       return VK_INDEX_TYPE_UINT16;
    else if (meta->Is<uint8_t>())
       return VK_INDEX_TYPE_UINT8_EXT;
-   else
-      LANGULUS_THROW(Graphics, "Unsupported index type");
+
+   LANGULUS_OOPS(Graphics, "Unsupported index type");
+   return VK_INDEX_TYPE_MAX_ENUM;
 }
 
 /// Convert meta data to a VK color/depth format                              
@@ -152,7 +153,8 @@ VkFormat AsVkFormat(DMeta type, bool reverse) {
       break;
    }
 
-   LANGULUS_THROW(Graphics, "Unsupported format");
+   LANGULUS_OOPS(Graphics, "Unsupported format");
+   return VK_FORMAT_UNDEFINED;
 }
 
 /// Convert vulkan format to meta data                                        
@@ -253,7 +255,8 @@ DMeta VkFormatToDMeta(const VkFormat& type, bool& reverse) {
          break;
    }
 
-   LANGULUS_THROW(Graphics, "Unsupported format");
+   LANGULUS_OOPS(Graphics, "Unsupported format");
+   return {};
 }
 
 /// Converter from PC shader to VK shader stage                               
@@ -290,7 +293,8 @@ VkPrimitiveTopology AsVkPrimitive(DMeta meta) {
    if (meta->CastsTo<A::Line>())
       return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
 
-   LANGULUS_THROW(Graphics, "Unsupported topology");
+   LANGULUS_OOPS(Graphics, "Unsupported topology");
+   return VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
 }
 
 /// Helper function for converting colors to floats                           

@@ -8,16 +8,14 @@
 #include "Vulkan.hpp"
 #include <Anyness/Path.hpp>
 
-#define VERBOSE_PIPELINE(...) Logger::Verbose(Self(), __VA_ARGS__)
-
 
 /// Descriptor constructor                                                    
 ///   @param producer - the pipeline producer                                 
 ///   @param descriptor - the pipeline descriptor                             
 VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, const Neat& descriptor)
-   : Graphics {MetaOf<VulkanPipeline>(), descriptor}
+   : Graphics {MetaOf<VulkanPipeline>()}
    , ProducedFrom {producer, descriptor} {
-   VERBOSE_PIPELINE("Initializing graphics pipeline from: ", descriptor);
+   VERBOSE_VULKAN("Initializing graphics pipeline from: ", descriptor);
    mSubscribers.New();
    mGeometries.New();
 
@@ -84,7 +82,7 @@ VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, const Neat& descriptor)
       }
          
       // Now create generator, and the pipeline from it                 
-      VERBOSE_PIPELINE("Pipeline material will be generated from: ", material);
+      VERBOSE_VULKAN("Pipeline material will be generated from: ", material);
       Verbs::Create creator {Abandon(material)};
       Run(creator)->ForEach([this](const A::Material& generator) {
          GenerateShaders(generator);
@@ -124,7 +122,7 @@ VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, const Neat& descriptor)
          rasterizer.polygonMode = VK_POLYGON_MODE_LINE;
          break;
       default:
-         LANGULUS_THROW(Graphics, "Unsupported primitive");
+         LANGULUS_OOPS(Graphics, "Unsupported primitive");
       }
    }
    //rasterizer.polygonMode = VK_POLYGON_MODE_LINE; //for debuggery
@@ -179,7 +177,7 @@ VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, const Neat& descriptor)
    pipelineLayoutInfo.pSetLayouts = relevantLayouts.data();
 
    if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &mPipeLayout.Get()))
-      LANGULUS_THROW(Graphics, "Can't create pipeline layout");
+      LANGULUS_OOPS(Graphics, "Can't create pipeline layout");
 
    // Allow viewport to be dynamically set                              
    const VkDynamicState dynamicStates[] {
@@ -235,7 +233,7 @@ VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, const Neat& descriptor)
    pipelineInfo.pDynamicState = &dynamicState;
 
    if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &mPipeline.Get()))
-      LANGULUS_THROW(Graphics, "Can't create graphical pipeline");
+      LANGULUS_OOPS(Graphics, "Can't create graphical pipeline");
 }
 
 /// Pipeline destruction                                                      
@@ -421,7 +419,7 @@ void VulkanPipeline::CreateDescriptorLayoutAndSet(
    layoutInfo.pBindings = bindings.GetRaw();
 
    if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, layout))
-      LANGULUS_THROW(Graphics, "vkCreateDescriptorSetLayout failed");
+      LANGULUS_OOPS(Graphics, "vkCreateDescriptorSetLayout failed");
 
    // Create a descriptor set                                           
    VkDescriptorSetAllocateInfo allocInfo {};
@@ -431,7 +429,7 @@ void VulkanPipeline::CreateDescriptorLayoutAndSet(
    allocInfo.pSetLayouts = layout;
 
    if (vkAllocateDescriptorSets(device, &allocInfo, set))
-      LANGULUS_THROW(Graphics, "vkAllocateDescriptorSets failed");
+      LANGULUS_OOPS(Graphics, "vkAllocateDescriptorSets failed");
 }
 
 /// Create a new sampler set                                                  
@@ -458,7 +456,7 @@ void VulkanPipeline::CreateNewSamplerSet() {
    allocInfo.pSetLayouts = &mSamplersUBOLayout.Get();
 
    if (vkAllocateDescriptorSets(mProducer->mDevice, &allocInfo, &ubo.mSamplersUBOSet.Get())) {
-      LANGULUS_THROW(Graphics,
+      LANGULUS_OOPS(Graphics,
          "vkAllocateDescriptorSets failed - either reserve more "
          "items in descriptor pool, or make more pools on demand"
       );
@@ -485,8 +483,7 @@ void VulkanPipeline::CreateNewGeometrySet() {
 /// Create uniform buffers                                                    
 void VulkanPipeline::CreateUniformBuffers() {
    const auto device = mProducer->mDevice;
-   if (not mUniforms)
-      LANGULUS_THROW(Graphics, "No uniforms/inputs provided by generator");
+   LANGULUS_ASSERT(mUniforms, Graphics, "No uniforms/inputs provided by generator");
 
    // Create descriptor pools                                           
    static constinit VkDescriptorPoolSize poolSizes[] {
@@ -506,7 +503,7 @@ void VulkanPipeline::CreateUniformBuffers() {
    pool.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
    if (vkCreateDescriptorPool(device, &pool, nullptr, &mUBOPool.Get())) {
-      LANGULUS_THROW(Graphics,
+      LANGULUS_OOPS(Graphics,
          "Can't create UBO pool, so creation of vulkan material fails");
    }
 

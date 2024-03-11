@@ -28,6 +28,7 @@ SCENARIO("Renderer creation inside a window", "[renderer]") {
          // Create root entity                                          
          Thing root;
          root.SetName("ROOT");
+
          root.CreateRuntime();
          root.LoadMod("GLFW");
          root.LoadMod("Vulkan");
@@ -79,11 +80,12 @@ SCENARIO("Drawing an empty window", "[renderer]") {
       // Create the scene                                               
       Thing root;
       root.SetName("ROOT");
+
       root.CreateRuntime();
       root.LoadMod("GLFW");
       root.LoadMod("Vulkan");
-      root.LoadMod("FileSystem");
       root.LoadMod("AssetsImages");
+
       root.CreateUnit<A::Window>(Traits::Size(640, 480));
       root.CreateUnit<A::Renderer>();
 
@@ -133,17 +135,21 @@ SCENARIO("Drawing solid polygons", "[renderer]") {
       // Create the scene                                               
       Thing root;
       root.SetName("ROOT");
+
       root.CreateRuntime();
       root.LoadMod("GLFW");
       root.LoadMod("Vulkan");
       root.LoadMod("FileSystem");
       root.LoadMod("AssetsImages");
+      root.LoadMod("AssetsGeometry");
+      root.LoadMod("Physics");
+
       root.CreateUnit<A::Window>(Traits::Size(640, 480));
       root.CreateUnit<A::Renderer>();
       root.CreateUnit<A::Layer>();
+      root.CreateUnit<A::World>();
 
-      auto rect = root.CreateChild();
-      rect->AddTrait(Traits::Size {100});
+      auto rect = root.CreateChild({Traits::Size {100}, Traits::Name {"Rectangles"}});
       auto renderable = rect->CreateUnit<A::Renderable>();
       auto mesh = rect->CreateUnit<A::Mesh>(Math::Box2 {});
       auto topLeft  = rect->CreateUnit<A::Instance>(Traits::Place(100, 100), Colors::Black);
@@ -152,6 +158,7 @@ SCENARIO("Drawing solid polygons", "[renderer]") {
       auto botRight = rect->CreateUnit<A::Instance>(Traits::Place(540, 380), Colors::White);
       root.DumpHierarchy();
 
+      //static Allocator::State memoryState2;
       for (int repeat = 0; repeat != 10; ++repeat) {
          WHEN(std::string("Update cycle #") + std::to_string(repeat)) {
             // Update the scene                                         
@@ -160,19 +167,34 @@ SCENARIO("Drawing solid polygons", "[renderer]") {
             // And interpret the scene as an image, i.e. taking a       
             // screenshot                                               
             Verbs::InterpretAs<A::Image> interpret;
-            root.Do(interpret);
+            root.Run(interpret);
 
-            /*Verbs::Compare compare {Colors::Red};
-            interpret->Run(compare);
+            REQUIRE(root.GetUnits().GetCount() == 4);
+            REQUIRE(rect->GetUnits().GetCount() == 6);
+            REQUIRE(root.GetChildren().GetCount() == 1);
+            REQUIRE_FALSE(root.HasUnits<A::Image>());
+            REQUIRE(interpret.IsDone());
+            REQUIRE(interpret->GetCount() == 1);
+            REQUIRE(interpret->IsSparse());
+            REQUIRE(interpret->template CastsTo<A::Image>());
 
-            REQUIRE(compare.GetOutput() == Compared::Equal);*/
+            Verbs::Compare compare {Colors::Red};
+            interpret.Then(compare);
+
+            REQUIRE(compare.IsDone());
+            REQUIRE(compare->GetCount() == 1);
+            REQUIRE(compare->IsDense());
+            REQUIRE(compare.GetOutput() == Compared::Equal);
 
             root.DumpHierarchy();
-         }
 
-         // Check for memory leaks after each cycle                     
-         REQUIRE(memoryState.Assert());
+            // Check for memory leaks after each update cycle           
+            //REQUIRE(memoryState2.Assert());
+         }
       }
    }
+
+   // Check for memory leaks after each initialization cycle            
+   REQUIRE(memoryState.Assert());
 }
 

@@ -55,7 +55,6 @@ protected:
    // Mouse scroll, can be passed to shaders                            
    Ref<Grad2v2> mMouseScroll;
 
-protected:
    // Rendering surface                                                 
    Own<VkSurfaceKHR> mSurface;
    // The logical device                                                

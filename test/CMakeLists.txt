@@ -14,7 +14,10 @@ target_link_libraries(LangulusModVulkanTest
 add_dependencies(LangulusModVulkanTest
 	LangulusModVulkan
 	LangulusModGLFW
+	LangulusModFileSystem
 	LangulusModAssetsImages
+	LangulusModAssetsGeometry
+	LangulusModPhysics
 )
 
 add_test(

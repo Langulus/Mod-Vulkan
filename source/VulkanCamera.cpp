@@ -13,9 +13,11 @@
 ///   @param producer - the camera producer                                   
 ///   @param descriptor - the camera descriptor                               
 VulkanCamera::VulkanCamera(VulkanLayer* producer, const Neat& descriptor)
-   : Graphics {MetaOf<VulkanCamera>(), descriptor} 
+   : Graphics {MetaOf<VulkanCamera>()} 
    , ProducedFrom {producer, descriptor} {
-   TODO();
+   VERBOSE_VULKAN("Initializing...");
+   Couple(descriptor);
+   VERBOSE_VULKAN("Initialized");
 }
 
 /// Compile the camera                                                        
@@ -95,7 +97,7 @@ void VulkanCamera::Refresh() {
 ///   @param lod - the level-of-detail state                                  
 ///   @return the view transformation for the camera                          
 Mat4 VulkanCamera::GetViewTransform(const LOD& lod) const {
-   if (!mInstances)
+   if (not mInstances)
       return {};
 
    return mInstances[0]->GetViewTransform(lod);
@@ -105,7 +107,7 @@ Mat4 VulkanCamera::GetViewTransform(const LOD& lod) const {
 ///   @param level - the level                                                
 ///   @return the view transformation for the camera                          
 Mat4 VulkanCamera::GetViewTransform(const Level& level) const {
-   if (!mInstances)
+   if (not mInstances)
       return {};
 
    return mInstances[0]->GetViewTransform(level);
