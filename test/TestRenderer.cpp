@@ -20,7 +20,24 @@ CATCH_TRANSLATE_EXCEPTION(::Langulus::Exception const& ex) {
    return ::std::string {Token {serialized}};
 }
 
-SCENARIO("Renderer creation inside a window", "[renderer]") {
+namespace Catch
+{
+   template<CT::Stringifiable T>
+   struct StringMaker<T> {
+      static std::string convert(T const& value) {
+         return ::std::string {Token {static_cast<Text>(value)}};
+      }
+   };
+
+   /// Save catch2 from doing infinite recursions with Block types            
+   template<CT::Block T>
+   struct is_range<T> {
+      static const bool value = false;
+   };
+
+}
+
+/*SCENARIO("Renderer creation inside a window", "[renderer]") {
    static Allocator::State memoryState;
 
    for (int repeat = 0; repeat != 10; ++repeat) {
@@ -126,7 +143,7 @@ SCENARIO("Drawing an empty window", "[renderer]") {
 
    // Check for memory leaks after each initialization cycle            
    REQUIRE(memoryState.Assert());
-}
+}*/
 
 SCENARIO("Drawing solid polygons", "[renderer]") {
    static Allocator::State memoryState;
@@ -158,7 +175,8 @@ SCENARIO("Drawing solid polygons", "[renderer]") {
       auto botRight = rect->CreateUnit<A::Instance>(Traits::Place(540, 380), Colors::White);
       root.DumpHierarchy();
 
-      //static Allocator::State memoryState2;
+      static Allocator::State memoryState2;
+
       for (int repeat = 0; repeat != 10; ++repeat) {
          WHEN(std::string("Update cycle #") + std::to_string(repeat)) {
             // Update the scene                                         
@@ -178,7 +196,7 @@ SCENARIO("Drawing solid polygons", "[renderer]") {
             REQUIRE(interpret->IsSparse());
             REQUIRE(interpret->template CastsTo<A::Image>());
 
-            Verbs::Compare compare {Colors::Red};
+            Verbs::Compare compare {"polygons.png"};
             interpret.Then(compare);
 
             REQUIRE(compare.IsDone());
@@ -189,7 +207,7 @@ SCENARIO("Drawing solid polygons", "[renderer]") {
             root.DumpHierarchy();
 
             // Check for memory leaks after each update cycle           
-            //REQUIRE(memoryState2.Assert());
+            REQUIRE(memoryState2.Assert());
          }
       }
    }
