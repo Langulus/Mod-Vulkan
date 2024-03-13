@@ -9,8 +9,11 @@
 #include <Flow/Time.hpp>
 #include <Flow/Verbs/Interpret.hpp>
 #include <Flow/Verbs/Compare.hpp>
-#include <Math/Color.hpp>
-#include <Math/Primitives/Box.hpp>
+#include <Langulus/Platform.hpp>
+#include <Langulus/Graphics.hpp>
+#include <Langulus/Physical.hpp>
+#include <Langulus/Mesh.hpp>
+#include <Langulus/Image.hpp>
 #include <catch2/catch.hpp>
 
 

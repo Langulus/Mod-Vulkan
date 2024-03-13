@@ -9,6 +9,7 @@
 #include "Common.hpp"
 #include <Math/Range.hpp>
 #include <Math/Angle.hpp>
+#include <Math/Scale.hpp>
  
 using LevelRange = TRange<Level>;
 

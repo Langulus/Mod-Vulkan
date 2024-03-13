@@ -7,6 +7,7 @@
 ///                                                                           
 #pragma once
 #include "VulkanBuffer.hpp"
+#include <Langulus/Mesh.hpp>
 
 
 ///                                                                           

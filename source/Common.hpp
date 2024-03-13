@@ -6,12 +6,15 @@
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
 #pragma once
-#include <Entity/External.hpp>
+#include <Langulus.hpp>
 #include <Math/Color.hpp>
+#include <Langulus/Material.hpp>
+#include <Langulus/Graphics.hpp>
 
 LANGULUS_EXCEPTION(Graphics);
 
 using namespace Langulus;
+using namespace Math;
 
 struct Vulkan;
 struct VulkanMemory;

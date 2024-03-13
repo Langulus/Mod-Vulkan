@@ -16,6 +16,7 @@
 #include <Flow/Verbs/Create.hpp>
 #include <Flow/Verbs/Interpret.hpp>
 #include <Math/Gradient.hpp>
+#include <Entity/Pin.hpp>
 
 
 ///                                                                           

@@ -7,6 +7,7 @@
 ///                                                                           
 #pragma once
 #include "Common.hpp"
+#include <Math/Primitives.hpp>
 
 
 /// Convert a meta data to a VK index format                                  

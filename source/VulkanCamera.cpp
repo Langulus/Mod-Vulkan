@@ -7,6 +7,8 @@
 ///                                                                           
 #include "Vulkan.hpp"
 #include <Math/Level.hpp>
+#include <Langulus/Platform.hpp>
+#include <Langulus/Physical.hpp>
 
 
 /// Descriptor constructor                                                    

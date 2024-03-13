@@ -6,6 +6,8 @@
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
 #include "Common.hpp"
+#include <Langulus/Platform.hpp>
+
 
 /// Make sure that vulkan headers are included properly,                      
 /// by defining the same symbols for each include of this file                

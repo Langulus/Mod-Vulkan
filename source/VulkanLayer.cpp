@@ -6,10 +6,12 @@
 /// See LICENSE file, or https://www.gnu.org/licenses                         
 ///                                                                           
 #include "Vulkan.hpp"
-#include <Entity/Thing.hpp>
+#include <Langulus/Platform.hpp>
+#include <Langulus/Physical.hpp>
+/*#include <Entity/Thing.hpp>
 #include <Math/Level.hpp>
 #include <Math/Primitives/Frustum.hpp>
-#include <Math/Primitives/Plane.hpp>
+#include <Math/Primitives/Plane.hpp>*/
 
 
 /// Descriptor constructor                                                    
