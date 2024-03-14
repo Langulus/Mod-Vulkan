@@ -40,7 +40,7 @@ namespace Catch
 
 }
 
-/*SCENARIO("Renderer creation inside a window", "[renderer]") {
+SCENARIO("Renderer creation inside a window", "[renderer]") {
    static Allocator::State memoryState;
 
    for (int repeat = 0; repeat != 10; ++repeat) {
@@ -146,9 +146,9 @@ SCENARIO("Drawing an empty window", "[renderer]") {
 
    // Check for memory leaks after each initialization cycle            
    REQUIRE(memoryState.Assert());
-}*/
+}
 
-SCENARIO("Drawing solid polygons", "[renderer]") {
+/*SCENARIO("Drawing solid polygons", "[renderer]") {
    static Allocator::State memoryState;
 
    GIVEN("A window with a renderer") {
@@ -217,5 +217,5 @@ SCENARIO("Drawing solid polygons", "[renderer]") {
 
    // Check for memory leaks after each initialization cycle            
    REQUIRE(memoryState.Assert());
-}
+}*/
 

@@ -8,6 +8,8 @@
 #pragma once
 #include "inner/UBO.hpp"
 #include <Math/Blend.hpp>
+#include <Langulus/Mesh.hpp>
+#include <Langulus/IO.hpp>
 
 
 ///                                                                           
