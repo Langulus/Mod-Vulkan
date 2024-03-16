@@ -8,10 +8,6 @@
 #include "Vulkan.hpp"
 #include <Langulus/Platform.hpp>
 #include <Langulus/Physical.hpp>
-/*#include <Entity/Thing.hpp>
-#include <Math/Level.hpp>
-#include <Math/Primitives/Frustum.hpp>
-#include <Math/Primitives/Plane.hpp>*/
 
 
 /// Descriptor constructor                                                    
@@ -127,7 +123,7 @@ Count VulkanLayer::CompileThing(const Thing* thing, LOD& lod, PipelineSet& pipes
    auto relevantRenderables = thing->GatherUnits<VulkanRenderable, Seek::Here>();
 
    // Compile the instances associated with these renderables           
-   Count renderedInstances {};
+   Count renderedInstances = 0;
    for (auto renderable : relevantRenderables) {
       if (not renderable->mInstances) {
          // Imagine a default instance                                  
@@ -227,7 +223,7 @@ Count VulkanLayer::CompileLevelBatched(
    LOD lod {level, view, projection};
 
    // Iterate all renderables                                           
-   Count renderedInstances {};
+   Count renderedInstances = 0;
    for (const auto& renderable : mRenderables) {
       if (not renderable.mInstances) {
          auto pipeline = CompileInstance(&renderable, nullptr, lod);
@@ -273,7 +269,7 @@ Count VulkanLayer::CompileLevelBatched(
 /// Compile all levels and their instances                                    
 ///   @return the number of relevant cameras                                  
 Count VulkanLayer::CompileLevels() {
-   Count renderedCameras {};
+   Count renderedCameras = 0;
    mRelevantLevels.Clear();
    mRelevantPipelines.Clear();
 
@@ -374,6 +370,7 @@ void VulkanLayer::RenderBatched(const RenderConfig& config) const {
    TUnorderedMap<const VulkanPipeline*, Count> done;
 
    if (not mRelevantCameras) {
+      // Rendering using a fallback camera                              
       VkViewport viewport {};
       viewport.width = (*GetProducer()->mResolution)[0];
       viewport.height = (*GetProducer()->mResolution)[1];
@@ -382,7 +379,8 @@ void VulkanLayer::RenderBatched(const RenderConfig& config) const {
       scissor.extent.width = static_cast<uint32_t>(viewport.width);
       scissor.extent.height = static_cast<uint32_t>(viewport.height);
 
-      vkCmdBeginRenderPass(config.mCommands, &config.mPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+      vkCmdBeginRenderPass(config.mCommands, &config.mPassBeginInfo,
+         VK_SUBPASS_CONTENTS_INLINE);
       vkCmdSetViewport(config.mCommands, 0, 1, &viewport);
       vkCmdSetScissor(config.mCommands, 0, 1, &scissor);
 
@@ -403,10 +401,12 @@ void VulkanLayer::RenderBatched(const RenderConfig& config) const {
       vkCmdEndRenderPass(config.mCommands);
    }
    else for (const auto& camera : mRelevantCameras) {
+      // Rendering from each custom camera's point of view              
       config.mPassBeginInfo.renderArea.extent.width = camera->mResolution[0];
       config.mPassBeginInfo.renderArea.extent.height = camera->mResolution[1];
 
-      vkCmdBeginRenderPass(config.mCommands, &config.mPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+      vkCmdBeginRenderPass(config.mCommands, &config.mPassBeginInfo,
+         VK_SUBPASS_CONTENTS_INLINE);
       vkCmdSetViewport(config.mCommands, 0, 1, &camera->mVulkanViewport);
       vkCmdSetScissor(config.mCommands, 0, 1, &camera->mVulkanScissor);
 
@@ -433,22 +433,23 @@ void VulkanLayer::RenderBatched(const RenderConfig& config) const {
 /// compiled subscribers, rendering them in their respective order            
 ///   @param config - where to render to                                      
 void VulkanLayer::RenderHierarchical(const RenderConfig& config) const {
-   Count subscribersDone {};
+   Count subscribersDone = 0;
    auto subscriberCountPerLevel = &mSubscriberCountPerLevel[0];
 
    // Iterate all valid cameras                                         
    if (not mRelevantCameras) {
       VkViewport viewport {};
-      viewport.width = (*GetProducer()->mResolution)[0];
+      viewport.width  = (*GetProducer()->mResolution)[0];
       viewport.height = (*GetProducer()->mResolution)[1];
 
       VkRect2D scissor {};
       scissor.extent.width = static_cast<uint32_t>(viewport.width);
       scissor.extent.height = static_cast<uint32_t>(viewport.height);
 
-      vkCmdBeginRenderPass(config.mCommands, &config.mPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+      vkCmdBeginRenderPass(config.mCommands, &config.mPassBeginInfo,
+         VK_SUBPASS_CONTENTS_INLINE);
       vkCmdSetViewport(config.mCommands, 0, 1, &viewport);
-      vkCmdSetScissor(config.mCommands, 0, 1, &scissor);
+      vkCmdSetScissor (config.mCommands, 0, 1, &scissor);
 
       // Iterate all relevant levels                                    
       for (const auto& level : mRelevantLevels) {
@@ -475,9 +476,10 @@ void VulkanLayer::RenderHierarchical(const RenderConfig& config) const {
       config.mPassBeginInfo.renderArea.extent.width = camera->mResolution[0];
       config.mPassBeginInfo.renderArea.extent.height = camera->mResolution[1];
 
-      vkCmdBeginRenderPass(config.mCommands, &config.mPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+      vkCmdBeginRenderPass(config.mCommands, &config.mPassBeginInfo,
+         VK_SUBPASS_CONTENTS_INLINE);
       vkCmdSetViewport(config.mCommands, 0, 1, &camera->mVulkanViewport);
-      vkCmdSetScissor(config.mCommands, 0, 1, &camera->mVulkanScissor);
+      vkCmdSetScissor (config.mCommands, 0, 1, &camera->mVulkanScissor);
 
       // Iterate all relevant levels                                    
       for (const auto& level : mRelevantLevels) {

@@ -350,8 +350,7 @@ VkPhysicalDevice Vulkan::PickAdapter() const {
    if (deviceCount == 0) {
       Logger::Error(Self(), 
          "No graphical device was detected in your computer"
-         " - vulkan module is unusable"
-      );
+         " - vulkan module is unusable");
       return nullptr;
    }
 
