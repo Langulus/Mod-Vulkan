@@ -319,7 +319,7 @@ Construct VulkanPipeline::FromMesh(const A::Mesh& mesh) {
               << Traits::Input {Rate::Camera, Traits::Projection {positions->GetType()}};
 
       // If not using hardware-instancing, use the Thing's instances    
-      if (!instances) {
+      if (not instances) {
          request << Traits::Input {
             Rate::Instance, Traits::Transform {positions->GetType()}
          };

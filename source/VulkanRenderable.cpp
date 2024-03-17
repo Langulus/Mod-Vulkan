@@ -99,7 +99,7 @@ VulkanPipeline* VulkanRenderable::GetOrCreatePipeline(
       return mLOD[i].mPipeline;
 
    // Construct a pipeline                                              
-   bool usingGlobalPipeline {};
+   bool usingGlobalPipeline = false;
    auto construct = Construct::From<VulkanPipeline>();
    if (mMaterialContent) {
       construct << mMaterialContent;
