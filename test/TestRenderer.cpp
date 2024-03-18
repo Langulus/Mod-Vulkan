@@ -162,6 +162,7 @@ SCENARIO("Drawing solid polygons", "[renderer]") {
       root.LoadMod("FileSystem");
       root.LoadMod("AssetsImages");
       root.LoadMod("AssetsGeometry");
+      root.LoadMod("AssetsMaterials");
       root.LoadMod("Physics");
 
       root.CreateUnit<A::Window>(Traits::Size(640, 480));

@@ -83,7 +83,7 @@ VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, const Neat& descriptor)
       // Now create generator, and the pipeline from it                 
       VERBOSE_VULKAN("Pipeline material will be generated from: ", material);
       Verbs::Create creator {Abandon(material)};
-      Run(creator)->ForEach([this](const A::Material& generator) {
+      RunIn(creator)->ForEach([this](const A::Material& generator) {
          GenerateShaders(generator);
       });
    }
