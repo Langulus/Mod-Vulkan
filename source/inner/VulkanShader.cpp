@@ -41,7 +41,7 @@ VulkanShader::VulkanShader(VulkanRenderer* producer, const Neat& descriptor)
          const auto uniforms = material->template GetDataList<Traits::Trait>();
          if (uniforms and not *uniforms) {
             // Add relevant inputs                                      
-            const auto index = Rate(Rate::StagesBegin + mStage).GetInputIndex();
+            const auto index = RefreshRate(RefreshRate::StagesBegin + mStage).GetInputIndex();
             auto& inputs = uniforms->template As<TAny<Trait>>(index);
             for (auto& attribute : inputs)
                AddInput(attribute);
@@ -136,13 +136,13 @@ void VulkanShader::AddInput(const Trait& input) {
    // generating code                                                   
    switch (mStage) {
    case ShaderStage::Pixel:
-      mInputs[PerPixel.GetStageIndex()] << input;
+      mInputs[Rate::Pixel.GetStageIndex()] << input;
       return;
    case ShaderStage::Geometry:
-      mInputs[PerPrimitive.GetStageIndex()] << input;
+      mInputs[Rate::Primitive.GetStageIndex()] << input;
       return;
    case ShaderStage::Vertex:
-      mInputs[PerVertex.GetStageIndex()] << input;
+      mInputs[Rate::Vertex.GetStageIndex()] << input;
       // Note this is the only case where we continue   after the switch
       break;
    default:
@@ -218,8 +218,8 @@ VkShaderStageFlagBits VulkanShader::GetStageFlagBit() const noexcept {
 
 /// Get the rate index of the shader stage                                    
 ///   @return the rate                                                        
-Rate VulkanShader::GetRate() const noexcept {
-   return mStage + Rate::StagesBegin;
+RefreshRate VulkanShader::GetRate() const noexcept {
+   return mStage + RefreshRate::StagesBegin;
 }
 
 /// Get a vertex input descriptor for vulkan use                              

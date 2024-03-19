@@ -486,8 +486,8 @@ void VulkanPipeline::CreateUniformBuffers() {
 
    // Create descriptor pools                                           
    static constinit VkDescriptorPoolSize poolSizes[] {
-      { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, Rate::StaticUniformCount },
-      { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, Rate::DynamicUniformCount },
+      { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, RefreshRate::StaticUniformCount },
+      { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, RefreshRate::DynamicUniformCount },
       { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 8 },
       { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 8 },
       { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 8 }
@@ -510,11 +510,11 @@ void VulkanPipeline::CreateUniformBuffers() {
    {
       // For each static uniform rate (set = 0)...                      
       Bindings bindings;
-      for (Count rate = 0; rate < Rate::StaticUniformCount; ++rate) {
+      for (Count rate = 0; rate < RefreshRate::StaticUniformCount; ++rate) {
          auto& ubo = mStaticUBO[rate];
 
          // Add relevant inputs                                         
-         const auto index = Rate(Rate::StaticUniformBegin + rate).GetInputIndex();
+         const auto index = RefreshRate(RefreshRate::StaticUniformBegin + rate).GetInputIndex();
          for (const auto& trait : mUniforms[index]) {
             if (trait.template IsTrait<Traits::Image>())
                continue;
@@ -551,11 +551,11 @@ void VulkanPipeline::CreateUniformBuffers() {
    // Create the dynamic sets (0)                                       
    {
       Bindings bindings;
-      for (Offset rate = 0; rate < Rate::DynamicUniformCount; ++rate) {
+      for (Offset rate = 0; rate < RefreshRate::DynamicUniformCount; ++rate) {
          auto& ubo = mDynamicUBO[rate];
 
          // Add relevant inputs                                         
-         const auto index = Rate(Rate::DynamicUniformBegin + rate).GetInputIndex();
+         const auto index = RefreshRate(RefreshRate::DynamicUniformBegin + rate).GetInputIndex();
          for (const auto& trait : mUniforms[index]) {
             if (trait.template IsTrait<Traits::Image>())
                continue;
@@ -594,7 +594,7 @@ void VulkanPipeline::CreateUniformBuffers() {
    {
       // Add relevant inputs                                            
       SamplerUBO ubo;
-      for (const auto& trait : mUniforms[PerRenderable.GetInputIndex()]) {
+      for (const auto& trait : mUniforms[Rate::Renderable.GetInputIndex()]) {
          if (not trait.template IsTrait<Traits::Image>())
             continue;
          ubo.mUniforms.Emplace(IndexBack, 0, trait);
@@ -692,7 +692,7 @@ Count VulkanPipeline::RenderLevel(const Offset& offset) const {
 
    // Get the initial state to check for interrupts                     
    const auto& initial = mSubscribers[offset];
-   const auto r = GetRelevantDynamicUBOIndexOfRate<PerLevel>();
+   const auto r = GetRelevantDynamicUBOIndexOfRate<Rate::Level>();
 
    // And for each subscriber...                                        
    Offset i = offset;

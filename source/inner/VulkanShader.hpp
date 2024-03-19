@@ -35,7 +35,7 @@ public:
    VulkanShader(VulkanRenderer*, const Neat&);
    ~VulkanShader();
 
-   NOD() Rate GetRate() const noexcept;
+   NOD() RefreshRate GetRate() const noexcept;
    NOD() VertexInput CreateVertexInputState() const noexcept;
 
    const Shader& Compile() const;

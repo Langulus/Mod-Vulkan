@@ -338,11 +338,11 @@ void VulkanRenderer::Draw() {
    // Upload any uniform buffer changes to VRAM                         
    // Once this data is uploaded, we're free to prepare the next frame  
    for (auto pipe : relevantPipes) {
-      pipe->SetUniform<PerTick, Traits::Time>(
+      pipe->SetUniform<Rate::Tick, Traits::Time>(
          mTime->Current());
-      pipe->SetUniform<PerTick, Traits::MousePosition>(
+      pipe->SetUniform<Rate::Tick, Traits::MousePosition>(
          mMousePosition->Current());
-      pipe->SetUniform<PerTick, Traits::MouseScroll>(
+      pipe->SetUniform<Rate::Tick, Traits::MouseScroll>(
          mMouseScroll->Current());
       pipe->UpdateUniformBuffers();
    }

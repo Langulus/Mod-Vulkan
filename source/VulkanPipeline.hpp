@@ -16,7 +16,7 @@
 ///   Pipeline subscriber                                                     
 ///                                                                           
 struct PipeSubscriber {
-   uint32_t offsets[Rate::DynamicUniformCount] {};
+   uint32_t offsets[RefreshRate::DynamicUniformCount] {};
    uint32_t samplerSet {};
    uint32_t geometrySet {};
 };
@@ -59,8 +59,8 @@ private:
    Own<VkDescriptorSet> mDynamicUBOSet;
 
    // Uniform buffer objects for each RefreshRate                       
-   DataUBO<false> mStaticUBO[Rate::StaticUniformCount];
-   DataUBO<true> mDynamicUBO[Rate::DynamicUniformCount];
+   DataUBO<false> mStaticUBO[RefreshRate::StaticUniformCount];
+   DataUBO<true> mDynamicUBO[RefreshRate::DynamicUniformCount];
    TAny<DataUBO<true>*> mRelevantDynamicDescriptors;
 
    // Sets and samplers for textures                                    
@@ -102,16 +102,16 @@ public:
    ///   @param value - the value to use                                      
    ///   @param index - the index of the uniform of this kind                 
    ///                  used as ID only when setting a texture                
-   template<Rate RATE, CT::Trait TRAIT, CT::Data DATA>
+   template<RefreshRate RATE, CT::Trait TRAIT, CT::Data DATA>
    void SetUniform(const DATA& value, Offset index = 0) {
       if constexpr (CT::Same<DATA, VulkanTexture>) {
-         static_assert(RATE == PerRenderable,
+         static_assert(RATE == Rate::Renderable,
             "Setting a texture requires Rate::Renderable");
          // Set the sampler with the given index                        
          mSamplerUBO[mSubscribers.Last().samplerSet].Set(value, index);
       }
       else if constexpr (CT::Same<DATA, VulkanGeometry>) {
-         static_assert(RATE == PerRenderable,
+         static_assert(RATE == Rate::Renderable,
             "Setting a geometry stream requires Rate::Renderable");
          // Set the geometry stream                                     
          mGeometries[mSubscribers.Last().geometrySet] = value;
@@ -135,7 +135,7 @@ public:
    ///   @tparam RATE - the rate to push                                      
    ///   @tparam SUBSCRIBE - whether or not to subscribe for batched draw     
    ///   @return the subscriber, if SUBSCRIBE is true and RATE is dynamic     
-   template<Rate RATE, bool SUBSCRIBE = true>
+   template<RefreshRate RATE, bool SUBSCRIBE = true>
    NOD() auto PushUniforms() {
       if constexpr (RATE.IsStaticUniform()) {
          // Pushing static uniforms does nothing                        
@@ -150,17 +150,17 @@ public:
 
          mDynamicUBO[rate].Push();
 
-         if constexpr (RATE == PerRenderable) {
+         if constexpr (RATE == Rate::Renderable) {
             // When pushing PerRenderable state, create new sampler set 
             // and a new geometry set for next SetUniform calls         
             CreateNewSamplerSet();
             CreateNewGeometrySet();
          }
 
-         if constexpr (RATE == PerInstance) {
+         if constexpr (RATE == Rate::Instance) {
             // Push a new subscriber only on new instance               
             PipeSubscriber newSubscriber = mSubscribers.Last();
-            Offset i {};
+            Offset i = 0;
             for (auto ubo : mRelevantDynamicDescriptors)
                newSubscriber.offsets[i++] = ubo->GetOffset();
 
@@ -178,10 +178,10 @@ public:
    /// Convert a rate to the corresponding UBO index                          
    ///   @param RATE - the rate to convert                                    
    ///   @return the relevant UBO index                                       
-   template<Rate RATE>
+   template<RefreshRate RATE>
    NOD() auto GetRelevantDynamicUBOIndexOfRate() const noexcept {
       constexpr auto r = RATE.GetDynamicUniformIndex();
-      Offset rtoi {};
+      Offset rtoi = 0;
       for (Offset s = 0; s < r; ++s) {
          // Unused dynamic UBOs do not participate in offsets!          
          // Find what's the relevant index for 'r'                      
