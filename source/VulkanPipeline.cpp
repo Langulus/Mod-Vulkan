@@ -79,13 +79,15 @@ VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, const Neat& descriptor)
             TODO();
          }
       }
-         
+      
       // Now create generator, and the pipeline from it                 
       VERBOSE_VULKAN("Pipeline material will be generated from: ", material);
       Verbs::Create creator {Abandon(material)};
-      RunIn(creator)->ForEach([this](const A::Material& generator) {
-         GenerateShaders(generator);
-      });
+      producer->RunIn(creator)->ForEach(
+         [this](const A::Material& generator) {
+            GenerateShaders(generator);
+         }
+      );
    }
 
    // Proceed with initializing the pipeline                            
@@ -303,25 +305,26 @@ Construct VulkanPipeline::FromMesh(const A::Mesh& mesh) {
       Traits::Topology {mesh.GetTopology()}
    );
 
+   Traits::Input inputs;
    const auto instances = mesh.GetData<Traits::Transform>();
    if (instances) {
       // Create geometry shader hardware instancing input               
-      request << Traits::Input {
-         Rate::Primitive, Traits::Transform {instances->GetType()}
+      inputs << Traits::Transform {
+         Rate::Primitive, instances->GetType()
       };
    }
 
    const auto positions = mesh.GetData<Traits::Place>();
    if (positions) {
       // Create a vertex position input and project it                  
-      request << Traits::Input {Rate::Vertex, Traits::Place {positions->GetType()}}
-              << Traits::Input {Rate::Level,  Traits::View {positions->GetType()}}
-              << Traits::Input {Rate::Camera, Traits::Projection {positions->GetType()}};
+      inputs << Traits::Place       {Rate::Vertex, positions->GetType()}
+             << Traits::View        {Rate::Level,  positions->GetType()}
+             << Traits::Projection  {Rate::Camera, positions->GetType()};
 
       // If not using hardware-instancing, use the Thing's instances    
       if (not instances) {
-         request << Traits::Input {
-            Rate::Instance, Traits::Transform {positions->GetType()}
+         inputs << Traits::Transform {
+            Rate::Instance, positions->GetType()
          };
       }
    }
@@ -329,28 +332,30 @@ Construct VulkanPipeline::FromMesh(const A::Mesh& mesh) {
    const auto normals = mesh.GetData<Traits::Aim>();
    if (normals) {
       // Create a vertex normals input                                  
-      request << Traits::Input {
-         Rate::Vertex, Traits::Aim {normals->GetType()}
+      inputs << Traits::Aim {
+         Rate::Vertex, normals->GetType()
       };
    }
          
    const auto textureCoords = mesh.GetData<Traits::Sampler>();
    if (textureCoords) {
       // Create a vertex texture coordinates input                      
-      request << Traits::Input {
-         Rate::Vertex, Traits::Sampler {textureCoords->GetType()}
+      inputs << Traits::Sampler {
+         Rate::Vertex, textureCoords->GetType()
       };
    }
          
    const auto materialIds = mesh.GetData<Traits::Material>();
    if (materialIds) {
       // Create a vertex material ids input                             
-      request << Traits::Input {
-         Rate::Vertex, Traits::Material {materialIds->GetType()}
+      inputs << Traits::Material {
+         Rate::Vertex, materialIds->GetType()
       };
    }
 
-   return request;
+   if (inputs)
+      request << Abandon(inputs);
+   return Abandon(request);
 }
 
 /// Create a pipeline capable of rendering an image                           
@@ -367,7 +372,7 @@ Construct VulkanPipeline::FromImage(const A::Image& image) {
    if (colors) {
       // Create pixel shader texture input with the image view          
       request << Traits::Input {
-         Rate::Pixel, Traits::Image {image.GetView()}
+         Traits::Image {Rate::Pixel, image.GetView()}
       };
    }
 
