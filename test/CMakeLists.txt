@@ -17,6 +17,7 @@ add_dependencies(LangulusModVulkanTest
 	LangulusModFileSystem
 	LangulusModAssetsImages
 	LangulusModAssetsGeometry
+	LangulusModAssetsMaterials
 	LangulusModPhysics
 )
 

@@ -69,7 +69,9 @@ VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, const Neat& descriptor)
       for (const auto& attachment : mProducer->mPassAttachments) {
          switch (attachment.format) {
          case VK_FORMAT_B8G8R8A8_UNORM:
-            material << Traits::Output {Rate::Pixel, MetaOf<RGBA>()};
+            material << Traits::Output {
+               Traits::Color {Rate::Pixel, MetaOf<RGBA>()}
+            };
             break;
          case VK_FORMAT_D32_SFLOAT:
          case VK_FORMAT_D16_UNORM:
