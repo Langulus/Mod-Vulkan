@@ -1,6 +1,7 @@
 ///                                                                           
 /// Langulus::Module::Vulkan                                                  
-/// Copyright(C) 2020 Dimo Markov <langulusteam@gmail.com>                    
+/// Copyright (c) 2020 Dimo Markov <team@langulus.com>                        
+/// Part of the Langulus framework, see https://langulus.com                  
 ///                                                                           
 /// Distributed under GNU General Public License v3+                          
 /// See LICENSE file, or https://www.gnu.org/licenses                         
@@ -14,7 +15,7 @@
 ///   @param producer - the renderer producer                                 
 ///   @param descriptor - the renderer descriptor                             
 VulkanRenderer::VulkanRenderer(Vulkan* producer, const Neat& descriptor)
-   : Renderer {MetaOf<VulkanRenderer>()}
+   : Resolvable {MetaOf<VulkanRenderer>()}
    , ProducedFrom {producer, descriptor}
    , mSwapchain {*this}
    , mLayers {this}

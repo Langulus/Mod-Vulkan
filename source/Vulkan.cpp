@@ -1,6 +1,7 @@
 ///                                                                           
 /// Langulus::Module::Vulkan                                                  
-/// Copyright(C) 2020 Dimo Markov <langulusteam@gmail.com>                    
+/// Copyright (c) 2020 Dimo Markov <team@langulus.com>                        
+/// Part of the Langulus framework, see https://langulus.com                  
 ///                                                                           
 /// Distributed under GNU General Public License v3+                          
 /// See LICENSE file, or https://www.gnu.org/licenses                         
@@ -75,7 +76,8 @@ LANGULUS_DEFINE_MODULE(
 ///   @param system - the system that owns the module instance                
 ///   @param handle - the library handle                                      
 Vulkan::Vulkan(Runtime* runtime, const Neat&)
-   : A::GraphicsModule {MetaOf<Vulkan>(), runtime}
+   : Resolvable {MetaOf<Vulkan>()}
+   , Module {runtime}
    , mRenderers {this} {
    VERBOSE_VULKAN("Initializing...");
    VkApplicationInfo appInfo {};

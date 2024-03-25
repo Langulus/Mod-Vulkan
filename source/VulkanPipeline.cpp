@@ -1,6 +1,7 @@
 ///                                                                           
 /// Langulus::Module::Vulkan                                                  
-/// Copyright(C) 2020 Dimo Markov <langulusteam@gmail.com>                    
+/// Copyright (c) 2020 Dimo Markov <team@langulus.com>                        
+/// Part of the Langulus framework, see https://langulus.com                  
 ///                                                                           
 /// Distributed under GNU General Public License v3+                          
 /// See LICENSE file, or https://www.gnu.org/licenses                         
@@ -12,7 +13,7 @@
 ///   @param producer - the pipeline producer                                 
 ///   @param descriptor - the pipeline descriptor                             
 VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, const Neat& descriptor)
-   : Graphics {MetaOf<VulkanPipeline>()}
+   : Resolvable {MetaOf<VulkanPipeline>()}
    , ProducedFrom {producer, descriptor} {
    VERBOSE_VULKAN("Initializing graphics pipeline from: ", descriptor);
    mSubscribers.New();

@@ -1,6 +1,7 @@
 ///                                                                           
 /// Langulus::Module::Vulkan                                                  
-/// Copyright(C) 2020 Dimo Markov <langulusteam@gmail.com>                    
+/// Copyright (c) 2020 Dimo Markov <team@langulus.com>                        
+/// Part of the Langulus framework, see https://langulus.com                  
 ///                                                                           
 /// Distributed under GNU General Public License v3+                          
 /// See LICENSE file, or https://www.gnu.org/licenses                         
@@ -16,7 +17,7 @@
 ///   @param producer - the shader producer                                   
 ///   @param descriptor - the shader descriptor                               
 VulkanShader::VulkanShader(VulkanRenderer* producer, const Neat& descriptor)
-   : Graphics {MetaOf<VulkanShader>()} 
+   : Resolvable {MetaOf<VulkanShader>()} 
    , ProducedFrom {producer, descriptor} {
    // Configure the shader, but don't compile it yet                    
    descriptor.ForEachDeep(

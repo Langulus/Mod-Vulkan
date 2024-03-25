@@ -1,6 +1,7 @@
 ///                                                                           
 /// Langulus::Module::Vulkan                                                  
-/// Copyright(C) 2020 Dimo Markov <langulusteam@gmail.com>                    
+/// Copyright (c) 2020 Dimo Markov <team@langulus.com>                        
+/// Part of the Langulus framework, see https://langulus.com                  
 ///                                                                           
 /// Distributed under GNU General Public License v3+                          
 /// See LICENSE file, or https://www.gnu.org/licenses                         
@@ -37,7 +38,7 @@ inline bool IsVertexData(const Block& container, bool& indexData) {
 ///   @param producer - the producer of the unit                              
 ///   @param descriptor - the unit descriptor                                 
 VulkanGeometry::VulkanGeometry(VulkanRenderer* producer, const Neat& descriptor)
-   : A::Graphics {MetaOf<VulkanGeometry>()}
+   : Resolvable {MetaOf<VulkanGeometry>()}
    , ProducedFrom {producer, descriptor} {
    // Scan the descriptor                                               
    auto& vram = mProducer->mVRAM;

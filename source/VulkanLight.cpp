@@ -1,6 +1,7 @@
 ///                                                                           
 /// Langulus::Module::Vulkan                                                  
-/// Copyright(C) 2020 Dimo Markov <langulusteam@gmail.com>                    
+/// Copyright (c) 2020 Dimo Markov <team@langulus.com>                        
+/// Part of the Langulus framework, see https://langulus.com                  
 ///                                                                           
 /// Distributed under GNU General Public License v3+                          
 /// See LICENSE file, or https://www.gnu.org/licenses                         
@@ -12,7 +13,7 @@
 ///   @param producer - the light producer                                    
 ///   @param descriptor - the light descriptor                                
 VulkanLight::VulkanLight(VulkanLayer* producer, const Neat& descriptor)
-   : Graphics {MetaOf<VulkanLight>()}
+   : Resolvable {MetaOf<VulkanLight>()}
    , ProducedFrom {producer, descriptor} {
    VERBOSE_VULKAN("Initializing...");
    Couple(descriptor);

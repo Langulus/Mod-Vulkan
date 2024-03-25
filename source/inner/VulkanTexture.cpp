@@ -1,6 +1,7 @@
 ///                                                                           
 /// Langulus::Module::Vulkan                                                  
-/// Copyright(C) 2020 Dimo Markov <langulusteam@gmail.com>                    
+/// Copyright (c) 2020 Dimo Markov <team@langulus.com>                        
+/// Part of the Langulus framework, see https://langulus.com                  
 ///                                                                           
 /// Distributed under GNU General Public License v3+                          
 /// See LICENSE file, or https://www.gnu.org/licenses                         
@@ -14,7 +15,7 @@
 ///   @param producer - the texture producer                                  
 ///   @param descriptor - the texture descriptor                              
 VulkanTexture::VulkanTexture(VulkanRenderer* producer, const Neat& descriptor)
-   : A::Graphics {MetaOf<VulkanTexture>()}
+   : Resolvable {MetaOf<VulkanTexture>()}
    , ProducedFrom {producer, descriptor} {
    descriptor.ForEachDeep([&](const A::Image& content) {
       Upload(content);
