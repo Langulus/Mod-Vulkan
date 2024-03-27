@@ -13,7 +13,7 @@
 ///   @param producer - the pipeline producer                                 
 ///   @param descriptor - the pipeline descriptor                             
 VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, const Neat& descriptor)
-   : Resolvable {MetaOf<VulkanPipeline>()}
+   : Resolvable {this}
    , ProducedFrom {producer, descriptor} {
    VERBOSE_VULKAN("Initializing graphics pipeline from: ", descriptor);
    mSubscribers.New();

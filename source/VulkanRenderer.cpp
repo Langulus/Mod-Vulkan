@@ -15,7 +15,7 @@
 ///   @param producer - the renderer producer                                 
 ///   @param descriptor - the renderer descriptor                             
 VulkanRenderer::VulkanRenderer(Vulkan* producer, const Neat& descriptor)
-   : Resolvable {MetaOf<VulkanRenderer>()}
+   : Resolvable {this}
    , ProducedFrom {producer, descriptor}
    , mSwapchain {*this}
    , mLayers {this}

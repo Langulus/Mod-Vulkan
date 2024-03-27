@@ -13,7 +13,7 @@
 ///   @param producer - the camera producer                                   
 ///   @param descriptor - the camera descriptor                               
 VulkanCamera::VulkanCamera(VulkanLayer* producer, const Neat& descriptor)
-   : Resolvable {MetaOf<VulkanCamera>()} 
+   : Resolvable {this} 
    , ProducedFrom {producer, descriptor} {
    VERBOSE_VULKAN("Initializing...");
    Couple(descriptor);

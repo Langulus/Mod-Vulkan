@@ -15,7 +15,7 @@
 ///   @param producer - the texture producer                                  
 ///   @param descriptor - the texture descriptor                              
 VulkanTexture::VulkanTexture(VulkanRenderer* producer, const Neat& descriptor)
-   : Resolvable {MetaOf<VulkanTexture>()}
+   : Resolvable {this}
    , ProducedFrom {producer, descriptor} {
    descriptor.ForEachDeep([&](const A::Image& content) {
       Upload(content);

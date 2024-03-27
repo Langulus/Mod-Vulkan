@@ -15,7 +15,7 @@
 ///   @param producer - the camera producer                                   
 ///   @param descriptor - the camera descriptor                               
 VulkanLayer::VulkanLayer(VulkanRenderer* producer, const Neat& descriptor)
-   : Resolvable {MetaOf<VulkanLayer>()} 
+   : Resolvable {this} 
    , ProducedFrom {producer, descriptor}
    , mCameras {this}
    , mRenderables {this}
