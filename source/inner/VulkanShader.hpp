@@ -30,7 +30,7 @@ private:
    // Shader stage                                                      
    ShaderStage::Enum mStage {ShaderStage::Pixel};
    // Uniform/input bindings for each shader stage                      
-   TAny<Trait> mInputs[RefreshRate::StagesCount];
+   TMany<Trait> mInputs[RefreshRate::StagesCount];
 
 public:
    VulkanShader(VulkanRenderer*, const Neat&);

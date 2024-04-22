@@ -40,7 +40,7 @@ protected:
    // Eye separation. Stereo if more/less than zero                     
    Real mEyeSeparation {};
 
-   TAny<const A::Instance*> mInstances;
+   TMany<const A::Instance*> mInstances;
    Mat4 mProjectionInverted;
    VkViewport mVulkanViewport {0, 0, 640, 480, 0, 1};
    VkRect2D mVulkanScissor {{0, 0}, {640, 480}};

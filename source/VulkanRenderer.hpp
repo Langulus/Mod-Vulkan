@@ -72,7 +72,7 @@ protected:
    VulkanSwapchain mSwapchain;
 
    // The main rendering pass                                           
-   TAny<VkAttachmentDescription> mPassAttachments;
+   TMany<VkAttachmentDescription> mPassAttachments;
    Own<VkRenderPass> mPass;
 
    // Graphics family                                                   

@@ -304,7 +304,7 @@ VkPrimitiveTopology AsVkPrimitive(DMeta meta) {
 ///   @param color - the color to convert to RGBAf                            
 ///   @return a floating point RGBA vector                                    
 LANGULUS(INLINED)
-RGBAf AnyColorToVector(const Any& color) {
+RGBAf AnyColorToVector(const Many& color) {
    const auto ctype = color.GetType();
    LANGULUS_ASSERT(ctype, Meta, "No color type");
    const auto rmember = ctype->GetMember(MetaOf<Traits::R>());

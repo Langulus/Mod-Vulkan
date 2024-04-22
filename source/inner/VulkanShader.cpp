@@ -43,7 +43,7 @@ VulkanShader::VulkanShader(VulkanRenderer* producer, const Neat& descriptor)
          if (uniforms and not *uniforms) {
             // Add relevant inputs                                      
             const auto index = RefreshRate(RefreshRate::StagesBegin + mStage).GetInputIndex();
-            auto& inputs = uniforms->template As<TAny<Trait>>(index);
+            auto& inputs = uniforms->template As<TMany<Trait>>(index);
             for (auto& attribute : inputs)
                AddInput(attribute);
          }

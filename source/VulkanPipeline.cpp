@@ -215,7 +215,7 @@ VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, const Neat& descriptor)
    mAssembly.primitiveRestartEnable = VK_FALSE;
 
    // Create the pipeline                                               
-   TAny<Shader> stages;
+   TMany<Shader> stages;
    for (auto shader : mStages)
       stages << shader->Compile();
 

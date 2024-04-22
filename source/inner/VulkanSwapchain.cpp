@@ -106,7 +106,7 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamili
    if (vkGetSwapchainImagesKHR(mRenderer.mDevice, mSwapChain, &imageCount, nullptr))
       LANGULUS_OOPS(Graphics, "vkGetSwapchainImagesKHR fails");
 
-   TAny<VkImage> swapChainImages;
+   TMany<VkImage> swapChainImages;
    swapChainImages.New(imageCount);
    if (vkGetSwapchainImagesKHR(mRenderer.mDevice, mSwapChain, &imageCount, swapChainImages.GetRaw()))
       LANGULUS_OOPS(Graphics, "vkGetSwapchainImagesKHR fails");
@@ -190,7 +190,7 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamili
 
    // Create command buffer fences                                      
    if (not mNewBufferFence) {
-      TAny<VkFenceCreateInfo> fenceInfo;
+      TMany<VkFenceCreateInfo> fenceInfo;
       fenceInfo.New(count);
       mNewBufferFence.Reserve(count);
 

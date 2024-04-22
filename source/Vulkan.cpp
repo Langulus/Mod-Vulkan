@@ -43,7 +43,7 @@ LANGULUS_DEFINE_MODULE(
       // Get all validation layers supported                            
       uint32_t layerCount;
       vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-      TAny<VkLayerProperties> availableLayers;
+      TMany<VkLayerProperties> availableLayers;
       availableLayers.New(layerCount);
       vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.GetRaw());
 
@@ -213,7 +213,7 @@ Vulkan::Vulkan(Runtime* runtime, const Neat&)
    LANGULUS_ASSERT(queueCount, Graphics,
       "vkGetPhysicalDeviceQueueFamilyProperties returned no queues");
 
-   TAny<VkQueueFamilyProperties> queueProperties;
+   TMany<VkQueueFamilyProperties> queueProperties;
    queueProperties.New(queueCount);
    vkGetPhysicalDeviceQueueFamilyProperties(mAdapter, &queueCount, queueProperties.GetRaw());
 
@@ -243,7 +243,7 @@ Vulkan::Vulkan(Runtime* runtime, const Neat&)
       Logger::Verbose(Self(), "Your GPU supports sparse binding");
 
    // Create queues for rendering & presenting                          
-   TAny<VkDeviceQueueCreateInfo> queueCreateInfos;
+   TMany<VkDeviceQueueCreateInfo> queueCreateInfos;
    std::set<uint32_t> uniqueQueueFamilies {computeIndex};
    float queuePriority {1};
    for (int queueFamily : uniqueQueueFamilies) {

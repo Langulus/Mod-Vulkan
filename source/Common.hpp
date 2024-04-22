@@ -53,11 +53,11 @@ using VertexAttribute = VkVertexInputAttributeDescription;
 using Topology = VkPrimitiveTopology;
 using UBOLayout = VkDescriptorSetLayout;
 using TextureList = TUnorderedMap<TMeta, const VulkanTexture*>;
-using FrameViews = TAny<VkImageView>;
-using FrameBuffers = TAny<VkFramebuffer>;
+using FrameViews = TMany<VkImageView>;
+using FrameBuffers = TMany<VkFramebuffer>;
 using CmdBuffers = ::std::vector<VkCommandBuffer>;
 using TokenSet = ::std::vector<const char*>;
-using QueueFamilies = TAny<uint32_t>;
+using QueueFamilies = TMany<uint32_t>;
 
 constexpr uint32_t VK_INDEFINITELY = ::std::numeric_limits<uint32_t>::max();
 
@@ -70,6 +70,6 @@ NOD() VkFormat AsVkFormat(DMeta, bool reverse = false);
 NOD() DMeta VkFormatToDMeta(const VkFormat&, bool& reverse);
 NOD() constexpr VkShaderStageFlagBits AsVkStage(ShaderStage::Enum) noexcept;
 NOD() VkPrimitiveTopology AsVkPrimitive(DMeta);
-NOD() RGBAf AnyColorToVector(const Any&);
+NOD() RGBAf AnyColorToVector(const Many&);
 
 #include "Common.inl"

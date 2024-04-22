@@ -26,7 +26,7 @@ protected:
    friend struct VulkanLayer;
 
    // Precompiled instances and levels, updated on Refresh()            
-   TAny<const A::Instance*> mInstances;
+   TMany<const A::Instance*> mInstances;
    TRange<Level> mLevelRange;
    Ref<A::Material> mMaterialContent;
    Ref<A::Mesh> mGeometryContent;

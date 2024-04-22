@@ -23,13 +23,13 @@ protected:
    Own<VkSwapchainKHR> mSwapChain;
 
    // Images for the swap chain framebuffers                            
-   TAny<VulkanImage> mFrameImages;
+   TMany<VulkanImage> mFrameImages;
    // Swap chain frame views                                            
    FrameViews mFrameViews;
    // Framebuffers                                                      
    FrameBuffers mFrameBuffers;
    // Fence for each framebuffer                                        
-   TAny<VkFence> mNewBufferFence;
+   TMany<VkFence> mNewBufferFence;
 
    // I think this is not used                                          
    Own<VkSemaphore> mNewFrameFence;

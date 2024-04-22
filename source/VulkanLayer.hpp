@@ -73,9 +73,9 @@ protected:
 
    // Subscribers, used only for hierarchical styled layers             
    // Otherwise, VulkanPipeline::Subscriber is used                     
-   TAny<LayerSubscriber> mSubscribers;
-   TAny<Count> mSubscriberCountPerLevel;
-   TAny<Count> mSubscriberCountPerCamera;
+   TMany<LayerSubscriber> mSubscribers;
+   TMany<Count> mSubscriberCountPerLevel;
+   TMany<Count> mSubscriberCountPerCamera;
 
    /// The layer style determines how the scene will be compiled              
    /// Combine these flags to configure the layer to your needs               

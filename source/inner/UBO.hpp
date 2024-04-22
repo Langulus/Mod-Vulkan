@@ -34,7 +34,7 @@ struct UBO {
    Bytes mRAM;
    VulkanBuffer mBuffer;
    VkDescriptorBufferInfo mDescriptor {};
-   TAny<Uniform> mUniforms;
+   TMany<Uniform> mUniforms;
    VkShaderStageFlags mStages {};
 
    ~UBO();
@@ -47,7 +47,7 @@ struct UBO {
    }
 };
 
-using BufferUpdates = TAny<VkWriteDescriptorSet>;
+using BufferUpdates = TMany<VkWriteDescriptorSet>;
 
 
 ///                                                                           
@@ -121,8 +121,8 @@ struct SamplerUBO {
    VulkanRenderer* mRenderer {};
    VkDescriptorPool mPool;
    Own<VkDescriptorSet> mSamplersUBOSet;
-   TAny<VkDescriptorImageInfo> mSamplers;
-   TAny<Uniform> mUniforms;
+   TMany<VkDescriptorImageInfo> mSamplers;
+   TMany<Uniform> mUniforms;
 
    SamplerUBO() = default;
    SamplerUBO(const SamplerUBO&) noexcept = default;

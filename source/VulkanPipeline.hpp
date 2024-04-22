@@ -31,14 +31,14 @@ struct VulkanPipeline : A::Graphics, ProducedFrom<VulkanRenderer> {
    LANGULUS_BASES(A::Graphics);
 
 private:
-   using Bindings = TAny<VkDescriptorSetLayoutBinding>;
+   using Bindings = TMany<VkDescriptorSetLayoutBinding>;
 
    void CreateDescriptorLayoutAndSet(const Bindings&, UBOLayout*, VkDescriptorSet*);
    void CreateUniformBuffers();
    void CreateNewSamplerSet();
    void CreateNewGeometrySet();
 
-   TAny<TAny<Trait>> mUniforms;
+   TMany<TMany<Trait>> mUniforms;
 
    // Shaders                                                           
    Ref<const VulkanShader> mStages[ShaderStage::Counter];
@@ -62,10 +62,10 @@ private:
    // Uniform buffer objects for each RefreshRate                       
    DataUBO<false> mStaticUBO[RefreshRate::StaticUniformCount];
    DataUBO<true> mDynamicUBO[RefreshRate::DynamicUniformCount];
-   TAny<DataUBO<true>*> mRelevantDynamicDescriptors;
+   TMany<DataUBO<true>*> mRelevantDynamicDescriptors;
 
    // Sets and samplers for textures                                    
-   TAny<SamplerUBO> mSamplerUBO;
+   TMany<SamplerUBO> mSamplerUBO;
 
    // Vertex input descriptor                                           
    VertexInput mInput {};
@@ -79,8 +79,8 @@ private:
    bool mDepth {true};
 
    // Subscribers                                                       
-   TAny<PipeSubscriber> mSubscribers;
-   TAny<const VulkanGeometry*> mGeometries;
+   TMany<PipeSubscriber> mSubscribers;
+   TMany<const VulkanGeometry*> mGeometries;
 
    static Construct FromFile(const A::File&);
    static Construct FromMesh(const A::Mesh&);
