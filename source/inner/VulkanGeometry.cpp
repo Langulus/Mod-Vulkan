@@ -17,11 +17,11 @@
 ///   @param container - container to scan                                    
 ///   @param indexData - [out] whether or not index data is available         
 ///   @return true if container has vectors                                   
-inline bool IsVertexData(const Block& container, bool& indexData) {
-   if (  container.CastsTo<A::Topology>()
-      or container.CastsTo<A::Normal>()
-      or container.CastsTo<A::Sampler>()
-      or container.CastsTo<A::Color>()) {
+inline bool IsVertexData(const Block<>& container, bool& indexData) {
+   if (container.CastsTo<A::Topology>()
+   or  container.CastsTo<A::Normal>()
+   or  container.CastsTo<A::Sampler>()
+   or  container.CastsTo<A::Color>()) {
       indexData = false;
       return true;
    }

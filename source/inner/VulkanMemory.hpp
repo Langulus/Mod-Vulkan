@@ -49,5 +49,5 @@ public:
    void ImageTransfer(const VulkanImage&, VkImageLayout from, VkImageLayout to);
    void ImageTransfer(const VkImage&, VkImageLayout from, VkImageLayout to);
 
-   VulkanBuffer Upload(const Block&, VkBufferUsageFlags);
+   VulkanBuffer Upload(const Block<>&, VkBufferUsageFlags);
 };

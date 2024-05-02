@@ -189,7 +189,7 @@ SCENARIO("Drawing solid polygons", "[renderer]") {
 
             // And interpret the scene as an image, i.e. taking a       
             // screenshot                                               
-            Verbs::InterpretAs<A::Image> interpret;
+            Verbs::InterpretAs<A::Image*> interpret;
             root.Run(interpret);
 
             REQUIRE(root.GetUnits().GetCount() == 4);
