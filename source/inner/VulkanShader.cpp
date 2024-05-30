@@ -10,7 +10,11 @@
 #include <Langulus/IO.hpp>
 #include <shaderc/shaderc.hpp>
 
-#define VERBOSE_SHADER(...) //Logger::Verbose(Self(), __VA_ARGS__)
+#if 0
+   #define VERBOSE_SHADER(...) Logger::Verbose(Self(), __VA_ARGS__)
+#else
+   #define VERBOSE_SHADER(...) LANGULUS(NOOP)
+#endif
 
 
 /// Descriptor constructor                                                    

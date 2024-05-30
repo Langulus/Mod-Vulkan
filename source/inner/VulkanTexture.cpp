@@ -8,7 +8,11 @@
 ///                                                                           
 #include "../Vulkan.hpp"
 
-#define VERBOSE_VKTEXTURE(...) //Logger::Verbose(Self(), __VA_ARGS__)
+#if 0
+   #define VERBOSE_VKTEXTURE(...) Logger::Verbose(Self(), __VA_ARGS__)
+#else
+   #define VERBOSE_VKTEXTURE(...) LANGULUS(NOOP)
+#endif
 
 
 /// VRAM texture constructor                                                  

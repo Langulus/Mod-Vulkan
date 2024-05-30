@@ -10,7 +10,11 @@
 #include <Math/Normal.hpp>
 #include <Math/Sampler.hpp>
 
-#define VERBOSE_VKGEOMETRY(...) //Logger::Verbose(Self(), __VA_ARGS__)
+#if 0
+   #define VERBOSE_VKGEOMETRY(...) Logger::Verbose(Self(), __VA_ARGS__)
+#else
+   #define VERBOSE_VKGEOMETRY(...) LANGULUS(NOOP)
+#endif
 
 
 /// Returns true if container has any vertex data                             

@@ -36,8 +36,8 @@ struct VulkanShader;
    #define VERBOSE_VULKAN_TAB(...)  const auto tab = Logger::Verbose(Self(), __VA_ARGS__, Logger::Tabs {})
 #else
    #define VERBOSE_VULKAN_ENABLED() 0
-   #define VERBOSE_VULKAN(...)      
-   #define VERBOSE_VULKAN_TAB(...)  
+   #define VERBOSE_VULKAN(...)      LANGULUS(NOOP)
+   #define VERBOSE_VULKAN_TAB(...)  LANGULUS(NOOP)
 #endif
 
 ///                                                                           
