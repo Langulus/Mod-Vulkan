@@ -154,24 +154,22 @@ SCENARIO("Drawing solid polygons", "[renderer]") {
 
    GIVEN("A window with a renderer") {
       // Create the scene                                               
-      Thing root;
-      root.SetName("ROOT");
-
-      root.CreateRuntime();
-      root.LoadMod("GLFW");
-      root.LoadMod("Vulkan");
-      root.LoadMod("FileSystem");
-      root.LoadMod("AssetsImages");
-      root.LoadMod("AssetsGeometry");
-      root.LoadMod("AssetsMaterials");
-      root.LoadMod("Physics");
+      auto root = Thing::Root<false>(
+         "GLFW",
+         "Vulkan",
+         "FileSystem",
+         "AssetsImages",
+         "AssetsGeometry",
+         "AssetsMaterials",
+         "Physics"
+      );
 
       root.CreateUnit<A::Window>(Traits::Size(640, 480));
       root.CreateUnit<A::Renderer>();
       root.CreateUnit<A::Layer>();
       root.CreateUnit<A::World>();
 
-      auto rect = root.CreateChild({Traits::Size {100}, Traits::Name {"Rectangles"}});
+      auto rect = root.CreateChild(Traits::Size {100}, "Rectangles");
       auto renderable = rect->CreateUnit<A::Renderable>();
       auto mesh = rect->CreateUnit<A::Mesh>(Math::Box2 {});
       auto topLeft  = rect->CreateUnit<A::Instance>(Traits::Place(100, 100), Colors::Black);
