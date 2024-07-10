@@ -33,7 +33,7 @@ struct VulkanShader;
 #if 1
    #define VERBOSE_VULKAN_ENABLED() 1
    #define VERBOSE_VULKAN(...)      Logger::Verbose(Self(), __VA_ARGS__)
-   #define VERBOSE_VULKAN_TAB(...)  const auto tab = Logger::Verbose(Self(), __VA_ARGS__, Logger::Tabs {})
+   #define VERBOSE_VULKAN_TAB(...)  const auto tab = Logger::VerboseTab(Self(), __VA_ARGS__)
 #else
    #define VERBOSE_VULKAN_ENABLED() 0
    #define VERBOSE_VULKAN(...)      LANGULUS(NOOP)
@@ -45,31 +45,31 @@ struct VulkanShader;
 ///                                                                           
 #include <vulkan/vulkan_core.h>
 
-using Shader = VkPipelineShaderStageCreateInfo;
-using VertexInput = VkPipelineVertexInputStateCreateInfo;
-using VertexAssembly = VkPipelineInputAssemblyStateCreateInfo;
-using VertexBinding = VkVertexInputBindingDescription;
+using Shader          = VkPipelineShaderStageCreateInfo;
+using VertexInput     = VkPipelineVertexInputStateCreateInfo;
+using VertexAssembly  = VkPipelineInputAssemblyStateCreateInfo;
+using VertexBinding   = VkVertexInputBindingDescription;
 using VertexAttribute = VkVertexInputAttributeDescription;
-using Topology = VkPrimitiveTopology;
-using UBOLayout = VkDescriptorSetLayout;
-using TextureList = TUnorderedMap<TMeta, const VulkanTexture*>;
-using FrameViews = TMany<VkImageView>;
-using FrameBuffers = TMany<VkFramebuffer>;
-using CmdBuffers = ::std::vector<VkCommandBuffer>;
-using TokenSet = ::std::vector<const char*>;
-using QueueFamilies = TMany<uint32_t>;
+using Topology        = VkPrimitiveTopology;
+using UBOLayout       = VkDescriptorSetLayout;
+using TextureList     = TUnorderedMap<TMeta, const VulkanTexture*>;
+using FrameViews      = TMany<VkImageView>;
+using FrameBuffers    = TMany<VkFramebuffer>;
+using CmdBuffers      = ::std::vector<VkCommandBuffer>;
+using TokenSet        = ::std::vector<const char*>;
+using QueueFamilies   = TMany<uint32_t>;
 
 constexpr uint32_t VK_INDEFINITELY = ::std::numeric_limits<uint32_t>::max();
 
 /// These calls must be implemented for each OS individually                  
 bool CreateNativeVulkanSurfaceKHR(const VkInstance&, const A::Window*, VkSurfaceKHR&);
 
-NOD() TokenSet GetRequiredExtensions();
-NOD() VkIndexType AsVkIndexType(DMeta);
-NOD() VkFormat AsVkFormat(DMeta, bool reverse = false);
-NOD() DMeta VkFormatToDMeta(const VkFormat&, bool& reverse);
-NOD() constexpr VkShaderStageFlagBits AsVkStage(ShaderStage::Enum) noexcept;
-NOD() VkPrimitiveTopology AsVkPrimitive(DMeta);
-NOD() RGBAf AnyColorToVector(const Many&);
+NOD() auto GetRequiredExtensions() -> TokenSet;
+NOD() auto AsVkIndexType(DMeta) -> VkIndexType;
+NOD() auto AsVkFormat(DMeta, bool reverse = false) -> VkFormat;
+NOD() auto VkFormatToDMeta(const VkFormat&, bool& reverse) -> DMeta;
+NOD() constexpr auto AsVkStage(ShaderStage::Enum) noexcept -> VkShaderStageFlagBits;
+NOD() auto AsVkPrimitive(DMeta) -> VkPrimitiveTopology;
+NOD() auto AnyColorToVector(const Many&) -> RGBAf;
 
 #include "Common.inl"
