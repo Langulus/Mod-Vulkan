@@ -17,12 +17,7 @@
 VulkanRenderer::VulkanRenderer(Vulkan* producer, const Neat& descriptor)
    : Resolvable {this}
    , ProducedFrom {producer, descriptor}
-   , mSwapchain {*this}
-   , mLayers {this}
-   , mPipelines {this}
-   , mShaders {this}
-   , mGeometries {this}
-   , mTextures {this} {
+   , mSwapchain {*this} {
    VERBOSE_VULKAN("Initializing...");
 
    // Retrieve relevant traits from the environment                     
@@ -301,11 +296,11 @@ void VulkanRenderer::Refresh() {
 /// Also initialized the renderer if a window is provided                     
 ///   @param verb - creation verb                                             
 void VulkanRenderer::Create(Verb& verb) {
-   mLayers.Create(verb);
-   mPipelines.Create(verb);
-   mShaders.Create(verb);
-   mGeometries.Create(verb);
-   mTextures.Create(verb);
+   mLayers.Create(this, verb);
+   mPipelines.Create(this, verb);
+   mShaders.Create(this, verb);
+   mGeometries.Create(this, verb);
+   mTextures.Create(this, verb);
 }
 
 /// Interpret the renderer as an A::Texture, i.e. take a screenshot           

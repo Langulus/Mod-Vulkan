@@ -77,8 +77,7 @@ LANGULUS_DEFINE_MODULE(
 ///   @param handle - the library handle                                      
 Vulkan::Vulkan(Runtime* runtime, const Neat&)
    : Resolvable {this}
-   , Module {runtime}
-   , mRenderers {this} {
+   , Module     {runtime} {
    VERBOSE_VULKAN("Initializing...");
    VkApplicationInfo appInfo {};
    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -387,5 +386,5 @@ bool Vulkan::Update(Time) {
 /// Create/destroy renderers                                                  
 ///   @param verb - the creation/destruction verb                             
 void Vulkan::Create(Verb& verb) {
-   mRenderers.Create(verb);
+   mRenderers.Create(this, verb);
 }
