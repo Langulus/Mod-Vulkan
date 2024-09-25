@@ -74,7 +74,7 @@ LANGULUS_DEFINE_MODULE(
 /// Vulkan module construction                                                
 ///   @param system - the system that owns the module instance                
 ///   @param handle - the library handle                                      
-Vulkan::Vulkan(Runtime* runtime, const Neat&)
+Vulkan::Vulkan(Runtime* runtime, Describe)
    : Resolvable {this}
    , Module     {runtime} {
    VERBOSE_VULKAN("Initializing...");

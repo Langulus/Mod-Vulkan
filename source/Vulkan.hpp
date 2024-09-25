@@ -48,7 +48,7 @@ protected:
    #endif
 
 public:
-   Vulkan(Runtime*, const Neat&);
+   Vulkan(Runtime*, Describe);
    ~Vulkan();
 
    bool Update(Time);

@@ -11,8 +11,8 @@
 /// Descriptor constructor                                                    
 ///   @param producer - the camera producer                                   
 ///   @param descriptor - the camera descriptor                               
-VulkanCamera::VulkanCamera(VulkanLayer* producer, const Neat& descriptor)
-   : Resolvable {this} 
+VulkanCamera::VulkanCamera(VulkanLayer* producer, Describe descriptor)
+   : Resolvable   {this} 
    , ProducedFrom {producer, descriptor} {
    VERBOSE_VULKAN("Initializing...");
    Couple(descriptor);

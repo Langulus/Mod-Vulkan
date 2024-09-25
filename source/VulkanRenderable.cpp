@@ -12,8 +12,8 @@
 /// Descriptor constructor                                                    
 ///   @param producer - the renderable producer                               
 ///   @param descriptor - the renderable descriptor                           
-VulkanRenderable::VulkanRenderable(VulkanLayer* producer, const Neat& descriptor)
-   : Resolvable {this} 
+VulkanRenderable::VulkanRenderable(VulkanLayer* producer, Describe descriptor)
+   : Resolvable   {this} 
    , ProducedFrom {producer, descriptor} {
    VERBOSE_VULKAN("Initializing...");
    Couple(descriptor);

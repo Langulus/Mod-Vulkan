@@ -13,10 +13,10 @@
 /// Descriptor constructor                                                    
 ///   @param producer - the renderer producer                                 
 ///   @param descriptor - the renderer descriptor                             
-VulkanRenderer::VulkanRenderer(Vulkan* producer, const Neat& descriptor)
-   : Resolvable {this}
+VulkanRenderer::VulkanRenderer(Vulkan* producer, Describe descriptor)
+   : Resolvable   {this}
    , ProducedFrom {producer, descriptor}
-   , mSwapchain {*this} {
+   , mSwapchain   {*this} {
    VERBOSE_VULKAN("Initializing...");
 
    // Retrieve relevant traits from the environment                     

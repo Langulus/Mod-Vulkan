@@ -88,7 +88,7 @@ private:
    void GenerateShaders(const A::Material&);
 
 public:
-   VulkanPipeline(VulkanRenderer*, const Neat&);
+   VulkanPipeline(VulkanRenderer*, Describe);
    ~VulkanPipeline();
 
    NOD() Count RenderLevel(const Offset&) const;

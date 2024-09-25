@@ -19,7 +19,7 @@
 /// Descriptor constructor                                                    
 ///   @param producer - the shader producer                                   
 ///   @param descriptor - the shader descriptor                               
-VulkanShader::VulkanShader(VulkanRenderer* producer, const Neat& descriptor)
+VulkanShader::VulkanShader(VulkanRenderer* producer, Describe descriptor)
    : Resolvable {this} 
    , ProducedFrom {producer, descriptor} {
    // Configure the shader, but don't compile it yet                    

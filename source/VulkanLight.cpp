@@ -11,8 +11,8 @@
 /// Descriptor constructor                                                    
 ///   @param producer - the light producer                                    
 ///   @param descriptor - the light descriptor                                
-VulkanLight::VulkanLight(VulkanLayer* producer, const Neat& descriptor)
-   : Resolvable {this}
+VulkanLight::VulkanLight(VulkanLayer* producer, Describe descriptor)
+   : Resolvable   {this}
    , ProducedFrom {producer, descriptor} {
    VERBOSE_VULKAN("Initializing...");
    Couple(descriptor);

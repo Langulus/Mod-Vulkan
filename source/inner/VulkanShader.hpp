@@ -32,7 +32,7 @@ private:
    TMany<Trait> mInputs[RefreshRate::StagesCount];
 
 public:
-   VulkanShader(VulkanRenderer*, const Neat&);
+   VulkanShader(VulkanRenderer*, Describe);
    ~VulkanShader();
 
    NOD() RefreshRate GetRate() const noexcept;

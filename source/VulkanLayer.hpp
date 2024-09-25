@@ -118,7 +118,7 @@ protected:
    Style mStyle = Style::Default;
 
 public:
-   VulkanLayer(VulkanRenderer*, const Neat&);
+   VulkanLayer(VulkanRenderer*, Describe);
    ~VulkanLayer();
 
    void Create(Verb&);
