@@ -128,7 +128,7 @@ public:
          constexpr auto rate = RATE.GetDynamicUniformIndex();
          mDynamicUBO[rate].template Set<TRAIT, DATA>(value);
       }
-      else LANGULUS_ERROR("Unsupported uniform rate");
+      else static_assert(false, "Unsupported uniform rate");
    }
 
    /// Push the current samplers and dynamic uniforms, advancing indices      
@@ -172,7 +172,7 @@ public:
             }
          }
       }
-      else LANGULUS_ERROR("Unsupported uniform rate to push");
+      else static_assert(false, "Unsupported uniform rate to push");
    }
 
    /// Convert a rate to the corresponding UBO index                          
