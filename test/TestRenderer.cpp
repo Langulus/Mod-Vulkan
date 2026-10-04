@@ -9,10 +9,10 @@
 #include <Flow/Time.hpp>
 #include <Flow/Verbs/Interpret.hpp>
 #include <Flow/Verbs/Compare.hpp>
-#include <Langulus/Platform.hpp>
+#include <Langulus/CppAPI/Platform.hpp>
 #include <Langulus/Graphics.hpp>
-#include <Langulus/Physical.hpp>
-#include <Langulus/Mesh.hpp>
+#include <Langulus/CppAPI/Physical.hpp>
+#include <Langulus/CppAPI/Mesh.hpp>
 #include <Langulus/Image.hpp>
 #include <catch2/catch.hpp>
 
@@ -54,34 +54,34 @@ namespace Catch
          root.LoadMod("Vulkan");
          
          WHEN("A renderer is created via abstractions") {
-            auto window = root.CreateUnit<A::Window>(Traits::Size(640, 480));
-            auto renderer = root.CreateUnit<A::Renderer>();
+            auto window = root.CreateUnit<Things::Window>(Traits::Size(640, 480));
+            auto renderer = root.CreateUnit<Things::Renderer>();
             root.DumpHierarchy();
                
             REQUIRE(window);
             REQUIRE(window.IsSparse());
-            REQUIRE(window.CastsTo<A::Window>());
+            REQUIRE(window.CastsTo<Things::Window>());
 
             REQUIRE(renderer);
             REQUIRE(renderer.IsSparse());
-            REQUIRE(renderer.CastsTo<A::Renderer>());
+            REQUIRE(renderer.CastsTo<Things::Renderer>());
 
             REQUIRE(root.GetUnits().GetCount() == 2);
          }
 
       #if LANGULUS_FEATURE(MANAGED_REFLECTION)
          WHEN("A renderer is created via tokens") {
-            auto window = root.CreateUnitToken("A::Window", Traits::Size(640, 480));
+            auto window = root.CreateUnitToken("Things::Window", Traits::Size(640, 480));
             auto renderer = root.CreateUnitToken("Renderer");
             root.DumpHierarchy();
                
             REQUIRE(window);
             REQUIRE(window.IsSparse());
-            REQUIRE(window.CastsTo<A::Window>());
+            REQUIRE(window.CastsTo<Things::Window>());
 
             REQUIRE(renderer);
             REQUIRE(renderer.IsSparse());
-            REQUIRE(renderer.CastsTo<A::Renderer>());
+            REQUIRE(renderer.CastsTo<Things::Renderer>());
 
             REQUIRE(root.GetUnits().GetCount() == 2);
          }
@@ -106,8 +106,8 @@ SCENARIO("Drawing an empty window", "[renderer]") {
       root.LoadMod("Vulkan");
       root.LoadMod("AssetsImages");
 
-      root.CreateUnit<A::Window>(Traits::Size(640, 480));
-      root.CreateUnit<A::Renderer>();
+      root.CreateUnit<Things::Window>(Traits::Size(640, 480));
+      root.CreateUnit<Things::Renderer>();
 
       static Allocator::State memoryState2;
 
@@ -118,15 +118,15 @@ SCENARIO("Drawing an empty window", "[renderer]") {
 
             // And interpret the scene as an image, i.e. taking a       
             // screenshot                                               
-            Verbs::InterpretAs<A::Image> interpret;
+            Verbs::InterpretAs<Things::Image> interpret;
             root.Run(interpret);
 
             REQUIRE(root.GetUnits().GetCount() == 2);
-            REQUIRE_FALSE(root.HasUnits<A::Image>());
+            REQUIRE_FALSE(root.HasUnits<Things::Image>());
             REQUIRE(interpret.IsDone());
             REQUIRE(interpret->GetCount() == 1);
             REQUIRE(interpret->IsSparse());
-            REQUIRE(interpret->template CastsTo<A::Image>());
+            REQUIRE(interpret->template CastsTo<Things::Image>());
 
             Verbs::Compare compare {Colors::Red};
             interpret.Then(compare);
@@ -163,18 +163,18 @@ SCENARIO("Drawing solid polygons", "[renderer]") {
          "Physics"
       );
 
-      root.CreateUnit<A::Window>(Traits::Size(640, 480));
-      root.CreateUnit<A::Renderer>();
-      root.CreateUnit<A::Layer>();
+      root.CreateUnit<Things::Window>(Traits::Size(640, 480));
+      root.CreateUnit<Things::Renderer>();
+      root.CreateUnit<Things::Layer>();
       root.CreateUnit<A::World>();
 
       auto rect = root.CreateChild(Traits::Size {100}, "Rectangles");
-      auto renderable = rect->CreateUnit<A::Renderable>();
-      auto mesh = rect->CreateUnit<A::Mesh>(Math::Box2 {});
-      auto topLeft  = rect->CreateUnit<A::Instance>(Traits::Place(100, 100), Colors::Black);
-      auto topRight = rect->CreateUnit<A::Instance>(Traits::Place(540, 100), Colors::Green);
-      auto botLeft  = rect->CreateUnit<A::Instance>(Traits::Place(100, 380), Colors::Blue);
-      auto botRight = rect->CreateUnit<A::Instance>(Traits::Place(540, 380), Colors::White);
+      auto renderable = rect->CreateUnit<Things::Renderable>();
+      auto mesh = rect->CreateUnit<Things::Mesh>(Math::Box2 {});
+      auto topLeft  = rect->CreateUnit<Things::Instance>(Traits::Place(100, 100), Colors::Black);
+      auto topRight = rect->CreateUnit<Things::Instance>(Traits::Place(540, 100), Colors::Green);
+      auto botLeft  = rect->CreateUnit<Things::Instance>(Traits::Place(100, 380), Colors::Blue);
+      auto botRight = rect->CreateUnit<Things::Instance>(Traits::Place(540, 380), Colors::White);
       root.DumpHierarchy();
 
       static Allocator::State memoryState2;
@@ -186,17 +186,17 @@ SCENARIO("Drawing solid polygons", "[renderer]") {
 
             // And interpret the scene as an image, i.e. taking a       
             // screenshot                                               
-            Verbs::InterpretAs<A::Image*> interpret;
+            Verbs::InterpretAs<Things::Image*> interpret;
             root.Run(interpret);
 
             REQUIRE(root.GetUnits().GetCount() == 4);
             REQUIRE(rect->GetUnits().GetCount() == 6);
             REQUIRE(root.GetChildren().GetCount() == 1);
-            REQUIRE_FALSE(root.HasUnits<A::Image>());
+            REQUIRE_FALSE(root.HasUnits<Things::Image>());
             REQUIRE(interpret.IsDone());
             REQUIRE(interpret->GetCount() == 1);
             REQUIRE(interpret->IsSparse());
-            REQUIRE(interpret->template CastsTo<A::Image>());
+            REQUIRE(interpret->template CastsTo<Things::Image>());
 
             Verbs::Compare compare {"polygons.png"};
             interpret.Then(compare);

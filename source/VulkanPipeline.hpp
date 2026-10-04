@@ -8,8 +8,8 @@
 #pragma once
 #include "inner/UBO.hpp"
 #include <Math/Blend.hpp>
-#include <Langulus/Mesh.hpp>
-#include <Langulus/IO.hpp>
+#include <Langulus/CppAPI/Mesh.hpp>
+#include <Langulus/CppAPI/IO.hpp>
 
 
 ///                                                                           
@@ -26,7 +26,7 @@ struct PipeSubscriber {
 ///   Vulkan pipeline                                                         
 ///                                                                           
 struct VulkanPipeline : A::Graphics, ProducedFrom<VulkanRenderer> {
-   LANGULUS(ABSTRACT) false;
+   using CTTI_Abstract = No;
    LANGULUS_BASES(A::Graphics);
 
 private:
@@ -82,9 +82,9 @@ private:
    TMany<const VulkanGeometry*> mGeometries;
 
    static Construct FromFile(const A::File&);
-   static Construct FromMesh(const A::Mesh&);
-   static Construct FromImage(const A::Image&);
-   static Construct FromCode(const Text&);
+   static Construct FromMesh(const Things::Mesh&);
+   static Construct FromImage(const Things::Image&);
+   static Construct FromCode(Text const&);
    void GenerateShaders(const A::Material&);
 
 public:

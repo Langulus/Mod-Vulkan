@@ -46,7 +46,7 @@ protected:
    Own<VkImageView> mDepthImageView;
 
    // Always keep a reference to a screenshot, to avoid reallocation    
-   Ref<A::Image> mScreenshot;
+   Ref<Things::Image> mScreenshot;
 
 public:
    VulkanSwapchain() = delete;
@@ -63,5 +63,5 @@ public:
    NOD() VkCommandBuffer GetRenderCB() const noexcept;
    NOD() VkFramebuffer GetFramebuffer() const noexcept;
    NOD() const VulkanImage& GetCurrentImage() const noexcept;
-   NOD() Ref<A::Image> TakeScreenshot();
+   NOD() Ref<Things::Image> TakeScreenshot();
 };

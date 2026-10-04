@@ -43,18 +43,18 @@ VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, Describe descriptor)
             material = FromFile(file);
             return Loop::Break;
          },
-         [&](const Text& text) {
+         [&](Text const& text) {
             // Create from any text, including filenames and code       
             const auto file = GetRuntime()->GetFile(text);
             material = file ? FromFile(*file) : FromCode(text);
             return Loop::Break;
          },
-         [&](const A::Mesh& mesh) {
+         [&](const Things::Mesh& mesh) {
             // Adapt to a mesh                                          
             material = FromMesh(mesh);
             return Loop::Break;
          },
-         [&](const A::Image& image) {
+         [&](const Things::Image& image) {
             // Adapt to an image                                        
             material = FromImage(image);
             return Loop::Break;
@@ -70,7 +70,7 @@ VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, Describe descriptor)
          switch (attachment.format) {
          case VK_FORMAT_B8G8R8A8_UNORM:
             material << Traits::Output {
-               Traits::Color {Rate::Pixel, MetaOf<RGBA>()}
+               Tags::Color {Rate::Pixel, MetaOf<RGBA>()}
             };
             break;
          case VK_FORMAT_D32_SFLOAT:
@@ -300,7 +300,7 @@ Construct VulkanPipeline::FromFile(const A::File& file) {
 /// Create a pipeline capable of rendering a mesh                             
 ///   @attention geometry will be generated, in order to access data types    
 ///   @param mesh - the mesh content generator                                
-Construct VulkanPipeline::FromMesh(const A::Mesh& mesh) {
+Construct VulkanPipeline::FromMesh(const Things::Mesh& mesh) {
    // We use the geometry's properties to define a material             
    // generator, which we later use to initialize this pipeline         
    auto request = Construct::From<A::Material>(
@@ -363,14 +363,14 @@ Construct VulkanPipeline::FromMesh(const A::Mesh& mesh) {
 /// Create a pipeline capable of rendering an image                           
 ///   @attention image will be generated, in order to access data types       
 ///   @param image - the image content generator                              
-Construct VulkanPipeline::FromImage(const A::Image& image) {
+Construct VulkanPipeline::FromImage(const Things::Image& image) {
    // We use the image's properties to define a material                
    // generator, which we later use to initialize this pipeline         
    auto request = Construct::From<A::Material>(
       Traits::Topology {MetaOf<A::TriangleStrip>()}
    );
 
-   const auto colors = image.GetData<Traits::Color>();
+   const auto colors = image.GetData<Tags::Color>();
    if (colors) {
       // Create pixel shader texture input with the image view          
       request << Traits::Input {
@@ -383,7 +383,7 @@ Construct VulkanPipeline::FromImage(const A::Image& image) {
 
 /// Initialize the pipeline from any code                                     
 ///   @param code - the shader code                                           
-Construct VulkanPipeline::FromCode(const Text& code) {
+Construct VulkanPipeline::FromCode(Text const& code) {
    // We use the code to define a material generator, which we later    
    // use to initialize this pipeline                                   
    auto request = Construct::From<A::Material>(
@@ -535,7 +535,7 @@ void VulkanPipeline::CreateUniformBuffers() {
          //TODO precompute this in asset module!!!
          /*for (auto& uniform : ubo.mUniforms) {
             for (const auto stage : mStages) {
-               if (stage->GetCode().Find(GLSL {uniform.mTrait.GetTrait()}))
+               if (stage->GetCode().Find(GLSL {uniform.mTrait.GetTag()}))
                   ubo.mStages |= stage->GetStageFlagBit();
             }
          }*/
@@ -576,7 +576,7 @@ void VulkanPipeline::CreateUniformBuffers() {
          //TODO precompute this in asset module!!!
          /*for (auto& uniform : ubo.mUniforms) {
             for (const auto stage : mStages) {
-               if (stage->GetCode().Find(GLSL {uniform.mTrait.GetTrait()}))
+               if (stage->GetCode().Find(GLSL {uniform.mTrait.GetTag()}))
                   ubo.mStages |= stage->GetStageFlagBit();
             }
          }*/
@@ -618,7 +618,7 @@ void VulkanPipeline::CreateUniformBuffers() {
             //TODO precompute this in asset module!!!
             /*for (const auto stage : mStages) {
                const auto token = 
-                  GLSL {uniform.mTrait.GetTrait()}
+                  GLSL {uniform.mTrait.GetTag()}
                 + GLSL {bindings.GetCount()};
 
                if (stage->GetCode().Find(token))

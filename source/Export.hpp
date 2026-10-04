@@ -10,7 +10,7 @@
 #include <Math/Color.hpp>
 #include <Langulus/Material.hpp>
 #include <Langulus/Graphics.hpp>
-#include <Langulus/Platform.hpp>
+#include <Langulus/CppAPI/Platform.hpp>
 
 LANGULUS_EXCEPTION(Graphics);
 
@@ -61,7 +61,7 @@ using QueueFamilies   = TMany<uint32_t>;
 constexpr uint32_t VK_INDEFINITELY = ::std::numeric_limits<uint32_t>::max();
 
 /// These calls must be implemented for each OS individually                  
-bool CreateNativeVulkanSurfaceKHR(const VkInstance&, const A::Window*, VkSurfaceKHR&);
+bool CreateNativeVulkanSurfaceKHR(const VkInstance&, const Things::Window*, VkSurfaceKHR&);
 
 NOD() auto GetRequiredExtensions() -> TokenSet;
 NOD() auto AsVkIndexType(DMeta) -> VkIndexType;

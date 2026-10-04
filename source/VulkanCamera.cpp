@@ -89,7 +89,7 @@ void VulkanCamera::Compile() {
 
 /// Recompile the camera                                                      
 void VulkanCamera::Refresh() {
-   mInstances = GatherUnits<A::Instance, Seek::Here>();
+   mInstances = GatherUnits<Things::Instance, Seek::Here>();
 }
 
 /// Get view transformation for a given LOD state                             

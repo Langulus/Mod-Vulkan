@@ -13,7 +13,7 @@
 ///   Light source unit                                                       
 ///                                                                           
 struct VulkanLight : A::Graphics, ProducedFrom<VulkanLayer> {
-   LANGULUS(ABSTRACT) false;
+   using CTTI_Abstract = No;
    LANGULUS_BASES(A::Graphics);
 
    VulkanLight(VulkanLayer*, Describe);

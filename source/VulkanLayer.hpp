@@ -45,10 +45,10 @@ using PipelineSet = TUnorderedSet<VulkanPipeline*>;
 /// A logical group of cameras, renderables, and lights, isolated from other  
 /// layers. Useful for capsulating a GUI, for example.                        
 ///                                                                           
-struct VulkanLayer : A::Layer, ProducedFrom<VulkanRenderer> {
-   LANGULUS(ABSTRACT) false;
-   LANGULUS(PRODUCER) VulkanRenderer;
-   LANGULUS_BASES(A::Layer);
+struct VulkanLayer : Things::Layer, ProducedFrom<VulkanRenderer> {
+   using CTTI_Abstract = No;
+   using CTTI_Producer = VulkanRenderer;
+   LANGULUS_BASES(Things::Layer);
    LANGULUS_VERBS(Verbs::Create);
 
 protected:
@@ -127,7 +127,7 @@ public:
    void Detach();
 
    NOD() Style GetStyle() const noexcept;
-   NOD() const A::Window* GetWindow() const noexcept;
+   NOD() const Things::Window* GetWindow() const noexcept;
 
 private:
    void CompileCameras();
@@ -135,7 +135,7 @@ private:
    Count CompileLevelBatched(const Mat4&, const Mat4&, Level, PipelineSet&);
    Count CompileLevelHierarchical(const Mat4&, const Mat4&, Level, PipelineSet&);
    Count CompileThing(const Thing*, LOD&, PipelineSet&);
-   NOD() VulkanPipeline* CompileInstance(const VulkanRenderable*, const A::Instance*, LOD&);
+   NOD() VulkanPipeline* CompileInstance(const VulkanRenderable*, const Things::Instance*, LOD&);
    Count CompileLevels();
 
    void RenderBatched(const RenderConfig&) const;

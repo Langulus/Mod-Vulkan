@@ -16,7 +16,7 @@
 /// GPU computations, if your hardware has the required capabilities          
 ///                                                                           
 struct Vulkan final : A::GraphicsModule {
-   LANGULUS(ABSTRACT) false;
+   using CTTI_Abstract = No;
    LANGULUS_BASES(A::GraphicsModule);
    LANGULUS_VERBS(Verbs::Create);
 

@@ -13,7 +13,7 @@
 ///   Vulkan shader                                                           
 ///                                                                           
 struct VulkanShader : A::Graphics, ProducedFrom<VulkanRenderer> {
-   LANGULUS(ABSTRACT) false;
+   using CTTI_Abstract = No;
    LANGULUS_BASES(A::Graphics);
 
 private:
@@ -42,5 +42,5 @@ public:
    void AddInput(const Trait&);
    VkShaderStageFlagBits GetStageFlagBit() const noexcept;
    ShaderStage::Enum GetStage() const noexcept;
-   const Text& GetCode() const noexcept;
+   Text const& GetCode() const noexcept;
 };

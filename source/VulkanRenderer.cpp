@@ -6,7 +6,7 @@
 /// SPDX-License-Identifier: GPL-3.0-or-later                                 
 ///                                                                           
 #include "Vulkan.hpp"
-#include <Langulus/Platform.hpp>
+#include <Langulus/CppAPI/Platform.hpp>
 #include <set>
 
 
@@ -20,7 +20,7 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, Describe descriptor)
    VERBOSE_VULKAN("Initializing...");
 
    // Retrieve relevant traits from the environment                     
-   mWindow = SeekUnitAux<A::Window>(descriptor);
+   mWindow = SeekUnitAux<Things::Window>(descriptor);
    LANGULUS_ASSERT(mWindow, Construct,
       "No window available for renderer - did you create a window component "
       "_before_ creating the renderer?");
@@ -306,7 +306,7 @@ void VulkanRenderer::Create(Verb& verb) {
 ///   @param verb - interpret verb                                            
 void VulkanRenderer::Interpret(Verb& verb) {
    verb.ForEach([&](DMeta meta) {
-      if (meta->template CastsTo<A::Image>())
+      if (meta->template CastsTo<Things::Image>())
          verb << mSwapchain.TakeScreenshot().Get();
    });
 }
@@ -403,7 +403,7 @@ VkPhysicalDevice VulkanRenderer::GetAdapter() const noexcept {
 
 /// Get the window interface                                                  
 ///   @return the window interface                                            
-const A::Window* VulkanRenderer::GetWindow() const noexcept {
+const Things::Window* VulkanRenderer::GetWindow() const noexcept {
    return mWindow;
 }
 

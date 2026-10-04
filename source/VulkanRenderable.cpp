@@ -6,7 +6,7 @@
 /// SPDX-License-Identifier: GPL-3.0-or-later                                 
 ///                                                                           
 #include "Vulkan.hpp"
-#include <Langulus/Physical.hpp>
+#include <Langulus/CppAPI/Physical.hpp>
 
 
 /// Descriptor constructor                                                    
@@ -118,7 +118,7 @@ VulkanPipeline* VulkanRenderable::GetOrCreatePipeline(
       construct << shader;
 
    // Add colorization if available                                     
-   auto color = SeekTrait<Traits::Color>();
+   auto color = SeekTrait<Tags::Color>();
    if (color)
       construct << color;
 
@@ -156,7 +156,7 @@ void VulkanRenderable::Refresh() {
    Detach();
 
    // Gather all instances for this renderable, and calculate levels    
-   mInstances = GatherUnits<A::Instance, Seek::Here>();
+   mInstances = GatherUnits<Things::Instance, Seek::Here>();
    if (mInstances)
       mLevelRange = mInstances[0]->GetLevel();
    else
@@ -178,11 +178,11 @@ void VulkanRenderable::Refresh() {
       return;
    }
 
-   const auto geometry = SeekUnit<A::Mesh, Seek::Here>();
+   const auto geometry = SeekUnit<Things::Mesh, Seek::Here>();
    if (geometry)
       mGeometryContent = geometry;
 
-   const auto texture = SeekUnit<A::Image, Seek::Here>();
+   const auto texture = SeekUnit<Things::Image, Seek::Here>();
    if (texture)
       mTextureContent = texture;
 }

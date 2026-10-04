@@ -35,7 +35,7 @@ void UBO::CalculateSizes() {
       LANGULUS_ASSERT(concrete->mIsPOD, Graphics,
          "Uniform trait is not POD");
 
-      it.mTrait = Trait::FromMeta(it.mTrait.GetTrait(), concrete);
+      it.mTrait = Trait::FromMeta(it.mTrait.GetTag(), concrete);
 
       // Info about base alignment in Vulkan Spec                       
       //  15.6.4. Offset and Stride Assignment - Alignment Requirements 

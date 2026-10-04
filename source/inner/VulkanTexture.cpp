@@ -20,7 +20,7 @@
 VulkanTexture::VulkanTexture(VulkanRenderer* producer, Describe descriptor)
    : Resolvable {this}
    , ProducedFrom {producer, descriptor} {
-   descriptor.ForEachDeep([&](const A::Image& content) {
+   descriptor.ForEachDeep([&](const Things::Image& content) {
       Upload(content);
    });
 }
@@ -37,10 +37,10 @@ VulkanTexture::~VulkanTexture() {
 
 /// Initialize from the provided content                                      
 ///   @param content - the abstract texture content interface                 
-void VulkanTexture::Upload(const A::Image& content) {
+void VulkanTexture::Upload(const Things::Image& content) {
    // Check if any data was found                                       
    //const auto startTime = SteadyClock::Now();
-   const auto pixels = content.GetDataList<Traits::Color>();
+   const auto pixels = content.GetDataList<Tags::Color>();
    LANGULUS_ASSERT(pixels && *pixels, Graphics,
       "Can't generate texture - no color data found");
 

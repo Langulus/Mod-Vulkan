@@ -45,7 +45,7 @@ VulkanGeometry::VulkanGeometry(VulkanRenderer* producer, Describe descriptor)
    , ProducedFrom {producer, descriptor} {
    // Scan the descriptor                                               
    auto& vram = mProducer->mVRAM;
-   descriptor.ForEachDeep([&](const A::Mesh& mesh) {
+   descriptor.ForEachDeep([&](const Things::Mesh& mesh) {
       VERBOSE_VKGEOMETRY(const auto startTime = SteadyClock::now());
 
       // Create a buffer for each relevant data trait                   

@@ -6,7 +6,7 @@
 /// SPDX-License-Identifier: GPL-3.0-or-later                                 
 ///                                                                           
 #include "Common.hpp"
-#include <Langulus/Platform.hpp>
+#include <Langulus/CppAPI/Platform.hpp>
 
 
 /// Make sure that vulkan headers are included properly,                      
@@ -22,7 +22,7 @@
 #include <vulkan/vulkan.h>
 
 #if LANGULUS_OS(WINDOWS)
-   bool CreateNativeVulkanSurfaceKHR(const VkInstance& instance, const A::Window* window, VkSurfaceKHR& surface) {
+   bool CreateNativeVulkanSurfaceKHR(const VkInstance& instance, const Things::Window* window, VkSurfaceKHR& surface) {
       VkWin32SurfaceCreateInfoKHR createInfo;
       memset(&createInfo, 0, sizeof(VkWin32SurfaceCreateInfoKHR));
       createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
@@ -36,7 +36,7 @@
       return true;
    }
 #elif LANGULUS_OS(LINUX)
-   bool CreateNativeVulkanSurfaceKHR(const VkInstance& instance, const A::Window* window, VkSurfaceKHR& surface) {
+   bool CreateNativeVulkanSurfaceKHR(const VkInstance& instance, const Things::Window* window, VkSurfaceKHR& surface) {
       VkXlibSurfaceCreateInfoKHR createInfo;
       memset(&createInfo, 0, sizeof(VkXlibSurfaceCreateInfoKHR));
       createInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;

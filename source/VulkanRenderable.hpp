@@ -16,20 +16,20 @@
 /// graphical resources from the context, and generates a graphical pipeline  
 /// capable of visualizing them                                               
 ///                                                                           
-struct VulkanRenderable final : A::Renderable, ProducedFrom<VulkanLayer> {
-   LANGULUS(ABSTRACT) false;
-   LANGULUS(PRODUCER) VulkanLayer;
-   LANGULUS_BASES(A::Renderable);
+struct VulkanRenderable final : Things::Renderable, ProducedFrom<VulkanLayer> {
+   using CTTI_Abstract = No;
+   using CTTI_Producer = VulkanLayer;
+   LANGULUS_BASES(Things::Renderable);
 
 protected:
    friend struct VulkanLayer;
 
    // Precompiled instances and levels, updated on Refresh()            
-   TMany<const A::Instance*> mInstances;
+   TMany<const Things::Instance*> mInstances;
    TRange<Level> mLevelRange;
    Ref<A::Material> mMaterialContent;
-   Ref<A::Mesh> mGeometryContent;
-   Ref<A::Image> mTextureContent;
+   Ref<Things::Mesh> mGeometryContent;
+   Ref<Things::Image> mTextureContent;
    mutable Ref<VulkanPipeline> mPredefinedPipeline;
 
    // Precompiled content, updated on Refresh()                         

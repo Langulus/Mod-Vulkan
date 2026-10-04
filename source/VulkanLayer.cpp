@@ -6,8 +6,8 @@
 /// SPDX-License-Identifier: GPL-3.0-or-later                                 
 ///                                                                           
 #include "Vulkan.hpp"
-#include <Langulus/Platform.hpp>
-#include <Langulus/Physical.hpp>
+#include <Langulus/CppAPI/Platform.hpp>
+#include <Langulus/CppAPI/Physical.hpp>
 
 
 /// Descriptor constructor                                                    
@@ -68,7 +68,7 @@ void VulkanLayer::CompileCameras() {
 ///   @param lod - the lod state to use                                       
 ///   @return the pipeline if instance is relevant                            
 VulkanPipeline* VulkanLayer::CompileInstance(
-   const VulkanRenderable* renderable, const A::Instance* instance, LOD& lod
+   const VulkanRenderable* renderable, const Things::Instance* instance, LOD& lod
 ) {
    if (not instance) {
       // No instances, so culling based only on default level           
@@ -510,6 +510,6 @@ VulkanLayer::Style VulkanLayer::GetStyle() const noexcept {
 
 /// Get the window of a layer                                                 
 ///   @return the window interface                                            
-const A::Window* VulkanLayer::GetWindow() const noexcept {
+const Things::Window* VulkanLayer::GetWindow() const noexcept {
    return mProducer->GetWindow();
 }

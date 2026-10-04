@@ -6,7 +6,7 @@
 /// SPDX-License-Identifier: GPL-3.0-or-later                                 
 ///                                                                           
 #include "../Vulkan.hpp"
-#include <Langulus/IO.hpp>
+#include <Langulus/CppAPI/IO.hpp>
 #include <shaderc/shaderc.hpp>
 
 #if 0
@@ -37,7 +37,7 @@ VulkanShader::VulkanShader(VulkanRenderer* producer, Describe descriptor)
          if (file)
             mCode = file->ReadAs<Text>();
       },
-      [this](const Text& code) {
+      [this](Text const& code) {
          mCode = code;
       },
       [this](const A::Material* material) {
@@ -201,7 +201,7 @@ ShaderStage::Enum VulkanShader::GetStage() const noexcept {
 }
 
 /// Get the shader code                                                       
-const Text& VulkanShader::GetCode() const noexcept {
+Text const& VulkanShader::GetCode() const noexcept {
    return mCode;
 }
 

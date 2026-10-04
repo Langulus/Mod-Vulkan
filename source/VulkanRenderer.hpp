@@ -25,10 +25,10 @@
 /// Binds with a window and renders to it. Manages framebuffers, VRAM         
 /// contents, and layers                                                      
 ///                                                                           
-struct VulkanRenderer : A::Renderer, ProducedFrom<Vulkan> {
-   LANGULUS(ABSTRACT) false;
-   LANGULUS(PRODUCER) Vulkan;
-   LANGULUS_BASES(A::Renderer);
+struct VulkanRenderer : Things::Renderer, ProducedFrom<Vulkan> {
+   using CTTI_Abstract = No;
+   using CTTI_Producer = Vulkan;
+   LANGULUS_BASES(Things::Renderer);
    LANGULUS_VERBS(Verbs::Create, Verbs::Interpret);
 
 protected:
@@ -48,7 +48,7 @@ protected:
    //                                                                   
    
    // The platform window, where the renderer is created                
-   Ref<const A::Window> mWindow;
+   Ref<const Things::Window> mWindow;
    // The time gradient, used for animations                            
    Ref<TGradient<Time>> mTime;
    // Mouse position, can be passed to shaders                          
@@ -119,7 +119,7 @@ public:
 
    NOD() VkInstance GetVulkanInstance() const noexcept;
    NOD() VkPhysicalDevice GetAdapter() const noexcept;
-   NOD() const A::Window* GetWindow() const noexcept;
+   NOD() const Things::Window* GetWindow() const noexcept;
    NOD() Offset GetOuterUBOAlignment() const noexcept;
    NOD() VkCommandBuffer GetRenderCB() const noexcept;
    NOD() const Scale2& GetResolution() const noexcept;

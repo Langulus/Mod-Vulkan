@@ -15,7 +15,7 @@
 /// Handles hardware pixel/voxel buffers                                      
 ///                                                                           
 struct VulkanTexture : A::Graphics, ProducedFrom<VulkanRenderer> {
-   LANGULUS(ABSTRACT) false;
+   using CTTI_Abstract = No;
    LANGULUS_BASES(A::Graphics);
 
 private:
@@ -28,7 +28,7 @@ private:
    // Image sampler                                                     
    Own<VkSampler> mSampler;
 
-   void Upload(const A::Image&);
+   void Upload(const Things::Image&);
 
 public:
    VulkanTexture(VulkanRenderer*, Describe);

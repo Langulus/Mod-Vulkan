@@ -7,7 +7,7 @@
 ///                                                                           
 #pragma once
 #include "VulkanBuffer.hpp"
-#include <Langulus/Mesh.hpp>
+#include <Langulus/CppAPI/Mesh.hpp>
 
 
 ///                                                                           
@@ -17,7 +17,7 @@
 /// contents to the GPU                                                       
 ///                                                                           
 struct VulkanGeometry : A::Graphics, ProducedFrom<VulkanRenderer> {
-   LANGULUS(ABSTRACT) false;
+   using CTTI_Abstract = No;
    LANGULUS_BASES(A::Graphics);
 
 private:

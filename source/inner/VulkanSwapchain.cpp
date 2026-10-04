@@ -445,7 +445,7 @@ const VulkanImage& VulkanSwapchain::GetCurrentImage() const noexcept {
 }
 
 /// Take a screenshot                                                         
-Ref<A::Image> VulkanSwapchain::TakeScreenshot() {
+Ref<Things::Image> VulkanSwapchain::TakeScreenshot() {
    // The stager is used to copy from current back buffer               
    // (VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) to a                   
    // VK_BUFFER_USAGE_TRANSFER_DST_BIT buffer, that is later copied to  
@@ -533,12 +533,12 @@ Ref<A::Image> VulkanSwapchain::TakeScreenshot() {
       // want the image to be added as a component to a Thing. Parent   
       // will otherwise be added implicitly, by producing the image in  
       // the context of Thing that owns this renderer.                  
-      Verbs::Create creator {Construct::From<A::Image>(
+      Verbs::Create creator {Construct::From<Things::Image>(
          Traits::Parent {Ref {&mRenderer}},
          source.GetView(),
          SteadyClock::Now()
       )};
-      mScreenshot = mRenderer.RunIn(creator)->As<A::Image*>();
+      mScreenshot = mRenderer.RunIn(creator)->As<Things::Image*>();
    }
 
    mScreenshot->Upload(Abandon(memory));

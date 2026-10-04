@@ -7,7 +7,7 @@
 ///                                                                           
 #pragma once
 #include "Common.hpp"
-#include <Langulus/Physical.hpp>
+#include <Langulus/CppAPI/Physical.hpp>
 #include <Math/Range.hpp>
  
 using LevelRange = TRange<Level>;
@@ -17,7 +17,7 @@ using LevelRange = TRange<Level>;
 ///   Camera unit                                                             
 ///                                                                           
 struct VulkanCamera final : A::Graphics, ProducedFrom<VulkanLayer> {
-   LANGULUS(ABSTRACT) false;
+   using CTTI_Abstract = No;
    LANGULUS_BASES(A::Graphics);
 
 protected:
@@ -39,7 +39,7 @@ protected:
    // Eye separation. Stereo if more/less than zero                     
    Real mEyeSeparation {};
 
-   TMany<const A::Instance*> mInstances;
+   TMany<const Things::Instance*> mInstances;
    Mat4 mProjectionInverted;
    VkViewport mVulkanViewport {0, 0, 640, 480, 0, 1};
    VkRect2D mVulkanScissor {{0, 0}, {640, 480}};
