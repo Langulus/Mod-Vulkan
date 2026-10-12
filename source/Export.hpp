@@ -9,7 +9,7 @@
 #include <Langulus.hpp>
 #include <Math/Color.hpp>
 #include <Langulus/Material.hpp>
-#include <Langulus/Graphics.hpp>
+#include <Langulus/CppAPI/Graphics.hpp>
 #include <Langulus/CppAPI/Platform.hpp>
 
 LANGULUS_EXCEPTION(Graphics);

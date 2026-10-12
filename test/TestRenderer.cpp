@@ -10,7 +10,7 @@
 #include <Flow/Verbs/Interpret.hpp>
 #include <Flow/Verbs/Compare.hpp>
 #include <Langulus/CppAPI/Platform.hpp>
-#include <Langulus/Graphics.hpp>
+#include <Langulus/CppAPI/Graphics.hpp>
 #include <Langulus/CppAPI/Physical.hpp>
 #include <Langulus/CppAPI/Mesh.hpp>
 #include <Langulus/Image.hpp>
