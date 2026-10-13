@@ -122,7 +122,7 @@ SCENARIO("Drawing an empty window", "[renderer]") {
             root.Run(interpret);
 
             REQUIRE(root.GetUnits().GetCount() == 2);
-            REQUIRE_FALSE(root.HasUnits<Things::Image>());
+            REQUIRE_FALSE(root.HasParts<Things::Image>());
             REQUIRE(interpret.IsDone());
             REQUIRE(interpret->GetCount() == 1);
             REQUIRE(interpret->IsSparse());
@@ -192,7 +192,7 @@ SCENARIO("Drawing solid polygons", "[renderer]") {
             REQUIRE(root.GetUnits().GetCount() == 4);
             REQUIRE(rect->GetUnits().GetCount() == 6);
             REQUIRE(root.GetChildren().GetCount() == 1);
-            REQUIRE_FALSE(root.HasUnits<Things::Image>());
+            REQUIRE_FALSE(root.HasParts<Things::Image>());
             REQUIRE(interpret.IsDone());
             REQUIRE(interpret->GetCount() == 1);
             REQUIRE(interpret->IsSparse());
