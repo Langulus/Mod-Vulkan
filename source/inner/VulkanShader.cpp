@@ -27,11 +27,11 @@ VulkanShader::VulkanShader(VulkanRenderer* producer, Describe descriptor)
       [this](const ShaderStage::Enum& stage) {
          mStage = stage;
       },
-      [this](const A::File& file) {
+      [this](const Things::File& file) {
          // Create from file                                            
          mCode = file.ReadAs<Text>();
       },
-      [this](const Path& path) {
+      [this](Path const& path) {
          // Create from file path                                       
          const auto file = GetRuntime()->GetFile(path);
          if (file)

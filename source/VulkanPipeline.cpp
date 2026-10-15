@@ -38,7 +38,7 @@ VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, Describe descriptor)
       // We must generate the material ourselves                        
       Construct material;
       descriptor.ForEach(
-         [&](const A::File& file) {
+         [&](const Things::File& file) {
             // Create from file                                         
             material = FromFile(file);
             return Loop::Break;
@@ -287,7 +287,7 @@ VulkanPipeline::~VulkanPipeline() {
 
 /// Create a pipeline from a file                                             
 ///   @param file - the file interface                                        
-Construct VulkanPipeline::FromFile(const A::File& file) {
+Construct VulkanPipeline::FromFile(const Things::File& file) {
    try {
       // Check if file is a text file, and attempt using it             
       return FromCode(file.ReadAs<Text>());

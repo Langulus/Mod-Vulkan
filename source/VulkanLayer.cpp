@@ -364,7 +364,7 @@ void VulkanLayer::Render(const RenderConfig& config) const {
 ///   @param config - where to render to                                      
 void VulkanLayer::RenderBatched(const RenderConfig& config) const {
    // Iterate all valid cameras                                         
-   TUnorderedMap<const VulkanPipeline*, Count> done;
+   TMapUnsorted<const VulkanPipeline*, Count> done;
 
    if (not mRelevantCameras) {
       // Rendering using a fallback camera                              
