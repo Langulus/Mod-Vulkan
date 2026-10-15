@@ -128,9 +128,9 @@ Vulkan::Vulkan(Runtime* runtime, Describe)
          vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, available.data());
 
          // Test each GLFW requirement against them                     
-         for (const auto& test : extensions) {
+         for (auto const& test : extensions) {
             bool found = false;
-            for (const auto& ext : available) {
+            for (auto const& ext : available) {
                if (0 == strcmp(test, ext.extensionName)) {
                   found = true;
                   break;
@@ -360,7 +360,7 @@ VkPhysicalDevice Vulkan::PickAdapter() const {
    // Rate all devices, pick best                                       
    Offset best_rated {};
    VkPhysicalDevice result {};
-   for (const auto& device : devices) {
+   for (auto const& device : devices) {
       Offset newdevice = RateDevice(device);
       if (newdevice > best_rated) {
          best_rated = newdevice;

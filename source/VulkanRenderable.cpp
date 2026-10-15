@@ -112,7 +112,7 @@ VulkanPipeline* VulkanRenderable::GetOrCreatePipeline(
          construct << mTextureContent;
    }
 
-   // Add shaders if any such trait exists in unit environment          
+   // Add shaders if any such tag exists in unit environment          
    auto shader = SeekTrait<Traits::Shader>();
    if (shader)
       construct << shader;
@@ -149,7 +149,7 @@ VulkanPipeline* VulkanRenderable::GetOrCreatePipeline(
       return mLOD[i].mPipeline;
 }
 
-/// Called when owner changes components/traits                               
+/// Called when owner changes components/tags                               
 void VulkanRenderable::Refresh() {
    // Just reset - new resources will be regenerated or reused upon     
    // request if they need be                                           

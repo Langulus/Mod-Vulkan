@@ -31,9 +31,9 @@ void UBO::CalculateSizes() {
       auto concrete = it.mTrait.GetType()->GetMostConcrete();
 
       LANGULUS_ASSERT(concrete->mIsAbstract, Graphics,
-         "Abstract uniform trait couldn't be concertized");
+         "Abstract uniform tag couldn't be concertized");
       LANGULUS_ASSERT(concrete->mIsPOD, Graphics,
-         "Uniform trait is not POD");
+         "Uniform tag is not POD");
 
       it.mTrait = Trait::FromMeta(it.mTrait.GetTag(), concrete);
 

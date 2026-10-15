@@ -66,7 +66,7 @@ VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, Describe descriptor)
 
       // Create the pixel shader output according to the rendering pass 
       // attachment format requirements                                 
-      for (const auto& attachment : mProducer->mPassAttachments) {
+      for (auto const& attachment : mProducer->mPassAttachments) {
          switch (attachment.format) {
          case VK_FORMAT_B8G8R8A8_UNORM:
             material << Traits::Output {
@@ -522,10 +522,10 @@ void VulkanPipeline::CreateUniformBuffers() {
 
          // Add relevant inputs                                         
          const auto index = RefreshRate(RefreshRate::StaticUniformBegin + rate).GetInputIndex();
-         for (const auto& trait : mUniforms[index]) {
-            if (trait.template IsTrait<Traits::Image>())
+         for (auto const& tag : mUniforms[index]) {
+            if (tag.template IsTrait<Traits::Image>())
                continue;
-            ubo.mUniforms.Emplace(IndexBack, 0, trait);
+            ubo.mUniforms.Emplace(IndexBack, 0, tag);
          }
 
          if (!ubo.mUniforms)
@@ -563,10 +563,10 @@ void VulkanPipeline::CreateUniformBuffers() {
 
          // Add relevant inputs                                         
          const auto index = RefreshRate(RefreshRate::DynamicUniformBegin + rate).GetInputIndex();
-         for (const auto& trait : mUniforms[index]) {
-            if (trait.template IsTrait<Traits::Image>())
+         for (auto const& tag : mUniforms[index]) {
+            if (tag.template IsTrait<Traits::Image>())
                continue;
-            ubo.mUniforms.Emplace(IndexBack, 0, trait);
+            ubo.mUniforms.Emplace(IndexBack, 0, tag);
          }
 
          if (not ubo.mUniforms)
@@ -601,10 +601,10 @@ void VulkanPipeline::CreateUniformBuffers() {
    {
       // Add relevant inputs                                            
       SamplerUBO ubo;
-      for (const auto& trait : mUniforms[Rate::Renderable.GetInputIndex()]) {
-         if (not trait.template IsTrait<Traits::Image>())
+      for (auto const& tag : mUniforms[Rate::Renderable.GetInputIndex()]) {
+         if (not tag.template IsTrait<Traits::Image>())
             continue;
-         ubo.mUniforms.Emplace(IndexBack, 0, trait);
+         ubo.mUniforms.Emplace(IndexBack, 0, tag);
       }
 
       if (ubo.mUniforms) {
@@ -698,7 +698,7 @@ Count VulkanPipeline::RenderLevel(const Offset& offset) const {
    );
 
    // Get the initial state to check for interrupts                     
-   const auto& initial = mSubscribers[offset];
+   auto const& initial = mSubscribers[offset];
    const auto r = GetRelevantDynamicUBOIndexOfRate<Rate::Level>();
 
    // And for each subscriber...                                        

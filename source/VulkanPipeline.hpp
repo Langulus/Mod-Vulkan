@@ -96,8 +96,8 @@ public:
    void ResetUniforms();
 
    /// Set any kind of uniform                                                
-   ///   @tparam RATE - the rate of the trait to set                          
-   ///   @tparam TRAIT - the trait to set                                     
+   ///   @tparam RATE - the rate of the tag to set                          
+   ///   @tparam TRAIT - the tag to set                                     
    ///   @tparam DATA - the data to set                                       
    ///   @param value - the value to use                                      
    ///   @param index - the index of the uniform of this kind                 

@@ -48,7 +48,7 @@ VulkanGeometry::VulkanGeometry(VulkanRenderer* producer, Describe descriptor)
    descriptor.ForEachDeep([&](const Things::Mesh& mesh) {
       VERBOSE_VKGEOMETRY(const auto startTime = SteadyClock::now());
 
-      // Create a buffer for each relevant data trait                   
+      // Create a buffer for each relevant data tag                   
       // Each data request will generate that data, if it hasn't yet    
       const auto indices = mesh.GetData<Traits::Index>();
       if (indices) {

@@ -184,7 +184,7 @@ Count VulkanLayer::CompileLevelHierarchical(
 
    // Nest-iterate all children of the layer owner                      
    Count renderedEntities {};
-   for (const auto& owner : GetOwners())
+   for (auto const& owner : GetOwners())
       renderedEntities += CompileThing(owner, lod, pipesPerCamera);
    
    if (renderedEntities) {
@@ -221,7 +221,7 @@ Count VulkanLayer::CompileLevelBatched(
 
    // Iterate all renderables                                           
    Count renderedInstances = 0;
-   for (const auto& renderable : mRenderables) {
+   for (auto const& renderable : mRenderables) {
       if (not renderable.mInstances) {
          auto pipeline = CompileInstance(&renderable, nullptr, lod);
          if (pipeline) {
@@ -304,7 +304,7 @@ Count VulkanLayer::CompileLevels() {
          ++renderedCameras;
       }
    }
-   else for (const auto& camera : mCameras) {
+   else for (auto const& camera : mCameras) {
       // Iterate all levels per camera                                  
       PipelineSet pipesPerCamera;
       if (mStyle & Style::Multilevel) {
@@ -382,7 +382,7 @@ void VulkanLayer::RenderBatched(const RenderConfig& config) const {
       vkCmdSetScissor(config.mCommands, 0, 1, &scissor);
 
       // Iterate all relevant levels                                    
-      for (const auto& level : mRelevantLevels) {
+      for (auto const& level : mRelevantLevels) {
          // Draw all subscribers to the pipeline for the current level  
          for (auto pipeline : mRelevantPipelines)
             done[pipeline] = pipeline->RenderLevel(done[pipeline]);
@@ -397,7 +397,7 @@ void VulkanLayer::RenderBatched(const RenderConfig& config) const {
       // Main pass ends                                                 
       vkCmdEndRenderPass(config.mCommands);
    }
-   else for (const auto& camera : mRelevantCameras) {
+   else for (auto const& camera : mRelevantCameras) {
       // Rendering from each custom camera's point of view              
       config.mPassBeginInfo.renderArea.extent.width = camera->mResolution[0];
       config.mPassBeginInfo.renderArea.extent.height = camera->mResolution[1];
@@ -408,7 +408,7 @@ void VulkanLayer::RenderBatched(const RenderConfig& config) const {
       vkCmdSetScissor(config.mCommands, 0, 1, &camera->mVulkanScissor);
 
       // Iterate all relevant levels                                    
-      for (const auto& level : mRelevantLevels) {
+      for (auto const& level : mRelevantLevels) {
          // Draw all subscribers to the pipeline for the current level  
          for (auto pipeline : mRelevantPipelines)
             done[pipeline] = pipeline->RenderLevel(done[pipeline]);
@@ -449,7 +449,7 @@ void VulkanLayer::RenderHierarchical(const RenderConfig& config) const {
       vkCmdSetScissor (config.mCommands, 0, 1, &scissor);
 
       // Iterate all relevant levels                                    
-      for (const auto& level : mRelevantLevels) {
+      for (auto const& level : mRelevantLevels) {
          // Draw all subscribers to the pipeline for the current level  
          for (Count s = 0; s < *subscriberCountPerLevel; ++s) {
             auto& subscriber = mSubscribers[subscribersDone + s];
@@ -469,7 +469,7 @@ void VulkanLayer::RenderHierarchical(const RenderConfig& config) const {
       // Main pass ends                                                 
       vkCmdEndRenderPass(config.mCommands);
    }
-   else for (const auto& camera : mRelevantCameras) {
+   else for (auto const& camera : mRelevantCameras) {
       config.mPassBeginInfo.renderArea.extent.width = camera->mResolution[0];
       config.mPassBeginInfo.renderArea.extent.height = camera->mResolution[1];
 
@@ -479,7 +479,7 @@ void VulkanLayer::RenderHierarchical(const RenderConfig& config) const {
       vkCmdSetScissor (config.mCommands, 0, 1, &camera->mVulkanScissor);
 
       // Iterate all relevant levels                                    
-      for (const auto& level : mRelevantLevels) {
+      for (auto const& level : mRelevantLevels) {
          // Draw all subscribers to the pipeline for the current level  
          // and camera                                                  
          for (Count s = 0; s < *subscriberCountPerLevel; ++s) {

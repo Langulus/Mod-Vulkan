@@ -10,7 +10,7 @@
 
 
 ///                                                                           
-/// A single uniform - maps a trait to a position inside shader binary        
+/// A single uniform - maps a tag to a position inside shader binary        
 ///                                                                           
 struct Uniform {
    Offset mPosition;
@@ -77,9 +77,9 @@ public:
    void Create(VulkanRenderer*);
    void Update(uint32_t, const VkDescriptorSet&, BufferUpdates&) const;
 
-   /// Set the value of a trait inside last active block                      
-   /// Will set nothing, if trait is not part of the UBO                      
-   ///   @tparam TRAIT - the trait to search for                              
+   /// Set the value of a tag inside last active block                      
+   /// Will set nothing, if tag is not part of the UBO                      
+   ///   @tparam TRAIT - the tag to search for                              
    ///   @tparam DATA - the value to set                                      
    ///   @param value - the value to set                                      
    template<CT::Trait TRAIT, CT::Data DATA>
@@ -87,7 +87,7 @@ public:
       static_assert(CT::Dense<DATA>, "DATA must be dense");
       static_assert(CT::POD<DATA>, "DATA must be POD");
 
-      for (const auto& it : mUniforms) {
+      for (auto const& it : mUniforms) {
          if (not it.mTrait.template IsTrait<TRAIT>())
             continue;
 

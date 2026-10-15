@@ -19,7 +19,7 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, Describe descriptor)
    , mSwapchain   {*this} {
    VERBOSE_VULKAN("Initializing...");
 
-   // Retrieve relevant traits from the environment                     
+   // Retrieve relevant tags from the environment                     
    mWindow = SeekUnitAux<Things::Window>(descriptor);
    LANGULUS_ASSERT(mWindow, Construct,
       "No window available for renderer - did you create a window component "
@@ -366,7 +366,7 @@ void VulkanRenderer::Draw() {
 
    if (mLayers) {
       // Render all layers                                              
-      for (const auto& layer : mLayers)
+      for (auto const& layer : mLayers)
          layer.Render(config);
    }
    else {

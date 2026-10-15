@@ -51,7 +51,7 @@ void VulkanSwapchain::Create(const VkSurfaceFormatKHR& format, const QueueFamili
 
    // Choose present mode                                               
    auto surfacePresentMode = VkPresentModeKHR::VK_PRESENT_MODE_FIFO_KHR;
-   for (const auto& availablePresentMode : surface_presentModes) {
+   for (auto const& availablePresentMode : surface_presentModes) {
       if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
          surfacePresentMode = availablePresentMode;
    }
@@ -321,7 +321,7 @@ VkSurfaceFormatKHR VulkanSwapchain::GetSurfaceFormat() const noexcept {
          VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
       };
    }
-   else for (const auto& availableFormat : surface_formats) {
+   else for (auto const& availableFormat : surface_formats) {
       if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM) {
          surfaceFormat = availableFormat;
          break;
