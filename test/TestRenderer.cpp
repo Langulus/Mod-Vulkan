@@ -71,8 +71,8 @@ namespace Catch
 
       #if LANGULUS_FEATURE(MANAGED_REFLECTION)
          WHEN("A renderer is created via tokens") {
-            auto window = root.CreateUnitToken("Things::Window", Traits::Size(640, 480));
-            auto renderer = root.CreateUnitToken("Renderer");
+            auto window = root.CreatePartToken("Things::Window", Traits::Size(640, 480));
+            auto renderer = root.CreatePartToken("Renderer");
             root.DumpHierarchy();
                
             REQUIRE(window);
