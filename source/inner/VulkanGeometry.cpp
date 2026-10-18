@@ -110,8 +110,7 @@ VulkanGeometry::VulkanGeometry(VulkanRenderer* producer, Describe descriptor)
          mVOffsets.push_back(0);
       }
 
-      LANGULUS_ASSERT(not mVBuffers.empty(), Graphics,
-         "Couldn't upload geometry to VRAM");
+      LglsAssert(not mVBuffers.empty(), "Couldn't upload geometry to VRAM");
 
       // Make sure mView.mPCount means vertex count, and not            
       // primitive count - decay in order to do that                    

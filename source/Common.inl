@@ -13,8 +13,7 @@
 /// Convert a meta data to a VK index format                                  
 ///   @param meta - the type definition to convert                            
 ///   @return the vulkan format equivalent                                    
-LANGULUS(INLINED)
-VkIndexType AsVkIndexType(DMeta meta) {
+inline VkIndexType AsVkIndexType(DMeta meta) {
    if (meta->Is<uint32_t>())
       return VK_INDEX_TYPE_UINT32;
    else if (meta->Is<uint16_t>())
@@ -22,7 +21,7 @@ VkIndexType AsVkIndexType(DMeta meta) {
    else if (meta->Is<uint8_t>())
       return VK_INDEX_TYPE_UINT8_EXT;
 
-   LANGULUS_OOPS(Graphics, "Unsupported index type");
+   LglsError(Graphics, "Unsupported index type");
    return VK_INDEX_TYPE_MAX_ENUM;
 }
 
@@ -30,8 +29,7 @@ VkIndexType AsVkIndexType(DMeta meta) {
 ///   @param type - the type definition to convert                            
 ///   @param reverse - whether to invert color definition                     
 ///   @return the vulkan format equivalent                                    
-LANGULUS(INLINED)
-VkFormat AsVkFormat(DMeta type, bool reverse) {
+inline VkFormat AsVkFormat(DMeta type, bool reverse) {
    switch (type->mSize) {
    case 1:
       if (type->CastsTo<uint8_t, true>(1))
@@ -154,7 +152,7 @@ VkFormat AsVkFormat(DMeta type, bool reverse) {
       break;
    }
 
-   LANGULUS_OOPS(Graphics, "Unsupported format");
+   LglsError("Unsupported format");
    return VK_FORMAT_UNDEFINED;
 }
 
@@ -162,8 +160,7 @@ VkFormat AsVkFormat(DMeta type, bool reverse) {
 ///   @param type - the vulkan format type                                    
 ///   @param reverse - whether or not reversal is required                    
 ///   @return the piception equivalent                                        
-LANGULUS(INLINED)
-DMeta VkFormatToDMeta(const VkFormat& type, bool& reverse) {
+inline DMeta VkFormatToDMeta(const VkFormat& type, bool& reverse) {
    reverse = false;
    switch (type) {
       case VK_FORMAT_D16_UNORM:
@@ -256,7 +253,7 @@ DMeta VkFormatToDMeta(const VkFormat& type, bool& reverse) {
          break;
    }
 
-   LANGULUS_OOPS(Graphics, "Unsupported format");
+   LglsError("Unsupported format");
    return {};
 }
 
@@ -279,8 +276,7 @@ constexpr VkShaderStageFlagBits AsVkStage(ShaderStage::Enum stage) noexcept {
 /// Converter from PC primitive to VK primitive                               
 ///   @param meta - the primitive type                                        
 ///   @return the vulkan equivalent                                           
-LANGULUS(INLINED)
-VkPrimitiveTopology AsVkPrimitive(DMeta meta) {
+inline VkPrimitiveTopology AsVkPrimitive(DMeta meta) {
    if (meta->CastsTo<A::Point>())
       return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
    if (meta->CastsTo<A::TriangleStrip>())
@@ -294,7 +290,7 @@ VkPrimitiveTopology AsVkPrimitive(DMeta meta) {
    if (meta->CastsTo<A::Line>())
       return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
 
-   LANGULUS_OOPS(Graphics, "Unsupported topology");
+   LglsError("Unsupported topology");
    return VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
 }
 
@@ -302,14 +298,13 @@ VkPrimitiveTopology AsVkPrimitive(DMeta meta) {
 /// If data is made of integers, colors will be normalized in the 255 range   
 ///   @param color - the color to convert to RGBAf                            
 ///   @return a floating point RGBA vector                                    
-LANGULUS(INLINED)
-RGBAf AnyColorToVector(const Many& color) {
+inline RGBAf AnyColorToVector(const Many& color) {
    const auto ctype = color.GetType();
-   LANGULUS_ASSERT(ctype, Meta, "No color type");
-   const auto rmember = ctype->GetMember(MetaOf<Traits::R>());
-   const auto gmember = ctype->GetMember(MetaOf<Traits::G>());
-   const auto bmember = ctype->GetMember(MetaOf<Traits::B>());
-   const auto amember = ctype->GetMember(MetaOf<Traits::A>());
+   LglsAssert(ctype, "No color type");
+   const auto rmember = ctype->GetMember(MetaOf<Tags::R>());
+   const auto gmember = ctype->GetMember(MetaOf<Tags::G>());
+   const auto bmember = ctype->GetMember(MetaOf<Tags::B>());
+   const auto amember = ctype->GetMember(MetaOf<Tags::A>());
 
    // Inspect the data pack, what color components does it contain?     
    const auto rChannel = color.GetMember(*rmember, 0);

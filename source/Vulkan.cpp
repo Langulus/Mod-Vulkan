@@ -57,8 +57,7 @@ LANGULUS_DEFINE_MODULE(
          }
 
          if (not found) {
-            LANGULUS_OOPS(Graphics,
-               "Missing validation layer for debugging: ", layerName);
+            LglsError("Missing validation layer for debugging: ", layerName);
          }
       }
    }
@@ -152,7 +151,7 @@ Vulkan::Vulkan(Runtime* runtime, Describe)
          Logger::Error(Self(), "Your driver is incompatible");
       }
 
-      LANGULUS_OOPS(Graphics, "Vulkan couldn't setup");
+      LglsError("Vulkan couldn't setup");
    }
 
    VERBOSE_VULKAN(Logger::Verbose(Self(),
@@ -189,14 +188,13 @@ Vulkan::Vulkan(Runtime* runtime, Describe)
       if (func)
          func(mInstance, &relayInfo, nullptr, &mLogRelay);
       else {
-         LANGULUS_OOPS(Graphics,
-            "vkCreateDebugReportCallbackEXT failed - try building in release mode");
+         LglsError("vkCreateDebugReportCallbackEXT failed - try building in release mode");
       }
    #endif
 
    // Pick good hardware                                                
    mAdapter = PickAdapter();
-   LANGULUS_ASSERT(mAdapter, Graphics,
+   LglsAssert(mAdapter,
       "Error picking graphics adapter - vulkan module is unusable");
 
    // Show some info                                                    
@@ -208,7 +206,7 @@ Vulkan::Vulkan(Runtime* runtime, Describe)
    // Check adapter functionality                                       
    uint32_t queueCount;
    vkGetPhysicalDeviceQueueFamilyProperties(mAdapter, &queueCount, nullptr);
-   LANGULUS_ASSERT(queueCount, Graphics,
+   LglsAssert(queueCount,
       "vkGetPhysicalDeviceQueueFamilyProperties returned no queues");
 
    TMany<VkQueueFamilyProperties> queueProperties;
@@ -269,9 +267,10 @@ Vulkan::Vulkan(Runtime* runtime, Describe)
 
    // Create the computation device                                     
    if (vkCreateDevice(mAdapter, &deviceInfo, nullptr, &mDevice.Get())) {
-      LANGULUS_OOPS(Graphics,
+      LglsError(
          "Could not create logical device for rendering"
-         " - vulkan module is unusable");
+         " - vulkan module is unusable"
+      );
    }
 
    // Get computation queue                                             

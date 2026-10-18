@@ -11,30 +11,32 @@
 
 
 /// Descriptor constructor                                                    
-///   @param producer - the renderer producer                                 
-///   @param descriptor - the renderer descriptor                             
+///   @param producer the renderer producer                                   
+///   @param descriptor the renderer descriptor                               
 VulkanRenderer::VulkanRenderer(Vulkan* producer, Describe descriptor)
-   : Resolvable   {this}
-   , ProducedFrom {producer, descriptor}
+   : /*Resolvable   {this}
+   ,*/ ProducedFrom {producer, descriptor}
    , mSwapchain   {*this} {
    VERBOSE_VULKAN("Initializing...");
 
    // Retrieve relevant tags from the environment                     
    mWindow = SeekUnitAux<Things::Window>(descriptor);
-   LANGULUS_ASSERT(mWindow, Construct,
+   LglsAssert(mWindow,
       "No window available for renderer - did you create a window component "
-      "_before_ creating the renderer?");
-   if (not SeekValueAux<Traits::Size>(descriptor, mResolution))
+      "_before_ creating the renderer?"
+   );
+
+   if (not SeekValueAux<Tags::Size>(descriptor, mResolution))
       mResolution = mWindow->GetSize();
 
-   SeekValueAux<Traits::Time>(descriptor, mTime);
-   SeekValueAux<Traits::MousePosition>(descriptor, mMousePosition);
-   SeekValueAux<Traits::MouseScroll>(descriptor, mMouseScroll);
+   SeekValueAux<Tags::Time>(descriptor, mTime);
+   SeekValueAux<Tags::MousePosition>(descriptor, mMousePosition);
+   SeekValueAux<Tags::MouseScroll>(descriptor, mMouseScroll);
 
    // Create native surface                                             
    if (not CreateNativeVulkanSurfaceKHR(GetVulkanInstance(), mWindow, mSurface)) {
       Detach();
-      LANGULUS_OOPS(Graphics, "Error creating window surface");
+      LglsError("Error creating window surface");
    }
 
    // Check adapter functionality                                       
@@ -43,7 +45,7 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, Describe descriptor)
    vkGetPhysicalDeviceQueueFamilyProperties(adapter, &queueCount, nullptr);
    if (queueCount == 0) {
       Detach();
-      LANGULUS_OOPS(Graphics, "No queue families");
+      LglsError("No queue families");
    }
 
    std::vector<VkQueueFamilyProperties> queueProperties(queueCount);
@@ -54,7 +56,7 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, Describe descriptor)
    for (uint32_t i = 0; i < queueCount; i++) {
       if (vkGetPhysicalDeviceSurfaceSupportKHR(adapter, i, mSurface, &supportsPresent[i])) {
          Detach();
-         LANGULUS_OOPS(Graphics, "vkGetPhysicalDeviceSurfaceSupportKHR failed");
+         LglsError("vkGetPhysicalDeviceSurfaceSupportKHR failed");
       }
    }
 
@@ -80,8 +82,9 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, Describe descriptor)
 
    if (mGraphicIndex == UINT32_MAX or mPresentIndex == UINT32_MAX) {
       Detach();
-      LANGULUS_OOPS(Graphics,
-         "Your graphical adapter doesn't support rendering or presenting to screen");
+      LglsError(
+         "Your graphical adapter doesn't support rendering or presenting to screen"
+      );
    }
 
    if (mGraphicIndex != mPresentIndex) {
@@ -92,9 +95,10 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, Describe descriptor)
 
    if (mTransferIndex == UINT32_MAX) {
       Detach();
-      LANGULUS_OOPS(Graphics,
+      LglsError(
          "Your graphical adapter doesn't support memory transfer operations. "
-         "Is this even possible? Aborting just in case, because you can't use your VRAM...");
+         "Is this even possible? Aborting just in case, because you can't use your VRAM..."
+      );
    }
    else if (mTransferIndex == mGraphicIndex or mTransferIndex == mPresentIndex) {
       Logger::Warning(Self(),
@@ -143,7 +147,7 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, Describe descriptor)
    // Create the logical device                                         
    if (vkCreateDevice(adapter, &deviceInfo, nullptr, &mDevice.Get())) {
       Detach();
-      LANGULUS_OOPS(Graphics, "Could not create logical device for rendering");
+      LglsError("Could not create logical device for rendering");
    }
 
    mVRAM.Initialize(adapter, mDevice, mTransferIndex);
@@ -159,7 +163,7 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, Describe descriptor)
 
    if (vkCreateCommandPool(mDevice, &poolInfo, nullptr, &mCommandPool.Get())) {
       Detach();
-      LANGULUS_OOPS(Graphics, "Can't create command pool for rendering");
+      LglsError("Can't create command pool for rendering");
    }
 
    const auto format = mSwapchain.GetSurfaceFormat();
@@ -223,7 +227,7 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, Describe descriptor)
 
    if (vkCreateRenderPass(mDevice, &renderPassInfo, nullptr, &mPass.Get())) {
       Detach();
-      LANGULUS_OOPS(Graphics, "Can't create main rendering pass");
+      LglsError("Can't create main rendering pass");
    }
 
    // Create the swap chain                                             

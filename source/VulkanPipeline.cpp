@@ -61,7 +61,7 @@ VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, Describe descriptor)
          }
       );
 
-      LANGULUS_ASSERT(material.GetDescriptor(), Graphics,
+      LglsAssert(material.GetDescriptor(),
          "Couldn't generate material request for pipeline");
 
       // Create the pixel shader output according to the rendering pass 
@@ -125,7 +125,7 @@ VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, Describe descriptor)
          rasterizer.polygonMode = VK_POLYGON_MODE_LINE;
          break;
       default:
-         LANGULUS_OOPS(Graphics, "Unsupported primitive");
+         LglsError("Unsupported primitive");
       }
    }
    //rasterizer.polygonMode = VK_POLYGON_MODE_LINE; //for debuggery
@@ -180,7 +180,7 @@ VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, Describe descriptor)
    pipelineLayoutInfo.pSetLayouts = relevantLayouts.data();
 
    if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &mPipeLayout.Get()))
-      LANGULUS_OOPS(Graphics, "Can't create pipeline layout");
+      LglsError("Can't create pipeline layout");
 
    // Allow viewport to be dynamically set                              
    const VkDynamicState dynamicStates[] {
@@ -236,7 +236,7 @@ VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, Describe descriptor)
    pipelineInfo.pDynamicState = &dynamicState;
 
    if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &mPipeline.Get()))
-      LANGULUS_OOPS(Graphics, "Can't create graphical pipeline");
+      LglsError("Can't create graphical pipeline");
 }
 
 /// Pipeline destruction                                                      
@@ -398,7 +398,7 @@ Construct VulkanPipeline::FromCode(Text const& code) {
 ///   @param material - the content to use                                    
 void VulkanPipeline::GenerateShaders(const A::Material& material) {
    const auto shaders = material.GetDataList<Traits::Shader>();
-   LANGULUS_ASSERT(shaders, Graphics, "No shaders provided in material");
+   LglsAssert(shaders, "No shaders provided in material");
 
    for (auto stage : *shaders) {
       // Create a vulkan shader for each material-provided shader       
@@ -425,7 +425,7 @@ void VulkanPipeline::CreateDescriptorLayoutAndSet(
    layoutInfo.pBindings = bindings.GetRaw();
 
    if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, layout))
-      LANGULUS_OOPS(Graphics, "vkCreateDescriptorSetLayout failed");
+      LglsError("vkCreateDescriptorSetLayout failed");
 
    // Create a descriptor set                                           
    VkDescriptorSetAllocateInfo allocInfo {};
@@ -435,7 +435,7 @@ void VulkanPipeline::CreateDescriptorLayoutAndSet(
    allocInfo.pSetLayouts = layout;
 
    if (vkAllocateDescriptorSets(device, &allocInfo, set))
-      LANGULUS_OOPS(Graphics, "vkAllocateDescriptorSets failed");
+      LglsError("vkAllocateDescriptorSets failed");
 }
 
 /// Create a new sampler set                                                  
@@ -462,7 +462,7 @@ void VulkanPipeline::CreateNewSamplerSet() {
    allocInfo.pSetLayouts = &mSamplersUBOLayout.Get();
 
    if (vkAllocateDescriptorSets(mProducer->mDevice, &allocInfo, &ubo.mSamplersUBOSet.Get())) {
-      LANGULUS_OOPS(Graphics,
+      LglsError(
          "vkAllocateDescriptorSets failed - either reserve more "
          "items in descriptor pool, or make more pools on demand"
       );
@@ -489,7 +489,7 @@ void VulkanPipeline::CreateNewGeometrySet() {
 /// Create uniform buffers                                                    
 void VulkanPipeline::CreateUniformBuffers() {
    const auto device = mProducer->mDevice;
-   LANGULUS_ASSERT(mUniforms, Graphics, "No uniforms/inputs provided by generator");
+   LglsAssert(mUniforms, "No uniforms/inputs provided by generator");
 
    // Create descriptor pools                                           
    static constinit VkDescriptorPoolSize poolSizes[] {
@@ -509,8 +509,7 @@ void VulkanPipeline::CreateUniformBuffers() {
    pool.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
    if (vkCreateDescriptorPool(device, &pool, nullptr, &mUBOPool.Get())) {
-      LANGULUS_OOPS(Graphics,
-         "Can't create UBO pool, so creation of vulkan material fails");
+      LglsError("Can't create UBO pool, so creation of vulkan material fails");
    }
 
    // Create the static sets (0)                                        

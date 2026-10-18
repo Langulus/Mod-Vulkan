@@ -30,10 +30,8 @@ void UBO::CalculateSizes() {
    for (auto& it : mUniforms) {
       auto concrete = it.mTrait.GetType()->GetMostConcrete();
 
-      LANGULUS_ASSERT(concrete->mIsAbstract, Graphics,
-         "Abstract uniform tag couldn't be concertized");
-      LANGULUS_ASSERT(concrete->mIsPOD, Graphics,
-         "Uniform tag is not POD");
+      LglsAssert(concrete->mIsAbstract, "Abstract uniform tag couldn't be concertized");
+      LglsAssert(concrete->mIsPOD, "Uniform tag is not POD");
 
       it.mTrait = Trait::FromMeta(it.mTrait.GetTag(), concrete);
 
@@ -63,7 +61,7 @@ void UBO::CalculateSizes() {
          baseAlignment = it.mTrait.GetType()->mAlignment;
       }
 
-      LANGULUS_ASSERT(baseAlignment, Graphics, "Bad uniform alignment");
+      LglsAssert(baseAlignment, "Bad uniform alignment");
       it.mPosition = Align(range, baseAlignment);
       range = it.mPosition + it.mTrait.GetStride();
    }
@@ -239,8 +237,7 @@ bool SamplerUBO::operator == (const SamplerUBO& rhs) const noexcept {
 ///   @param value - the value to set                                         
 ///   @param index - the index of the stride, ignored if buffer is static     
 void SamplerUBO::Set(const VulkanTexture* texture, Offset index) {
-   LANGULUS_ASSERT(mSamplers.GetCount() > index, Graphics,
-      "Bad texture index");
+   LglsAssert(mSamplers.GetCount() > index, "Bad texture index");
 
    VkDescriptorImageInfo sampler;
    sampler.sampler = texture->GetSampler();

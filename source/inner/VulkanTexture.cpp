@@ -15,11 +15,11 @@
 
 
 /// VRAM texture constructor                                                  
-///   @param producer - the texture producer                                  
-///   @param descriptor - the texture descriptor                              
+///   @param producer the texture producer                                    
+///   @param descriptor the texture descriptor                                
 VulkanTexture::VulkanTexture(VulkanRenderer* producer, Describe descriptor)
-   : Resolvable {this}
-   , ProducedFrom {producer, descriptor} {
+   : /*Resolvable {this}
+   ,*/ ProducedFrom {producer, descriptor} {
    descriptor.ForEachDeep([&](const Things::Image& content) {
       Upload(content);
    });
@@ -36,13 +36,12 @@ VulkanTexture::~VulkanTexture() {
 }
 
 /// Initialize from the provided content                                      
-///   @param content - the abstract texture content interface                 
+///   @param content the abstract texture content interface                   
 void VulkanTexture::Upload(const Things::Image& content) {
    // Check if any data was found                                       
    //const auto startTime = SteadyClock::Now();
    const auto pixels = content.GetDataList<Tags::Color>();
-   LANGULUS_ASSERT(pixels && *pixels, Graphics,
-      "Can't generate texture - no color data found");
+   LglsAssert(pixels && *pixels, "Can't generate texture - no color data found");
 
    // Copy base view and create image                                   
    // Beware, the VRAM image may have a different internal format       
