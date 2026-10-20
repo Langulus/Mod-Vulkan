@@ -12,9 +12,9 @@
 ///                                                                           
 ///   Vulkan shader                                                           
 ///                                                                           
-struct VulkanShader : A::Graphics, ProducedFrom<VulkanRenderer> {
+struct VulkanShader : Things::Graphics, ProducedFrom<VulkanRenderer> {
    using CTTI_Abstract = No;
-   LANGULUS_BASES(A::Graphics);
+   LANGULUS_BASES(Things::Graphics);
 
 private:
    std::vector<VertexBinding> mBindings;

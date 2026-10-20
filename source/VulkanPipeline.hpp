@@ -25,9 +25,9 @@ struct PipeSubscriber {
 ///                                                                           
 ///   Vulkan pipeline                                                         
 ///                                                                           
-struct VulkanPipeline : A::Graphics, ProducedFrom<VulkanRenderer> {
+struct VulkanPipeline : Things::Graphics, ProducedFrom<VulkanRenderer> {
    using CTTI_Abstract = No;
-   LANGULUS_BASES(A::Graphics);
+   LANGULUS_BASES(Things::Graphics);
 
 private:
    using Bindings = TMany<VkDescriptorSetLayoutBinding>;
@@ -85,7 +85,7 @@ private:
    static Construct FromMesh(const Things::Mesh&);
    static Construct FromImage(const Things::Image&);
    static Construct FromCode(Text const&);
-   void GenerateShaders(const A::Material&);
+   void GenerateShaders(const Things::Material&);
 
 public:
    VulkanPipeline(VulkanRenderer*, Describe);

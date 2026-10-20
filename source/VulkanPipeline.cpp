@@ -26,7 +26,7 @@ VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, Describe descriptor)
             mDepth = false;
          return Loop::NextLoop;
       },
-      [this, &predefinedMaterial](const A::Material& material) {
+      [this, &predefinedMaterial](const Things::Material& material) {
          // Create from predefined material generator                   
          GenerateShaders(material);
          predefinedMaterial = true;
@@ -86,7 +86,7 @@ VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, Describe descriptor)
       VERBOSE_VULKAN("Pipeline material will be generated from: ", material);
       Verbs::Create creator {Abandon(material)};
       producer->RunIn(creator)->ForEach(
-         [this](const A::Material& generator) {
+         [this](const Things::Material& generator) {
             GenerateShaders(generator);
          }
       );
@@ -303,7 +303,7 @@ Construct VulkanPipeline::FromFile(const Things::File& file) {
 Construct VulkanPipeline::FromMesh(const Things::Mesh& mesh) {
    // We use the geometry's properties to define a material             
    // generator, which we later use to initialize this pipeline         
-   auto request = Construct::From<A::Material>(
+   auto request = Construct::From<Things::Material>(
       Traits::Topology {mesh.GetTopology()}
    );
 
@@ -366,7 +366,7 @@ Construct VulkanPipeline::FromMesh(const Things::Mesh& mesh) {
 Construct VulkanPipeline::FromImage(const Things::Image& image) {
    // We use the image's properties to define a material                
    // generator, which we later use to initialize this pipeline         
-   auto request = Construct::From<A::Material>(
+   auto request = Construct::From<Things::Material>(
       Traits::Topology {MetaOf<A::TriangleStrip>()}
    );
 
@@ -386,7 +386,7 @@ Construct VulkanPipeline::FromImage(const Things::Image& image) {
 Construct VulkanPipeline::FromCode(Text const& code) {
    // We use the code to define a material generator, which we later    
    // use to initialize this pipeline                                   
-   auto request = Construct::From<A::Material>(
+   auto request = Construct::From<Things::Material>(
       Traits::Topology {MetaOf<A::TriangleStrip>()},
       code
    );
@@ -396,7 +396,7 @@ Construct VulkanPipeline::FromCode(Text const& code) {
 
 /// Use material generator to generate all shader stages as GLSL              
 ///   @param material - the content to use                                    
-void VulkanPipeline::GenerateShaders(const A::Material& material) {
+void VulkanPipeline::GenerateShaders(const Things::Material& material) {
    const auto shaders = material.GetDataList<Traits::Shader>();
    LglsAssert(shaders, "No shaders provided in material");
 

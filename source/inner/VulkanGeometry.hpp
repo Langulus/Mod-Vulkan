@@ -16,9 +16,9 @@
 /// Can convert RAM content to VRAM vertex/index buffers, by copying the      
 /// contents to the GPU                                                       
 ///                                                                           
-struct VulkanGeometry : A::Graphics, ProducedFrom<VulkanRenderer> {
+struct VulkanGeometry : Things::Graphics, ProducedFrom<VulkanRenderer> {
    using CTTI_Abstract = No;
-   LANGULUS_BASES(A::Graphics);
+   LANGULUS_BASES(Things::Graphics);
 
 private:
    // Vertex info                                                       

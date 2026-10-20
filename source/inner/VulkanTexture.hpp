@@ -14,9 +14,9 @@
 ///                                                                           
 /// Handles hardware pixel/voxel buffers                                      
 ///                                                                           
-struct VulkanTexture : A::Graphics, ProducedFrom<VulkanRenderer> {
+struct VulkanTexture : Things::Graphics, ProducedFrom<VulkanRenderer> {
    using CTTI_Abstract = No;
-   LANGULUS_BASES(A::Graphics);
+   LANGULUS_BASES(Things::Graphics);
 
 private:
    // Original content texture view                                     

@@ -27,7 +27,7 @@ protected:
    // Precompiled instances and levels, updated on Refresh()            
    TMany<const Things::Instance*> mInstances;
    TRange<Level> mLevelRange;
-   Ref<A::Material> mMaterialContent;
+   Ref<Things::Material> mMaterialContent;
    Ref<Things::Mesh> mGeometryContent;
    Ref<Things::Image> mTextureContent;
    mutable Ref<VulkanPipeline> mPredefinedPipeline;

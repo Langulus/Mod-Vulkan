@@ -166,7 +166,7 @@ SCENARIO("Drawing solid polygons", "[renderer]") {
       root.CreateUnit<Things::Window>(Traits::Size(640, 480));
       root.CreateUnit<Things::Renderer>();
       root.CreateUnit<Things::Layer>();
-      root.CreateUnit<A::World>();
+      root.CreateUnit<Things::World>();
 
       auto rect = root.CreateChild(Traits::Size {100}, "Rectangles");
       auto renderable = rect->CreateUnit<Things::Renderable>();

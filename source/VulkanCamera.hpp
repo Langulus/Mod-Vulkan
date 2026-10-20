@@ -16,9 +16,9 @@ using LevelRange = TRange<Level>;
 ///                                                                           
 ///   Camera unit                                                             
 ///                                                                           
-struct VulkanCamera final : A::Graphics, ProducedFrom<VulkanLayer> {
+struct VulkanCamera final : Things::Graphics, ProducedFrom<VulkanLayer> {
    using CTTI_Abstract = No;
-   LANGULUS_BASES(A::Graphics);
+   LANGULUS_BASES(Things::Graphics);
 
 protected:
    friend struct VulkanLayer;

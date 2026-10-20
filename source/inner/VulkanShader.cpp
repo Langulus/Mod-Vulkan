@@ -40,7 +40,7 @@ VulkanShader::VulkanShader(VulkanRenderer* producer, Describe descriptor)
       [this](Text const& code) {
          mCode = code;
       },
-      [this](const A::Material* material) {
+      [this](const Things::Material* material) {
          // Access input mappings                                       
          const auto uniforms = material->template GetDataList<Traits::Trait>();
          if (uniforms and not *uniforms) {

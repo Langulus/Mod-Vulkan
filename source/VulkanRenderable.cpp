@@ -100,30 +100,30 @@ VulkanPipeline* VulkanRenderable::GetOrCreatePipeline(
 
    // Construct a pipeline                                              
    bool usingGlobalPipeline = false;
-   auto construct = Construct::From<VulkanPipeline>();
+   auto recipe = Construct::From<VulkanPipeline>();
    if (mMaterialContent) {
-      construct << mMaterialContent;
+      recipe << mMaterialContent;
       usingGlobalPipeline = true;
    }
    else {
       if (mGeometryContent)
-         construct << mGeometryContent->GetLOD(lod);
+         recipe << mGeometryContent->GetLOD(lod);
       if (mTextureContent)
-         construct << mTextureContent;
+         recipe << mTextureContent;
    }
 
    // Add shaders if any such tag exists in unit environment          
    auto shader = SeekTrait<Traits::Shader>();
    if (shader)
-      construct << shader;
+      recipe << shader;
 
    // Add colorization if available                                     
    auto color = SeekTrait<Tags::Color>();
    if (color)
-      construct << color;
+      recipe << color;
 
-   // If at this point the construct is empty, then nothing to draw     
-   if (not construct.GetDescriptor()) {
+   // If at this point the recipe is empty, then nothing to draw     
+   if (not recipe.GetDescriptor()) {
       Logger::Warning(Self(), "No contents available for generating pipeline");
       return nullptr;
    }
@@ -131,10 +131,10 @@ VulkanPipeline* VulkanRenderable::GetOrCreatePipeline(
    // Add the layer, too, if available                                  
    // This is intentionally added after the above check                 
    if (layer)
-      construct << layer;
+      recipe << layer;
 
    // Get, or create the pipeline                                       
-   Verbs::Create creator {&construct};
+   Verbs::Create creator {&recipe};
    GetRenderer()->Create(creator);
    creator->ForEachDeep([&](VulkanPipeline& p) {
       if (usingGlobalPipeline)
@@ -172,7 +172,7 @@ void VulkanRenderable::Refresh() {
       return;
    }
 
-   const auto material = SeekUnit<A::Material, Seek::Here>();
+   const auto material = SeekUnit<Things::Material, Seek::Here>();
    if (material) {
       mMaterialContent = material;
       return;
