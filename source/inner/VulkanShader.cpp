@@ -20,7 +20,7 @@
 ///   @param producer - the shader producer                                   
 ///   @param descriptor - the shader descriptor                               
 VulkanShader::VulkanShader(VulkanRenderer* producer, Describe descriptor)
-   : Resolvable {this} 
+   : Downcastable {this} 
    , ProducedFrom {producer, descriptor} {
    // Configure the shader, but don't compile it yet                    
    descriptor.ForEachDeep(

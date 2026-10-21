@@ -13,7 +13,7 @@
 ///   @param producer - the renderable producer                               
 ///   @param descriptor - the renderable descriptor                           
 VulkanRenderable::VulkanRenderable(VulkanLayer* producer, Describe descriptor)
-   : Resolvable   {this} 
+   : Downcastable   {this} 
    , ProducedFrom {producer, descriptor} {
    VERBOSE_VULKAN("Initializing...");
    Couple(descriptor);

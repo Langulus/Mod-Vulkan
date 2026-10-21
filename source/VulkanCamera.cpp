@@ -12,7 +12,7 @@
 ///   @param producer - the camera producer                                   
 ///   @param descriptor - the camera descriptor                               
 VulkanCamera::VulkanCamera(VulkanLayer* producer, Describe descriptor)
-   : Resolvable   {this} 
+   : Downcastable   {this} 
    , ProducedFrom {producer, descriptor} {
    VERBOSE_VULKAN("Initializing...");
    Couple(descriptor);

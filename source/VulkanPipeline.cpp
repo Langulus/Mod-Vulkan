@@ -12,7 +12,7 @@
 ///   @param producer - the pipeline producer                                 
 ///   @param descriptor - the pipeline descriptor                             
 VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, Describe descriptor)
-   : Resolvable   {this}
+   : Downcastable   {this}
    , ProducedFrom {producer, descriptor} {
    VERBOSE_VULKAN("Initializing graphics pipeline from: ", descriptor);
    mSubscribers.New();

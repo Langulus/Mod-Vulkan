@@ -74,7 +74,7 @@ LANGULUS_DEFINE_MODULE(
 ///   @param system - the system that owns the module instance                
 ///   @param handle - the library handle                                      
 Vulkan::Vulkan(Runtime* runtime, Describe)
-   : Resolvable {this}
+   : Downcastable {this}
    , Module     {runtime} {
    VERBOSE_VULKAN("Initializing...");
    VkApplicationInfo appInfo {};

@@ -41,7 +41,7 @@ inline bool IsVertexData(const Block<>& container, bool& indexData) {
 ///   @param producer - the producer of the unit                              
 ///   @param descriptor - the unit descriptor                                 
 VulkanGeometry::VulkanGeometry(VulkanRenderer* producer, Describe descriptor)
-   : Resolvable   {this}
+   : Downcastable   {this}
    , ProducedFrom {producer, descriptor} {
    // Scan the descriptor                                               
    auto& vram = mProducer->mVRAM;
