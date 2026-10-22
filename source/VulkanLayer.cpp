@@ -114,7 +114,7 @@ VulkanPipeline* VulkanLayer::CompileInstance(
 ///   @param lod - the lod state to use                                       
 ///   @param pipesPerCamera - [out] pipelines used by the hierarchy           
 ///   @return 1 if something from the hierarchy was rendered                  
-Count VulkanLayer::CompileThing(const Thing* thing, LOD& lod, PipelineSet& pipesPerCamera) {
+Count VulkanLayer::CompileThing(Thing const* thing, LOD& lod, PipelineSet& pipesPerCamera) {
    // Iterate all renderables of the entity, which are part of this     
    // layer - disregard all others                                      
    auto relevantRenderables = thing->GatherUnits<VulkanRenderable, Seek::Here>();

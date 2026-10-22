@@ -134,7 +134,7 @@ private:
 
    Count CompileLevelBatched(const Mat4&, const Mat4&, Level, PipelineSet&);
    Count CompileLevelHierarchical(const Mat4&, const Mat4&, Level, PipelineSet&);
-   Count CompileThing(const Thing*, LOD&, PipelineSet&);
+   Count CompileThing(Thing const*, LOD&, PipelineSet&);
    NOD() VulkanPipeline* CompileInstance(const VulkanRenderable*, const Things::Instance*, LOD&);
    Count CompileLevels();
 
