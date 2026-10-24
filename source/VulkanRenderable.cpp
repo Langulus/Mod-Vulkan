@@ -50,7 +50,7 @@ VulkanRenderer* VulkanRenderable::GetRenderer() const noexcept {
 /// This is the point where content might be generated upon request           
 ///   @param lod - information used to extract the best LOD                   
 ///   @return the VRAM geometry or nullptr if content is not available        
-VulkanGeometry* VulkanRenderable::GetGeometry(const LOD& lod) const {
+VulkanGeometry* VulkanRenderable::GetGeometry(LOD const& lod) const {
    const auto i = lod.GetAbsoluteIndex();
    if (not mLOD[i].mGeometry and mGeometryContent) {
       // Cache geometry to VRAM                                         
@@ -68,7 +68,7 @@ VulkanGeometry* VulkanRenderable::GetGeometry(const LOD& lod) const {
 /// This is the point where content might be generated upon request           
 ///   @param lod - information used to extract the best LOD                   
 ///   @return the VRAM texture or nullptr if content is not available         
-VulkanTexture* VulkanRenderable::GetTexture(const LOD& lod) const {
+VulkanTexture* VulkanRenderable::GetTexture(LOD const& lod) const {
    const auto i = lod.GetAbsoluteIndex();
    if (not mLOD[i].mTexture and mTextureContent) {
       // Cache texture to VRAM                                          
@@ -87,7 +87,7 @@ VulkanTexture* VulkanRenderable::GetTexture(const LOD& lod) const {
 ///   @param layer - additional settings might be provided by the used layer  
 ///   @return the pipeline                                                    
 VulkanPipeline* VulkanRenderable::GetOrCreatePipeline(
-   const LOD& lod, const VulkanLayer* layer
+   LOD const& lod, const VulkanLayer* layer
 ) const {
    // Always return the predefined pipeline if available                
    if (mPredefinedPipeline)

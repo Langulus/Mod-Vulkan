@@ -27,7 +27,7 @@ VulkanShader::VulkanShader(VulkanRenderer* producer, Describe descriptor)
       [this](const ShaderStage::Enum& stage) {
          mStage = stage;
       },
-      [this](const Things::File& file) {
+      [this](Things::File const& file) {
          // Create from file                                            
          mCode = file.ReadAs<Text>();
       },

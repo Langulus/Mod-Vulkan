@@ -28,7 +28,7 @@ private:
    // Image sampler                                                     
    Own<VkSampler> mSampler;
 
-   void Upload(const Things::Image&);
+   void Upload(Things::Image const&);
 
 public:
    VulkanTexture(VulkanRenderer*, Describe);

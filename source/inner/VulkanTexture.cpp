@@ -20,7 +20,7 @@
 VulkanTexture::VulkanTexture(VulkanRenderer* producer, Describe descriptor)
    : /*Resolvable {this}
    ,*/ ProducedFrom {producer, descriptor} {
-   descriptor.ForEachDeep([&](const Things::Image& content) {
+   descriptor.ForEachDeep([&](Things::Image const& content) {
       Upload(content);
    });
 }
@@ -37,7 +37,7 @@ VulkanTexture::~VulkanTexture() {
 
 /// Initialize from the provided content                                      
 ///   @param content the abstract texture content interface                   
-void VulkanTexture::Upload(const Things::Image& content) {
+void VulkanTexture::Upload(Things::Image const& content) {
    // Check if any data was found                                       
    //const auto startTime = SteadyClock::Now();
    const auto pixels = content.GetDataList<Tags::Color>();

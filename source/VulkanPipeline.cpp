@@ -26,7 +26,7 @@ VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, Describe descriptor)
             mDepth = false;
          return Loop::NextLoop;
       },
-      [this, &predefinedMaterial](const Things::Material& material) {
+      [this, &predefinedMaterial](Things::Material const& material) {
          // Create from predefined material generator                   
          GenerateShaders(material);
          predefinedMaterial = true;
@@ -38,7 +38,7 @@ VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, Describe descriptor)
       // We must generate the material ourselves                        
       Construct material;
       descriptor.ForEach(
-         [&](const Things::File& file) {
+         [&](Things::File const& file) {
             // Create from file                                         
             material = FromFile(file);
             return Loop::Break;
@@ -49,12 +49,12 @@ VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, Describe descriptor)
             material = file ? FromFile(*file) : FromCode(text);
             return Loop::Break;
          },
-         [&](const Things::Mesh& mesh) {
+         [&](Things::Mesh const& mesh) {
             // Adapt to a mesh                                          
             material = FromMesh(mesh);
             return Loop::Break;
          },
-         [&](const Things::Image& image) {
+         [&](Things::Image const& image) {
             // Adapt to an image                                        
             material = FromImage(image);
             return Loop::Break;
@@ -86,7 +86,7 @@ VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, Describe descriptor)
       VERBOSE_VULKAN("Pipeline material will be generated from: ", material);
       Verbs::Create creator {Abandon(material)};
       producer->RunIn(creator)->ForEach(
-         [this](const Things::Material& generator) {
+         [this](Things::Material const& generator) {
             GenerateShaders(generator);
          }
       );
@@ -287,7 +287,7 @@ VulkanPipeline::~VulkanPipeline() {
 
 /// Create a pipeline from a file                                             
 ///   @param file - the file interface                                        
-Construct VulkanPipeline::FromFile(const Things::File& file) {
+Construct VulkanPipeline::FromFile(Things::File const& file) {
    try {
       // Check if file is a text file, and attempt using it             
       return FromCode(file.ReadAs<Text>());
@@ -300,7 +300,7 @@ Construct VulkanPipeline::FromFile(const Things::File& file) {
 /// Create a pipeline capable of rendering a mesh                             
 ///   @attention geometry will be generated, in order to access data types    
 ///   @param mesh - the mesh content generator                                
-Construct VulkanPipeline::FromMesh(const Things::Mesh& mesh) {
+Construct VulkanPipeline::FromMesh(Things::Mesh const& mesh) {
    // We use the geometry's properties to define a material             
    // generator, which we later use to initialize this pipeline         
    auto request = Construct::From<Things::Material>(
@@ -363,7 +363,7 @@ Construct VulkanPipeline::FromMesh(const Things::Mesh& mesh) {
 /// Create a pipeline capable of rendering an image                           
 ///   @attention image will be generated, in order to access data types       
 ///   @param image - the image content generator                              
-Construct VulkanPipeline::FromImage(const Things::Image& image) {
+Construct VulkanPipeline::FromImage(Things::Image const& image) {
    // We use the image's properties to define a material                
    // generator, which we later use to initialize this pipeline         
    auto request = Construct::From<Things::Material>(
@@ -396,7 +396,7 @@ Construct VulkanPipeline::FromCode(Text const& code) {
 
 /// Use material generator to generate all shader stages as GLSL              
 ///   @param material - the content to use                                    
-void VulkanPipeline::GenerateShaders(const Things::Material& material) {
+void VulkanPipeline::GenerateShaders(Things::Material const& material) {
    const auto shaders = material.GetDataList<Traits::Shader>();
    LglsAssert(shaders, "No shaders provided in material");
 

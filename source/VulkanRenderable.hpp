@@ -44,9 +44,9 @@ public:
    ~VulkanRenderable();
 
    NOD() VulkanRenderer* GetRenderer() const noexcept;
-   NOD() VulkanGeometry* GetGeometry(const LOD&) const;
-   NOD() VulkanTexture*  GetTexture(const LOD&) const;
-   NOD() VulkanPipeline* GetOrCreatePipeline(const LOD&, const VulkanLayer*) const;
+   NOD() VulkanGeometry* GetGeometry(LOD const&) const;
+   NOD() VulkanTexture*  GetTexture(LOD const&) const;
+   NOD() VulkanPipeline* GetOrCreatePipeline(LOD const&, const VulkanLayer*) const;
 
    void Refresh();
    void Detach();

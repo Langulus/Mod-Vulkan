@@ -81,11 +81,11 @@ private:
    TMany<PipeSubscriber> mSubscribers;
    TMany<const VulkanGeometry*> mGeometries;
 
-   static Construct FromFile(const Things::File&);
-   static Construct FromMesh(const Things::Mesh&);
-   static Construct FromImage(const Things::Image&);
+   static Construct FromFile(Things::File const&);
+   static Construct FromMesh(Things::Mesh const&);
+   static Construct FromImage(Things::Image const&);
    static Construct FromCode(Text const&);
-   void GenerateShaders(const Things::Material&);
+   void GenerateShaders(Things::Material const&);
 
 public:
    VulkanPipeline(VulkanRenderer*, Describe);
