@@ -526,7 +526,7 @@ Ref<Things::Image> VulkanSwapchain::TakeScreenshot() {
    vram.DestroyBuffer(stager);
 
    if (not mScreenshot) {
-      // Create an image asset if not created yet, otherwise reuse it   
+      // Create an image art if not created yet, otherwise reuse it     
       // The image includes current timestamp to make it unique         
       // We also predefine the renderer as parent, because we don't     
       // want the image to be added as a component to a Thing. Parent   

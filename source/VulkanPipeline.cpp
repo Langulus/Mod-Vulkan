@@ -531,7 +531,7 @@ void VulkanPipeline::CreateUniformBuffers() {
             continue;
 
          // Find out where the UBO is used                              
-         //TODO precompute this in asset module!!!
+         //TODO precompute this in art module!!!
          /*for (auto& uniform : ubo.mUniforms) {
             for (const auto stage : mStages) {
                if (stage->GetCode().Find(GLSL {uniform.mTrait.GetTag()}))
@@ -572,7 +572,7 @@ void VulkanPipeline::CreateUniformBuffers() {
             continue;
 
          // Find out where the UBO is used                              
-         //TODO precompute this in asset module!!!
+         //TODO precompute this in art module!!!
          /*for (auto& uniform : ubo.mUniforms) {
             for (const auto stage : mStages) {
                if (stage->GetCode().Find(GLSL {uniform.mTrait.GetTag()}))
@@ -614,7 +614,7 @@ void VulkanPipeline::CreateUniformBuffers() {
          for (auto& uniform : ubo.mUniforms) {
             // Find out where the UBO is used                           
             VkShaderStageFlags mask {};
-            //TODO precompute this in asset module!!!
+            //TODO precompute this in art module!!!
             /*for (const auto stage : mStages) {
                const auto token = 
                   GLSL {uniform.mTrait.GetTag()}
