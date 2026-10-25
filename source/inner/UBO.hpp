@@ -88,7 +88,7 @@ public:
       static_assert(CT::POD<DATA>, "DATA must be POD");
 
       for (auto const& it : mUniforms) {
-         if (not it.mTrait.template IsTrait<TRAIT>())
+         if (not it.mTrait.template IsTag<TRAIT>())
             continue;
 
          const auto offset = mUsedCount * mStride + it.mPosition;

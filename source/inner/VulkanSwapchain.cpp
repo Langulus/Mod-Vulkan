@@ -306,7 +306,7 @@ VkSurfaceFormatKHR VulkanSwapchain::GetSurfaceFormat() const noexcept {
    }
 
    if (surface_formats.empty()) {
-      Logger::Error(Self(), "Could not create swap chain");
+      Logger::Error(this, ": Could not create swap chain");
       return error;
    }
 
@@ -348,7 +348,7 @@ bool VulkanSwapchain::StartRendering() {
    if (result == VK_ERROR_OUT_OF_DATE_KHR
    or (result and result != VK_SUBOPTIMAL_KHR)) {
       // Le strange error occurs                                        
-      Logger::Error(Self(), "Vulkan failed to resize swapchain");
+      Logger::Error(this, ": Vulkan failed to resize swapchain");
       return false;
    }
 
@@ -372,7 +372,7 @@ bool VulkanSwapchain::StartRendering() {
 bool VulkanSwapchain::EndRendering() {
    // Command buffer ends                                               
    if (vkEndCommandBuffer(mCommandBuffer[mCurrentFrame])) {
-      Logger::Error(Self(), "Can't end command buffer");
+      Logger::Error(this, ": Can't end command buffer");
       return false;
    }
 
@@ -394,7 +394,7 @@ bool VulkanSwapchain::EndRendering() {
    submitInfo.pSignalSemaphores = signalSemaphores;
 
    if (vkQueueSubmit(mRenderer.mRenderQueue, 1, &submitInfo, VK_NULL_HANDLE)) {
-      Logger::Error(Self(), "Vulkan failed to submit render buffer");
+      Logger::Error(this, ": Vulkan failed to submit render buffer");
       return false;
    }
 
@@ -415,7 +415,7 @@ bool VulkanSwapchain::EndRendering() {
    );
 
    if (vkQueuePresentKHR(mRenderer.mPresentQueue, &presentInfo)) {
-      Logger::Error(Self(), "Vulkan failed to present - the frame will be lost");
+      Logger::Error(this, ": Vulkan failed to present - the frame will be lost");
    }
 
    return true;
@@ -533,7 +533,7 @@ Ref<Things::Image> VulkanSwapchain::TakeScreenshot() {
       // will otherwise be added implicitly, by producing the image in  
       // the context of Thing that owns this renderer.                  
       Verbs::Create creator {Construct::From<Things::Image>(
-         Traits::Parent {Ref {&mRenderer}},
+         Tags::Parent {Ref {&mRenderer}},
          source.GetView(),
          SteadyClock::Now()
       )};

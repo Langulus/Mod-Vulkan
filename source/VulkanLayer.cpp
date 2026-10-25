@@ -92,19 +92,19 @@ VulkanPipeline* VulkanLayer::CompileInstance(
    const auto geometry = renderable->GetGeometry(lod);
    if (geometry) {
       pipeline->template
-         SetUniform<Rate::Renderable, Traits::Mesh>(geometry);
+         SetUniform<Rate::Renderable, Tags::Mesh>(geometry);
    }
 
    // Get relevant textures                                             
    const auto textures = renderable->GetTexture(lod);
    if (textures) {
       pipeline->template
-         SetUniform<Rate::Renderable, Traits::Image>(textures);
+         SetUniform<Rate::Renderable, Tags::Image>(textures);
    }
 
    // Push uniforms                                                     
    pipeline->template
-      SetUniform<Rate::Instance, Traits::Transform>(lod.mModel);
+      SetUniform<Rate::Instance, Tags::Transform>(lod.mModel);
    return pipeline;
 }
 
@@ -190,9 +190,9 @@ Count VulkanLayer::CompileLevelHierarchical(
    if (renderedEntities) {
       for (auto pipeline : pipesPerCamera) {
          // Push PerLevel uniforms                                      
-         pipeline->SetUniform<Rate::Level, Traits::View>(lod.mView);
-         pipeline->SetUniform<Rate::Level, Traits::Projection>(projection);
-         pipeline->SetUniform<Rate::Level, Traits::Level>(level);
+         pipeline->SetUniform<Rate::Level, Tags::View>(lod.mView);
+         pipeline->SetUniform<Rate::Level, Tags::Projection>(projection);
+         pipeline->SetUniform<Rate::Level, Tags::Level>(level);
          pipeline->PushUniforms<Rate::Level, false>();
       }
 
@@ -247,9 +247,9 @@ Count VulkanLayer::CompileLevelBatched(
    if (renderedInstances) {
       for (auto pipeline : pipesPerCamera) {
          // Push PerLevel uniforms if required                          
-         pipeline->SetUniform<Rate::Level, Traits::View>(lod.mView);
-         pipeline->SetUniform<Rate::Level, Traits::Projection>(projection);
-         pipeline->SetUniform<Rate::Level, Traits::Level>(level);
+         pipeline->SetUniform<Rate::Level, Tags::View>(lod.mView);
+         pipeline->SetUniform<Rate::Level, Tags::Projection>(projection);
+         pipeline->SetUniform<Rate::Level, Tags::Level>(level);
          pipeline->PushUniforms<Rate::Level>();
 
          // Store the negative level in the set, so they're always in   
@@ -290,9 +290,9 @@ Count VulkanLayer::CompileLevels() {
       if (pipesPerCamera) {
          for (auto pipeline : pipesPerCamera) {
             // Push PerCamera uniforms if required                      
-            pipeline->SetUniform<Rate::Camera, Traits::Projection>(Mat4 {});
-            pipeline->SetUniform<Rate::Camera, Traits::FOV>(Radians {});
-            pipeline->SetUniform<Rate::Camera, Traits::Size>(GetWindow()->GetSize());
+            pipeline->SetUniform<Rate::Camera, Tags::Projection>(Mat4 {});
+            pipeline->SetUniform<Rate::Camera, Tags::FOV>(Radians {});
+            pipeline->SetUniform<Rate::Camera, Tags::Size>(GetWindow()->GetSize());
             if (mStyle & Style::Hierarchical)
                pipeline->PushUniforms<Rate::Camera, false>();
             else
@@ -330,9 +330,9 @@ Count VulkanLayer::CompileLevels() {
       if (pipesPerCamera) {
          for (auto pipeline : pipesPerCamera) {
             // Push PerCamera uniforms if required                      
-            pipeline->SetUniform<Rate::Camera, Traits::Projection>(camera.mProjection);
-            pipeline->SetUniform<Rate::Camera, Traits::FOV>(camera.mFOV);
-            pipeline->SetUniform<Rate::Camera, Traits::Size>(camera.mResolution);
+            pipeline->SetUniform<Rate::Camera, Tags::Projection>(camera.mProjection);
+            pipeline->SetUniform<Rate::Camera, Tags::FOV>(camera.mFOV);
+            pipeline->SetUniform<Rate::Camera, Tags::Size>(camera.mResolution);
             if (mStyle & Style::Hierarchical)
                pipeline->PushUniforms<Rate::Camera, false>();
             else

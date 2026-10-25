@@ -90,7 +90,7 @@ Vulkan::Vulkan(Runtime* runtime, Describe)
 
    // Setup the required validation layers                              
    #if LANGULUS_DEBUG()
-      Logger::Warning(Self(), 
+      Logger::Warning(this, 
          "Vulkan will work in debug mode"
          " - performance warning due to validation layers"
       );
@@ -113,11 +113,11 @@ Vulkan::Vulkan(Runtime* runtime, Describe)
    // Create instance                                                   
    auto result = vkCreateInstance(&createInfo, nullptr, &mInstance.Get());
    if (result != VK_SUCCESS) {
-      Logger::Error(Self(), 
+      Logger::Error(this, 
          "Error creating Vulkan instance");
 
       if (result == VK_ERROR_EXTENSION_NOT_PRESENT) {
-         Logger::Error(Self(), 
+         Logger::Error(this, 
             "There was at least one unsupported extension, analyzing...");
 
          // Get all supported extensions                                
@@ -137,24 +137,24 @@ Vulkan::Vulkan(Runtime* runtime, Describe)
             }
 
             if (not found)
-               Logger::Error(Self(), " - Missing extension: ", test);
+               Logger::Error(this, ":  - Missing extension: ", test);
          }
       }
       else if (result == VK_ERROR_OUT_OF_HOST_MEMORY) {
-         Logger::Error(Self(), 
+         Logger::Error(this, 
             "You're either out of HOST memory, or your CPU/GPU doesn't support vulkan");
-         Logger::Error(Self(), 
+         Logger::Error(this, 
             "Beware, that only 4th+ generation CPUs with integrated video adapters "
             "are supported, when specific drivers are provided");
       }
       else if (result == VK_ERROR_INCOMPATIBLE_DRIVER) {
-         Logger::Error(Self(), "Your driver is incompatible");
+         Logger::Error(this, ": Your driver is incompatible");
       }
 
       LglsError("Vulkan couldn't setup");
    }
 
-   VERBOSE_VULKAN(Logger::Verbose(Self(),
+   VERBOSE_VULKAN(Logger::Verbose(this,
       "Vulkan instance created"));
 
    #if LANGULUS_DEBUG()
@@ -200,7 +200,7 @@ Vulkan::Vulkan(Runtime* runtime, Describe)
    // Show some info                                                    
    VkPhysicalDeviceProperties adapter_info;
    vkGetPhysicalDeviceProperties(mAdapter, &adapter_info);
-   VERBOSE_VULKAN(Logger::Verbose(Self(),
+   VERBOSE_VULKAN(Logger::Verbose(this,
       "Best rated adapter: ", adapter_info.deviceName));
 
    // Check adapter functionality                                       
@@ -227,16 +227,16 @@ Vulkan::Vulkan(Runtime* runtime, Describe)
    }
 
    if (mSupportsComputation) {
-      Logger::Verbose(Self(),
+      Logger::Verbose(this,
          "Your GPU supports data computation"
          " - it will be used for large-scale computation");
    }
 
    if (mSupportsTransfer)
-      Logger::Verbose(Self(), "Your GPU supports asynchronous queues");
+      Logger::Verbose(this, ": Your GPU supports asynchronous queues");
 
    if (mSupportsSparseBinding)
-      Logger::Verbose(Self(), "Your GPU supports sparse binding");
+      Logger::Verbose(this, ": Your GPU supports sparse binding");
 
    // Create queues for rendering & presenting                          
    TMany<VkDeviceQueueCreateInfo> queueCreateInfos;
@@ -327,13 +327,13 @@ unsigned Vulkan::RateDevice(const VkPhysicalDevice& device) const {
 
    // Application can't function without geometry shaders               
    if (not deviceFeatures.geometryShader) {
-      Logger::Error(Self(), "Device doesn't support geometry shaders");
+      Logger::Error(this, ": Device doesn't support geometry shaders");
       return 0;
    }
 
    // Application can't function without anistropic filtering           
    if (not deviceFeatures.samplerAnisotropy) {
-      Logger::Error(Self(), "Device doesn't support anistropic filtering");
+      Logger::Error(this, ": Device doesn't support anistropic filtering");
       return 0;
    }
 
@@ -347,7 +347,7 @@ VkPhysicalDevice Vulkan::PickAdapter() const {
    vkEnumeratePhysicalDevices(mInstance, &deviceCount, nullptr);
 
    if (deviceCount == 0) {
-      Logger::Error(Self(), 
+      Logger::Error(this, 
          "No graphical device was detected in your computer"
          " - vulkan module is unusable");
       return nullptr;
@@ -368,7 +368,7 @@ VkPhysicalDevice Vulkan::PickAdapter() const {
    }
 
    if (best_rated == 0)
-      Logger::Warning(Self(), "The graphical hardware you have is quite shitty");
+      Logger::Warning(this, ": The graphical hardware you have is quite shitty");
 
    return result;
 }

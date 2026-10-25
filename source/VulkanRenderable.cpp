@@ -113,7 +113,7 @@ VulkanPipeline* VulkanRenderable::GetOrCreatePipeline(
    }
 
    // Add shaders if any such tag exists in unit environment          
-   auto shader = SeekTrait<Traits::Shader>();
+   auto shader = SeekTrait<Tags::Shader>();
    if (shader)
       recipe << shader;
 
@@ -124,7 +124,7 @@ VulkanPipeline* VulkanRenderable::GetOrCreatePipeline(
 
    // If at this point the recipe is empty, then nothing to draw     
    if (not recipe.GetDescriptor()) {
-      Logger::Warning(Self(), "No contents available for generating pipeline");
+      Logger::Warning(this, ": No contents available for generating pipeline");
       return nullptr;
    }
    

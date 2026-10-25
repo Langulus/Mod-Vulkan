@@ -54,7 +54,7 @@ namespace Catch
          root.LoadMod("Vulkan");
          
          WHEN("A renderer is created via abstractions") {
-            auto window = root.CreateUnit<Things::Window>(Traits::Size(640, 480));
+            auto window = root.CreateUnit<Things::Window>(Tags::Size(640, 480));
             auto renderer = root.CreateUnit<Things::Renderer>();
             root.DumpHierarchy();
                
@@ -71,7 +71,7 @@ namespace Catch
 
       #if LANGULUS_FEATURE(MANAGED_REFLECTION)
          WHEN("A renderer is created via tokens") {
-            auto window = root.CreatePartToken("Things::Window", Traits::Size(640, 480));
+            auto window = root.CreatePartToken("Things::Window", Tags::Size(640, 480));
             auto renderer = root.CreatePartToken("Renderer");
             root.DumpHierarchy();
                
@@ -106,7 +106,7 @@ SCENARIO("Drawing an empty window", "[renderer]") {
       root.LoadMod("Vulkan");
       root.LoadMod("AssetsImages");
 
-      root.CreateUnit<Things::Window>(Traits::Size(640, 480));
+      root.CreateUnit<Things::Window>(Tags::Size(640, 480));
       root.CreateUnit<Things::Renderer>();
 
       static Allocator::State memoryState2;
@@ -163,18 +163,18 @@ SCENARIO("Drawing solid polygons", "[renderer]") {
          "Physics"
       );
 
-      root.CreateUnit<Things::Window>(Traits::Size(640, 480));
+      root.CreateUnit<Things::Window>(Tags::Size(640, 480));
       root.CreateUnit<Things::Renderer>();
       root.CreateUnit<Things::Layer>();
       root.CreateUnit<Things::World>();
 
-      auto rect = root.CreateChild(Traits::Size {100}, "Rectangles");
+      auto rect = root.CreateChild(Tags::Size {100}, "Rectangles");
       auto renderable = rect->CreateUnit<Things::Renderable>();
       auto mesh = rect->CreateUnit<Things::Mesh>(Math::Box2 {});
-      auto topLeft  = rect->CreateUnit<Things::Instance>(Traits::Place(100, 100), Colors::Black);
-      auto topRight = rect->CreateUnit<Things::Instance>(Traits::Place(540, 100), Colors::Green);
-      auto botLeft  = rect->CreateUnit<Things::Instance>(Traits::Place(100, 380), Colors::Blue);
-      auto botRight = rect->CreateUnit<Things::Instance>(Traits::Place(540, 380), Colors::White);
+      auto topLeft  = rect->CreateUnit<Things::Instance>(Tags::Place(100, 100), Colors::Black);
+      auto topRight = rect->CreateUnit<Things::Instance>(Tags::Place(540, 100), Colors::Green);
+      auto botLeft  = rect->CreateUnit<Things::Instance>(Tags::Place(100, 380), Colors::Blue);
+      auto botRight = rect->CreateUnit<Things::Instance>(Tags::Place(540, 380), Colors::White);
       root.DumpHierarchy();
 
       static Allocator::State memoryState2;

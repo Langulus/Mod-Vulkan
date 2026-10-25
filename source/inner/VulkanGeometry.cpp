@@ -10,26 +10,26 @@
 #include <Math/Sampler.hpp>
 
 #if 0
-   #define VERBOSE_VKGEOMETRY(...) Logger::Verbose(Self(), __VA_ARGS__)
+   #define VERBOSE_VKGEOMETRY(...) Logger::Verbose(this, __VA_ARGS__)
 #else
    #define VERBOSE_VKGEOMETRY(...) LANGULUS(NOOP)
 #endif
 
 
 /// Returns true if container has any vertex data                             
-///   @param container - container to scan                                    
-///   @param indexData - [out] whether or not index data is available         
+///   @param container container to scan                                      
+///   @param indexData [out] whether or not index data is available           
 ///   @return true if container has vectors                                   
 inline bool IsVertexData(const Block<>& container, bool& indexData) {
-   if (container.CastsTo<A::Topology>()
-   or  container.CastsTo<A::Normal>()
-   or  container.CastsTo<A::Sampler>()
-   or  container.CastsTo<A::Color>()) {
+   if (container.CastsTo<Topology>()
+   or  container.CastsTo<Normal>()
+   or  container.CastsTo<Sampler>()
+   or  container.CastsTo<Color>()) {
       indexData = false;
       return true;
    }
 
-   if (container.CastsTo<A::Integer>(1)) {
+   if (container.CastsTo<Integer>(1)) {
       indexData = true;
       return true;
    }
@@ -38,10 +38,10 @@ inline bool IsVertexData(const Block<>& container, bool& indexData) {
 }
 
 /// Descriptor constructor                                                    
-///   @param producer - the producer of the unit                              
-///   @param descriptor - the unit descriptor                                 
+///   @param producer the producer of the unit                                
+///   @param descriptor the unit descriptor                                   
 VulkanGeometry::VulkanGeometry(VulkanRenderer* producer, Describe descriptor)
-   : Downcastable   {this}
+   : Downcastable {this}
    , ProducedFrom {producer, descriptor} {
    // Scan the descriptor                                               
    auto& vram = mProducer->mVRAM;
@@ -50,7 +50,7 @@ VulkanGeometry::VulkanGeometry(VulkanRenderer* producer, Describe descriptor)
 
       // Create a buffer for each relevant data tag                   
       // Each data request will generate that data, if it hasn't yet    
-      const auto indices = mesh.GetData<Traits::Index>();
+      const auto indices = mesh.GetData<Tags::Index>();
       if (indices) {
          VERBOSE_VKGEOMETRY("Uploading indices to VRAM: ",
             indices->GetCount(), " of ", indices->GetType());
@@ -60,7 +60,7 @@ VulkanGeometry::VulkanGeometry(VulkanRenderer* producer, Describe descriptor)
          mIOffsets.push_back(0);
       }
 
-      const auto positions = mesh.GetData<Traits::Place>();
+      const auto positions = mesh.GetData<Tags::Place>();
       if (positions) {
          VERBOSE_VKGEOMETRY("Uploading vertex positions to VRAM: ",
             positions->GetCount(), " of ", positions->GetType());
@@ -70,7 +70,7 @@ VulkanGeometry::VulkanGeometry(VulkanRenderer* producer, Describe descriptor)
          mVOffsets.push_back(0);
       }
 
-      const auto normals = mesh.GetData<Traits::Aim>();
+      const auto normals = mesh.GetData<Tags::Aim>();
       if (normals) {
          VERBOSE_VKGEOMETRY("Uploading vertex normals to VRAM: ",
             normals->GetCount(), " of ", normals->GetType());
@@ -80,7 +80,7 @@ VulkanGeometry::VulkanGeometry(VulkanRenderer* producer, Describe descriptor)
          mVOffsets.push_back(0);
       }
 
-      const auto textureCoords = mesh.GetData<Traits::Sampler>();
+      const auto textureCoords = mesh.GetData<Tags::Sampler>();
       if (textureCoords) {
          VERBOSE_VKGEOMETRY("Uploading vertex texture coordinates to VRAM: ",
             textureCoords->GetCount(), " of ", textureCoords->GetType());
@@ -90,7 +90,7 @@ VulkanGeometry::VulkanGeometry(VulkanRenderer* producer, Describe descriptor)
          mVOffsets.push_back(0);
       }
 
-      const auto materialIds = mesh.GetData<Traits::Material>();
+      const auto materialIds = mesh.GetData<Tags::Material>();
       if (materialIds) {
          VERBOSE_VKGEOMETRY("Uploading vertex material IDs to VRAM: ",
             materialIds->GetCount(), " of ", materialIds->GetType());
@@ -100,7 +100,7 @@ VulkanGeometry::VulkanGeometry(VulkanRenderer* producer, Describe descriptor)
          mVOffsets.push_back(0);
       }
 
-      const auto instances = mesh.GetData<Traits::Transform>();
+      const auto instances = mesh.GetData<Tags::Transform>();
       if (instances) {
          VERBOSE_VKGEOMETRY("Uploading hardware instancing data to VRAM: ",
             instances->GetCount(), " of ", instances->GetType());

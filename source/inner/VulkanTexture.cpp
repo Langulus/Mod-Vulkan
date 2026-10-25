@@ -8,7 +8,7 @@
 #include "../Vulkan.hpp"
 
 #if 0
-   #define VERBOSE_VKTEXTURE(...) Logger::Verbose(Self(), __VA_ARGS__)
+   #define VERBOSE_VKTEXTURE(...) Logger::Verbose(this, __VA_ARGS__)
 #else
    #define VERBOSE_VKTEXTURE(...) LANGULUS(NOOP)
 #endif
@@ -18,8 +18,8 @@
 ///   @param producer the texture producer                                    
 ///   @param descriptor the texture descriptor                                
 VulkanTexture::VulkanTexture(VulkanRenderer* producer, Describe descriptor)
-   : /*Resolvable {this}
-   ,*/ ProducedFrom {producer, descriptor} {
+   : Downcastable {this}
+   , ProducedFrom {producer, descriptor} {
    descriptor.ForEachDeep([&](Things::Image const& content) {
       Upload(content);
    });

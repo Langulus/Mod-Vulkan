@@ -104,13 +104,13 @@ public:
    ///                  used as ID only when setting a texture                
    template<RefreshRate RATE, CT::Trait TRAIT, CT::Data DATA>
    void SetUniform(const DATA& value, Offset index = 0) {
-      if constexpr (CT::Same<DATA, VulkanTexture>) {
+      if constexpr (Same<DATA, VulkanTexture>) {
          static_assert(RATE == Rate::Renderable,
             "Setting a texture requires Rate::Renderable");
          // Set the sampler with the given index                        
          mSamplerUBO[mSubscribers.Last().samplerSet].Set(value, index);
       }
-      else if constexpr (CT::Same<DATA, VulkanGeometry>) {
+      else if constexpr (Same<DATA, VulkanGeometry>) {
          static_assert(RATE == Rate::Renderable,
             "Setting a geometry stream requires Rate::Renderable");
          // Set the geometry stream                                     

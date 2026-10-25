@@ -12,8 +12,6 @@
 #include <Langulus/CppAPI/Graphics.hpp>
 #include <Langulus/CppAPI/Platform.hpp>
 
-LANGULUS_EXCEPTION(Graphics);
-
 using namespace Langulus;
 using namespace Math;
 
@@ -31,8 +29,8 @@ struct VulkanShader;
 
 #if 1
    #define VERBOSE_VULKAN_ENABLED() 1
-   #define VERBOSE_VULKAN(...)      Logger::Verbose(Self(), __VA_ARGS__)
-   #define VERBOSE_VULKAN_TAB(...)  const auto tab = Logger::VerboseTab(Self(), __VA_ARGS__)
+   #define VERBOSE_VULKAN(...)      Logger::Verbose(this, __VA_ARGS__)
+   #define VERBOSE_VULKAN_TAB(...)  const auto tab = Logger::VerboseTab(this, __VA_ARGS__)
 #else
    #define VERBOSE_VULKAN_ENABLED() 0
    #define VERBOSE_VULKAN(...)      LANGULUS(NOOP)

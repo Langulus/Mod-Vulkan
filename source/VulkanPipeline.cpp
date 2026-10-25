@@ -69,7 +69,7 @@ VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, Describe descriptor)
       for (auto const& attachment : mProducer->mPassAttachments) {
          switch (attachment.format) {
          case VK_FORMAT_B8G8R8A8_UNORM:
-            material << Traits::Output {
+            material << Tags::Output {
                Tags::Color {Rate::Pixel, MetaOf<RGBA>()}
             };
             break;
@@ -304,53 +304,53 @@ Construct VulkanPipeline::FromMesh(Things::Mesh const& mesh) {
    // We use the geometry's properties to define a material             
    // generator, which we later use to initialize this pipeline         
    auto request = Construct::From<Things::Material>(
-      Traits::Topology {mesh.GetTopology()}
+      Tags::Topology {mesh.GetTopology()}
    );
 
-   Traits::Input inputs;
-   const auto instances = mesh.GetData<Traits::Transform>();
+   Tags::Input inputs;
+   const auto instances = mesh.GetData<Tags::Transform>();
    if (instances) {
       // Create geometry shader hardware instancing input               
-      inputs << Traits::Transform {
+      inputs << Tags::Transform {
          Rate::Primitive, instances->GetType()
       };
    }
 
-   const auto positions = mesh.GetData<Traits::Place>();
+   const auto positions = mesh.GetData<Tags::Place>();
    if (positions) {
       // Create a vertex position input and project it                  
-      inputs << Traits::Place       {Rate::Vertex, positions->GetType()}
-             << Traits::View        {Rate::Level,  positions->GetType()}
-             << Traits::Projection  {Rate::Camera, positions->GetType()};
+      inputs << Tags::Place       {Rate::Vertex, positions->GetType()}
+             << Tags::View        {Rate::Level,  positions->GetType()}
+             << Tags::Projection  {Rate::Camera, positions->GetType()};
 
       // If not using hardware-instancing, use the Thing's instances    
       if (not instances) {
-         inputs << Traits::Transform {
+         inputs << Tags::Transform {
             Rate::Instance, positions->GetType()
          };
       }
    }
          
-   const auto normals = mesh.GetData<Traits::Aim>();
+   const auto normals = mesh.GetData<Tags::Aim>();
    if (normals) {
       // Create a vertex normals input                                  
-      inputs << Traits::Aim {
+      inputs << Tags::Aim {
          Rate::Vertex, normals->GetType()
       };
    }
          
-   const auto textureCoords = mesh.GetData<Traits::Sampler>();
+   const auto textureCoords = mesh.GetData<Tags::Sampler>();
    if (textureCoords) {
       // Create a vertex texture coordinates input                      
-      inputs << Traits::Sampler {
+      inputs << Tags::Sampler {
          Rate::Vertex, textureCoords->GetType()
       };
    }
          
-   const auto materialIds = mesh.GetData<Traits::Material>();
+   const auto materialIds = mesh.GetData<Tags::Material>();
    if (materialIds) {
       // Create a vertex material ids input                             
-      inputs << Traits::Material {
+      inputs << Tags::Material {
          Rate::Vertex, materialIds->GetType()
       };
    }
@@ -367,14 +367,14 @@ Construct VulkanPipeline::FromImage(Things::Image const& image) {
    // We use the image's properties to define a material                
    // generator, which we later use to initialize this pipeline         
    auto request = Construct::From<Things::Material>(
-      Traits::Topology {MetaOf<A::TriangleStrip>()}
+      Tags::Topology {MetaOf<A::TriangleStrip>()}
    );
 
    const auto colors = image.GetData<Tags::Color>();
    if (colors) {
       // Create pixel shader texture input with the image view          
-      request << Traits::Input {
-         Traits::Image {Rate::Pixel, image.GetView()}
+      request << Tags::Input {
+         Tags::Image {Rate::Pixel, image.GetView()}
       };
    }
 
@@ -387,7 +387,7 @@ Construct VulkanPipeline::FromCode(Text const& code) {
    // We use the code to define a material generator, which we later    
    // use to initialize this pipeline                                   
    auto request = Construct::From<Things::Material>(
-      Traits::Topology {MetaOf<A::TriangleStrip>()},
+      Tags::Topology {MetaOf<A::TriangleStrip>()},
       code
    );
 
@@ -397,7 +397,7 @@ Construct VulkanPipeline::FromCode(Text const& code) {
 /// Use material generator to generate all shader stages as GLSL              
 ///   @param material - the content to use                                    
 void VulkanPipeline::GenerateShaders(Things::Material const& material) {
-   const auto shaders = material.GetDataList<Traits::Shader>();
+   const auto shaders = material.GetDataList<Tags::Shader>();
    LglsAssert(shaders, "No shaders provided in material");
 
    for (auto stage : *shaders) {
@@ -522,7 +522,7 @@ void VulkanPipeline::CreateUniformBuffers() {
          // Add relevant inputs                                         
          const auto index = RefreshRate(RefreshRate::StaticUniformBegin + rate).GetInputIndex();
          for (auto const& tag : mUniforms[index]) {
-            if (tag.template IsTrait<Traits::Image>())
+            if (tag.template IsTag<Tags::Image>())
                continue;
             ubo.mUniforms.Emplace(IndexBack, 0, tag);
          }
@@ -563,7 +563,7 @@ void VulkanPipeline::CreateUniformBuffers() {
          // Add relevant inputs                                         
          const auto index = RefreshRate(RefreshRate::DynamicUniformBegin + rate).GetInputIndex();
          for (auto const& tag : mUniforms[index]) {
-            if (tag.template IsTrait<Traits::Image>())
+            if (tag.template IsTag<Tags::Image>())
                continue;
             ubo.mUniforms.Emplace(IndexBack, 0, tag);
          }
@@ -601,7 +601,7 @@ void VulkanPipeline::CreateUniformBuffers() {
       // Add relevant inputs                                            
       SamplerUBO ubo;
       for (auto const& tag : mUniforms[Rate::Renderable.GetInputIndex()]) {
-         if (not tag.template IsTrait<Traits::Image>())
+         if (not tag.template IsTag<Tags::Image>())
             continue;
          ubo.mUniforms.Emplace(IndexBack, 0, tag);
       }

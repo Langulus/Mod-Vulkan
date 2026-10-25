@@ -14,8 +14,8 @@
 ///   @param producer the renderer producer                                   
 ///   @param descriptor the renderer descriptor                               
 VulkanRenderer::VulkanRenderer(Vulkan* producer, Describe descriptor)
-   : /*Resolvable   {this}
-   ,*/ ProducedFrom {producer, descriptor}
+   : Resolvable   {this}
+   , ProducedFrom {producer, descriptor}
    , mSwapchain   {*this} {
    VERBOSE_VULKAN("Initializing...");
 
@@ -88,7 +88,7 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, Describe descriptor)
    }
 
    if (mGraphicIndex != mPresentIndex) {
-      Logger::Warning(Self(),
+      Logger::Warning(this,
          "Performance warning: graphics and present queues are on separate devices. "
          "This means that one device might need to wait for the other to complete buffer copy operations");
    }
@@ -101,7 +101,7 @@ VulkanRenderer::VulkanRenderer(Vulkan* producer, Describe descriptor)
       );
    }
    else if (mTransferIndex == mGraphicIndex or mTransferIndex == mPresentIndex) {
-      Logger::Warning(Self(),
+      Logger::Warning(this,
          "Performance warning: you do not have a dedicated memory transfer queue. "
          "This means that VRAM copy operations might wait for other GPU operations to finish first");
    }
@@ -281,7 +281,7 @@ VulkanRenderer::~VulkanRenderer() {
 void VulkanRenderer::Refresh() {
    // Resize swapchain from the environment                             
    const Scale2 previousResolution = *mResolution;
-   if (not SeekValue<Traits::Size>(mResolution))
+   if (not SeekValue<Tags::Size>(mResolution))
       mResolution = mWindow->GetSize();
 
    if (*mResolution != previousResolution) {
@@ -290,9 +290,9 @@ void VulkanRenderer::Refresh() {
    }
 
    // Refresh time and mouse properties                                 
-   SeekValue<Traits::Time>(mTime);
-   SeekValue<Traits::MousePosition>(mMousePosition);
-   SeekValue<Traits::MouseScroll>(mMouseScroll);
+   SeekValue<Tags::Time>(mTime);
+   SeekValue<Tags::MousePosition>(mMousePosition);
+   SeekValue<Tags::MouseScroll>(mMouseScroll);
 }
 
 /// Introduce renderables, cameras, lights, shaders, textures, geometry       
@@ -337,11 +337,11 @@ void VulkanRenderer::Draw() {
    // Upload any uniform buffer changes to VRAM                         
    // Once this data is uploaded, we're free to prepare the next frame  
    for (auto pipe : relevantPipes) {
-      pipe->SetUniform<Rate::Tick, Traits::Time>(
+      pipe->SetUniform<Rate::Tick, Tags::Time>(
          mTime->Current());
-      pipe->SetUniform<Rate::Tick, Traits::MousePosition>(
+      pipe->SetUniform<Rate::Tick, Tags::MousePosition>(
          mMousePosition->Current());
-      pipe->SetUniform<Rate::Tick, Traits::MouseScroll>(
+      pipe->SetUniform<Rate::Tick, Tags::MouseScroll>(
          mMouseScroll->Current());
       pipe->UpdateUniformBuffers();
    }

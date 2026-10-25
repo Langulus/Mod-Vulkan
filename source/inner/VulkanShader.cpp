@@ -10,7 +10,7 @@
 #include <shaderc/shaderc.hpp>
 
 #if 0
-   #define VERBOSE_SHADER(...) Logger::Verbose(Self(), __VA_ARGS__)
+   #define VERBOSE_SHADER(...) Logger::Verbose(this, __VA_ARGS__)
 #else
    #define VERBOSE_SHADER(...) LANGULUS(NOOP)
 #endif
@@ -42,7 +42,7 @@ VulkanShader::VulkanShader(VulkanRenderer* producer, Describe descriptor)
       },
       [this](const Things::Material* material) {
          // Access input mappings                                       
-         const auto uniforms = material->template GetDataList<Traits::Trait>();
+         const auto uniforms = material->template GetDataList<Tags::Trait>();
          if (uniforms and not *uniforms) {
             // Add relevant inputs                                      
             const auto index = RefreshRate(RefreshRate::StagesBegin + mStage).GetInputIndex();
@@ -104,9 +104,9 @@ const Shader& VulkanShader::Compile() const {
    );
 
    if (assembly.GetCompilationStatus() != shaderc_compilation_status_success) {
-      Logger::Error(Self(), "Shader Compilation Error: ", assembly.GetErrorMessage());
-      Logger::Error(Self(), "For shader:");
-      Logger::Error(Self(), mCode);
+      Logger::Error(this, ": Shader Compilation Error: ", assembly.GetErrorMessage());
+      Logger::Error(this, ": For shader:");
+      Logger::Error(this, mCode);
       LANGULUS_THROW(Graphics, "Shader compilation failed");
    }
 
