@@ -28,7 +28,7 @@ void VulkanMemory::Initialize(VkPhysicalDevice adapter, VkDevice logicalDevice, 
    poolInfo.queueFamilyIndex = transferIndex;
    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
    if (vkCreateCommandPool(mDevice, &poolInfo, nullptr, &mTransferPool))
-      LANGULUS_THROW(Graphics, "Can't create command pool for transferring");
+      throw Exception("Can't create command pool for transferring");
 
    // Create dedicated transfer command buffer                          
    VkCommandBufferAllocateInfo allocInfo {};
@@ -88,7 +88,7 @@ bool VulkanMemory::CheckFormatSupport(VkFormat f, VkImageTiling t, VkFormatFeatu
 VulkanImage VulkanMemory::CreateImage(const ImageView& view, VkImageUsageFlags flags) const {
    // Precheck some simple constraints                                  
    if (!view.mFormat || (view.mWidth * view.mHeight * view.mDepth * view.mFrames == 0))
-      LANGULUS_THROW(Graphics, "Wrong texture descriptor");
+      throw Exception("Wrong texture descriptor");
 
    // Check if image format is supported, perform conversion if possible
    constexpr auto features = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
@@ -139,14 +139,14 @@ VulkanImage VulkanMemory::CreateImage(const ImageView& view, VkImageUsageFlags f
             imageFormat = VK_FORMAT_R64G64B64A64_SFLOAT;
             break;
          default:
-            LANGULUS_THROW(Graphics, "Unsupported texture format");
+            throw Exception("Unsupported texture format");
          }
 
          usingOptimalTiling = true;
 
          if (!CheckFormatSupport(imageFormat, VK_IMAGE_TILING_OPTIMAL, features)) {
             if (!CheckFormatSupport(imageFormat, VK_IMAGE_TILING_LINEAR, features))
-               LANGULUS_THROW(Graphics, "Unsupported texture format");
+               throw Exception("Unsupported texture format");
             else
                usingOptimalTiling = false;
          }
@@ -197,7 +197,7 @@ VulkanImage VulkanMemory::CreateImage(const ImageView& view, VkImageUsageFlags f
 
    if (vkAllocateMemory(mDevice, &allocInfo, nullptr, &image.mMemory.Get())) {
       vkDestroyImage(mDevice, image.mBuffer, nullptr);
-      LANGULUS_THROW(Graphics, "Couldn't allocate VRAM");
+      throw Exception("Couldn't allocate VRAM");
    }
 
    // Bind memory with the image                                        
@@ -242,7 +242,7 @@ VkImageView VulkanMemory::CreateImageView(const VkImage& image, const ImageView&
       viewInfo.viewType = VK_IMAGE_VIEW_TYPE_3D;
       break;
    default:
-      LANGULUS_THROW(Graphics, "Wrong number of dimensions");
+      throw Exception("Wrong number of dimensions");
    }
    viewInfo.format = AsVkFormat(view.mFormat, view.mReverseFormat);
    viewInfo.subresourceRange.aspectMask = flags;
@@ -251,7 +251,7 @@ VkImageView VulkanMemory::CreateImageView(const VkImage& image, const ImageView&
 
    VkImageView imageView {};
    if (vkCreateImageView(mDevice, &viewInfo, nullptr, &imageView))
-      LANGULUS_THROW(Graphics, "vkCreateImageView failed");
+      throw Exception("vkCreateImageView failed");
 
    return imageView;
 }
@@ -286,7 +286,7 @@ uint32_t VulkanMemory::ChooseMemory(uint32_t type, VkMemoryPropertyFlags propert
    }
 
    // Error occured                                                     
-   LANGULUS_THROW(Graphics, "Failed to choose suitable memory type");
+   throw Exception("Failed to choose suitable memory type");
 }
 
 /// Create a buffer                                                           
@@ -305,7 +305,7 @@ VulkanBuffer VulkanMemory::CreateBuffer(DMeta meta, VkDeviceSize size, VkBufferU
    bufferInfo.usage = usage;
    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
    if (vkCreateBuffer(mDevice, &bufferInfo, nullptr, &result.mBuffer.Get()))
-      LANGULUS_THROW(Graphics, "Can't create VRAM buffer");
+      throw Exception("Can't create VRAM buffer");
 
    // Get memory requirements                                           
    VkMemoryRequirements memRequirements;
@@ -318,7 +318,7 @@ VulkanBuffer VulkanMemory::CreateBuffer(DMeta meta, VkDeviceSize size, VkBufferU
    allocInfo.memoryTypeIndex = ChooseMemory(memRequirements.memoryTypeBits, properties);
    if (vkAllocateMemory(mDevice, &allocInfo, nullptr, &result.mMemory.Get())) {
       vkDestroyBuffer(mDevice, result.mBuffer, nullptr);
-      LANGULUS_THROW(Graphics, "Can't create VRAM buffer");
+      throw Exception("Can't create VRAM buffer");
    }
 
    // Associate memory with the buffer                                  
@@ -388,7 +388,7 @@ void VulkanMemory::ImageTransfer(const VkImage& img, VkImageLayout from, VkImage
          destinationStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
          barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
       }
-      else LANGULUS_THROW(Graphics, "Unsupported layout transition");
+      else throw Exception("Unsupported layout transition");
    }
    else if (
       from == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && 
@@ -416,7 +416,7 @@ void VulkanMemory::ImageTransfer(const VkImage& img, VkImageLayout from, VkImage
          destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
          barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
       }
-      else LANGULUS_THROW(Graphics, "Unsupported layout transition");
+      else throw Exception("Unsupported layout transition");
    }
    else if (from == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
       if (to == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
@@ -436,7 +436,7 @@ void VulkanMemory::ImageTransfer(const VkImage& img, VkImageLayout from, VkImage
          destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
          barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
       }
-      else LANGULUS_THROW(Graphics, "Unsupported layout transition");
+      else throw Exception("Unsupported layout transition");
    }
    else if (from == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) {
       if (to == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
@@ -447,9 +447,9 @@ void VulkanMemory::ImageTransfer(const VkImage& img, VkImageLayout from, VkImage
          destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
          barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
       }
-      else LANGULUS_THROW(Graphics, "Unsupported layout transition");
+      else throw Exception("Unsupported layout transition");
    }
-   else LANGULUS_THROW(Graphics, "Unsupported layout transition");
+   else throw Exception("Unsupported layout transition");
    
    // Create the barrier                                                
    vkCmdPipelineBarrier(mTransferBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
@@ -481,12 +481,12 @@ VulkanBuffer VulkanMemory::Upload(const Block<>& memory, VkBufferUsageFlags usag
    );
 
    if (!stager.IsValid())
-      LANGULUS_THROW(Graphics, "Error creating VRAM vertex buffer for staging");
+      throw Exception("Error creating VRAM vertex buffer for staging");
 
    // Copy data to staging buffer                                       
    if (!stager.Upload(0, bytesize, memory.GetRaw())) {
       DestroyBuffer(stager);
-      LANGULUS_THROW(Graphics, "Error uploading VRAM vertex buffer");
+      throw Exception("Error uploading VRAM vertex buffer");
    }
 
    auto final = CreateBuffer(
@@ -497,7 +497,7 @@ VulkanBuffer VulkanMemory::Upload(const Block<>& memory, VkBufferUsageFlags usag
 
    if (!final.IsValid()) {
       DestroyBuffer(stager);
-      LANGULUS_THROW(Graphics, "Error creating VRAM vertex buffer");
+      throw Exception("Error creating VRAM vertex buffer");
    }
 
    // Copy data to VRAM                                                 

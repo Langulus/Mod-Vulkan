@@ -202,7 +202,7 @@ void VulkanTexture::Upload(Things::Image const& content) {
    samplerInfo.maxLod = 0.0f;
 
    if (vkCreateSampler(mProducer->mDevice, &samplerInfo, nullptr, &mSampler.Get()))
-      LANGULUS_THROW(Graphics, "Can't create vulkan sampler");
+      throw Exception("Can't create vulkan sampler");
 
    VERBOSE_VKTEXTURE(Logger::Green, "Data uploaded in VRAM for ",
       SteadyClock::now() - startTime);

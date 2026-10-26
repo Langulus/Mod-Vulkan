@@ -107,7 +107,7 @@ const Shader& VulkanShader::Compile() const {
       Logger::Error(this, ": Shader Compilation Error: ", assembly.GetErrorMessage());
       Logger::Error(this, ": For shader:");
       Logger::Error(this, mCode);
-      LANGULUS_THROW(Graphics, "Shader compilation failed");
+      throw Exception("Shader compilation failed");
    }
 
    // Create the vulkan shader module                                   
@@ -118,7 +118,7 @@ const Shader& VulkanShader::Compile() const {
 
    VkShaderModule shaderModule;
    if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
-      LANGULUS_THROW(Graphics, "vkCreateShaderModule failed");
+      throw Exception("vkCreateShaderModule failed");
 
    // Create the shader stage                                           
    mStageDescription = {};
@@ -178,7 +178,7 @@ void VulkanShader::AddInput(const Trait& input) {
       vkt = AsVkFormat(inputBase.mType);
    
    if (vkt == VK_FORMAT_UNDEFINED)
-      LANGULUS_THROW(Graphics, "Unsupported base for shader attribute");
+      throw Exception("Unsupported base for shader attribute");
 
    // Then create the input bindings and attributes                     
    VertexBinding bindingDescription {};
