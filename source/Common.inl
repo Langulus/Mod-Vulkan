@@ -315,25 +315,25 @@ inline RGBAf AnyColorToVector(const Many& color) {
    // Get the values (and normalize them if we have to)                 
    RGBAf result;
    if (rChannel) {
-      result[0] = rChannel.AsCast<Real>();
+      result[0] = rChannel.As<Real>();
       if (rChannel.CastsTo<A::Integer>())
          result[0] /= 255.0f;
    }
    
    if (gChannel) {
-      result[1] = gChannel.AsCast<Real>();
+      result[1] = gChannel.As<Real>();
       if (gChannel.CastsTo<A::Integer>())
          result[1] /= 255.0f;
    }
 
    if (bChannel) {
-      result[2] = bChannel.AsCast<Real>();
+      result[2] = bChannel.As<Real>();
       if (bChannel.CastsTo<A::Integer>())
          result[2] /= 255.0f;
    }
 
    if (aChannel) {
-      result[3] = aChannel.AsCast<Real>();
+      result[3] = aChannel.As<Real>();
       if (aChannel.CastsTo<A::Integer>())
          result[3] /= 255.0f;
    }
