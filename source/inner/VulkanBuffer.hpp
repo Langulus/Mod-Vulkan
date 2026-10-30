@@ -69,11 +69,11 @@ protected:
    VkImageCreateInfo mInfo {};
 
 public:
-   static VulkanImage FromSwapchain(const VkDevice&, const VkImage&, const ImageView&) noexcept;
+   static VulkanImage FromSwapchain(const VkDevice&, const VkImage&, ImageView const&) noexcept;
 
    NOD() bool IsValid() const noexcept;
    void Reset() noexcept;
-   NOD() const ImageView& GetView() const noexcept;
+   NOD() ImageView const& GetView() const noexcept;
    NOD() VkImage GetImage() const noexcept;
    NOD() const VkImageCreateInfo& GetImageCreateInfo() const noexcept;
 };

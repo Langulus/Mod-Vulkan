@@ -85,7 +85,7 @@ bool VulkanMemory::CheckFormatSupport(VkFormat f, VkImageTiling t, VkFormatFeatu
 ///   @param view - image view                                                
 ///   @param flags - image usage flags                                        
 ///   @return an image buffer instance                                        
-VulkanImage VulkanMemory::CreateImage(const ImageView& view, VkImageUsageFlags flags) const {
+VulkanImage VulkanMemory::CreateImage(ImageView const& view, VkImageUsageFlags flags) const {
    // Precheck some simple constraints                                  
    if (!view.mFormat || (view.mWidth * view.mHeight * view.mDepth * view.mFrames == 0))
       throw Exception("Wrong texture descriptor");
@@ -223,7 +223,7 @@ void VulkanMemory::DestroyImage(VulkanImage& buffer) const {
 ///   @param view - pc image view                                             
 ///   @param aspectFlags - image aspect                                       
 ///   @return the image view                                                  
-VkImageView VulkanMemory::CreateImageView(const VkImage& image, const ImageView& view, VkImageAspectFlags flags) {
+VkImageView VulkanMemory::CreateImageView(const VkImage& image, ImageView const& view, VkImageAspectFlags flags) {
    VkImageViewCreateInfo viewInfo {};
    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
    viewInfo.image = image;

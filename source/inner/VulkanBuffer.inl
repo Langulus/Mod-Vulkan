@@ -76,7 +76,7 @@ const VkBuffer& VulkanBuffer::GetBuffer() const noexcept {
 ///   @param view - the image view                                            
 ///   @return the wrapped vulkan image                                        
 LANGULUS(INLINED)
-VulkanImage VulkanImage::FromSwapchain(const VkDevice& device, const VkImage& image, const ImageView& view) noexcept {
+VulkanImage VulkanImage::FromSwapchain(const VkDevice& device, const VkImage& image, ImageView const& view) noexcept {
    VulkanImage result;
    result.mDevice = device;
    result.mBuffer = image;
@@ -102,7 +102,7 @@ void VulkanImage::Reset() noexcept {
 /// Get the texture view                                                      
 ///   @return a reference to the view                                         
 LANGULUS(INLINED)
-const ImageView& VulkanImage::GetView() const noexcept {
+ImageView const& VulkanImage::GetView() const noexcept {
    return mView;
 }
 

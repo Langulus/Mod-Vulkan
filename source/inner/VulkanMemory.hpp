@@ -38,11 +38,11 @@ public:
    VulkanBuffer CreateBuffer(DMeta, VkDeviceSize, VkBufferUsageFlags, VkMemoryPropertyFlags) const;
    void DestroyBuffer(VulkanBuffer&) const;
 
-   VulkanImage CreateImage(const ImageView&, VkImageUsageFlags) const;
+   VulkanImage CreateImage(ImageView const&, VkImageUsageFlags) const;
    void DestroyImage(VulkanImage&) const;
 
-   VkImageView CreateImageView(const VkImage&, const ImageView&, VkImageAspectFlags);
-   VkImageView CreateImageView(const VulkanImage&, const ImageView&, VkImageAspectFlags);
+   VkImageView CreateImageView(const VkImage&, ImageView const&, VkImageAspectFlags);
+   VkImageView CreateImageView(const VulkanImage&, ImageView const&, VkImageAspectFlags);
    VkImageView CreateImageView(const VulkanImage&);
 
    void ImageTransfer(const VulkanImage&, VkImageLayout from, VkImageLayout to);
