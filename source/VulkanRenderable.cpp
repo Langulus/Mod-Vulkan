@@ -10,10 +10,10 @@
 
 
 /// Descriptor constructor                                                    
-///   @param producer - the renderable producer                               
-///   @param descriptor - the renderable descriptor                           
+///   @param producer the renderable producer                                 
+///   @param descriptor the renderable descriptor                             
 VulkanRenderable::VulkanRenderable(VulkanLayer* producer, Describe descriptor)
-   : Downcastable   {this} 
+   : Downcastable {this} 
    , ProducedFrom {producer, descriptor} {
    VERBOSE_VULKAN("Initializing...");
    Couple(descriptor);
@@ -48,7 +48,7 @@ VulkanRenderer* VulkanRenderable::GetRenderer() const noexcept {
 
 /// Get VRAM geometry corresponding to an octave of this renderable           
 /// This is the point where content might be generated upon request           
-///   @param lod - information used to extract the best LOD                   
+///   @param lod information used to extract the best LOD                     
 ///   @return the VRAM geometry or nullptr if content is not available        
 VulkanGeometry* VulkanRenderable::GetGeometry(LOD const& lod) const {
    const auto i = lod.GetAbsoluteIndex();
@@ -66,7 +66,7 @@ VulkanGeometry* VulkanRenderable::GetGeometry(LOD const& lod) const {
 
 /// Get VRAM texture corresponding to an octave of this renderable            
 /// This is the point where content might be generated upon request           
-///   @param lod - information used to extract the best LOD                   
+///   @param lod information used to extract the best LOD                     
 ///   @return the VRAM texture or nullptr if content is not available         
 VulkanTexture* VulkanRenderable::GetTexture(LOD const& lod) const {
    const auto i = lod.GetAbsoluteIndex();
@@ -83,11 +83,11 @@ VulkanTexture* VulkanRenderable::GetTexture(LOD const& lod) const {
 }
 
 /// Create GPU pipeline able to utilize geometry, textures and shaders        
-///   @param lod - information used to extract the best LOD                   
-///   @param layer - additional settings might be provided by the used layer  
+///   @param lod information used to extract the best LOD                     
+///   @param layer additional settings might be provided by the used layer    
 ///   @return the pipeline                                                    
 VulkanPipeline* VulkanRenderable::GetOrCreatePipeline(
-   LOD const& lod, const VulkanLayer* layer
+   LOD const& lod, VulkanLayer const* layer
 ) const {
    // Always return the predefined pipeline if available                
    if (mPredefinedPipeline)

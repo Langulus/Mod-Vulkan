@@ -11,10 +11,9 @@
 
 ///                                                                           
 ///   Vulkan shader                                                           
-///                                                                           
 struct VulkanShader : Things::Graphics, ProducedFrom<VulkanRenderer> {
-   using CTTI_Abstract = No;
-   LANGULUS_BASES(Things::Graphics);
+   using CTTI_Abstract  = No;
+   using CTTI_Bases     = Things::Graphics;
 
 private:
    std::vector<VertexBinding> mBindings;
@@ -35,8 +34,8 @@ public:
    VulkanShader(VulkanRenderer*, Describe);
    ~VulkanShader();
 
-   NOD() RefreshRate GetRate() const noexcept;
-   NOD() VertexInput CreateVertexInputState() const noexcept;
+   RefreshRate GetRate() const noexcept;
+   VertexInput CreateVertexInputState() const noexcept;
 
    const Shader& Compile() const;
    void AddInput(const Trait&);

@@ -44,12 +44,11 @@ using PipelineSet = TUnorderedSet<VulkanPipeline*>;
 ///                                                                           
 /// A logical group of cameras, renderables, and lights, isolated from other  
 /// layers. Useful for capsulating a GUI, for example.                        
-///                                                                           
 struct VulkanLayer : Things::Layer, ProducedFrom<VulkanRenderer> {
-   using CTTI_Abstract = No;
-   using CTTI_Producer = VulkanRenderer;
-   LANGULUS_BASES(Things::Layer);
-   LANGULUS_VERBS(Verbs::Create);
+   using CTTI_Abstract  = No;
+   using CTTI_Producer  = VulkanRenderer;
+   using CTTI_Bases     = Things::Layer;
+   using CTTI_Ability   = Verbs::Create;
 
 protected:
    friend struct VulkanCamera;
@@ -123,21 +122,21 @@ public:
 
    void Create(Verb&);
    bool Generate(PipelineSet&);
-   void Render(const RenderConfig&) const;
+   void Render(RenderConfig const&) const;
    void Detach();
 
    NOD() Style GetStyle() const noexcept;
-   NOD() const Things::Window* GetWindow() const noexcept;
+   NOD() Things::Window const* GetWindow() const noexcept;
 
 private:
    void CompileCameras();
 
-   Count CompileLevelBatched(const Mat4&, const Mat4&, Level, PipelineSet&);
-   Count CompileLevelHierarchical(const Mat4&, const Mat4&, Level, PipelineSet&);
+   Count CompileLevelBatched(Mat4 const&, Mat4 const&, Level, PipelineSet&);
+   Count CompileLevelHierarchical(Mat4 const&, Mat4 const&, Level, PipelineSet&);
    Count CompileThing(Thing const*, LOD&, PipelineSet&);
-   NOD() VulkanPipeline* CompileInstance(const VulkanRenderable*, const Things::Instance*, LOD&);
+   NOD() VulkanPipeline* CompileInstance(VulkanRenderable const*, Things::Instance const*, LOD&);
    Count CompileLevels();
 
-   void RenderBatched(const RenderConfig&) const;
-   void RenderHierarchical(const RenderConfig&) const;
+   void RenderBatched(RenderConfig const&) const;
+   void RenderHierarchical(RenderConfig const&) const;
 };

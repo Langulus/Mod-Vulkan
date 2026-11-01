@@ -14,9 +14,8 @@
 
 ///                                                                           
 ///   Pipeline subscriber                                                     
-///                                                                           
 struct PipeSubscriber {
-   uint32_t offsets[RefreshRate::DynamicUniformCount] {};
+   uint32_t offsets[RRate::DynamicUniformCount] {};
    uint32_t samplerSet {};
    uint32_t geometrySet {};
 };
@@ -24,20 +23,19 @@ struct PipeSubscriber {
 
 ///                                                                           
 ///   Vulkan pipeline                                                         
-///                                                                           
 struct VulkanPipeline : Things::Graphics, ProducedFrom<VulkanRenderer> {
-   using CTTI_Abstract = No;
-   LANGULUS_BASES(Things::Graphics);
+   using CTTI_Abstract  = No;
+   using CTTI_Bases     = Things::Graphics;
 
 private:
    using Bindings = TMany<VkDescriptorSetLayoutBinding>;
 
-   void CreateDescriptorLayoutAndSet(const Bindings&, UBOLayout*, VkDescriptorSet*);
+   void CreateDescriptorLayoutAndSet(Bindings const&, UBOLayout*, VkDescriptorSet*);
    void CreateUniformBuffers();
    void CreateNewSamplerSet();
    void CreateNewGeometrySet();
 
-   TMany<TMany<Trait>> mUniforms;
+   TMany<TMany<Tag>> mUniforms;
 
    // Shaders                                                           
    Ref<const VulkanShader> mStages[ShaderStage::Counter];
@@ -91,17 +89,17 @@ public:
    VulkanPipeline(VulkanRenderer*, Describe);
    ~VulkanPipeline();
 
-   NOD() Count RenderLevel(const Offset&) const;
-   void RenderSubscriber(const PipeSubscriber&) const;
+   Count RenderLevel(const Offset&) const;
+   void RenderSubscriber(PipeSubscriber const&) const;
    void ResetUniforms();
 
    /// Set any kind of uniform                                                
-   ///   @tparam RATE - the rate of the tag to set                          
-   ///   @tparam TRAIT - the tag to set                                     
-   ///   @tparam DATA - the data to set                                       
-   ///   @param value - the value to use                                      
-   ///   @param index - the index of the uniform of this kind                 
-   ///                  used as ID only when setting a texture                
+   ///   @tparam RATE the rate of the tag to set                              
+   ///   @tparam TRAIT the tag to set                                         
+   ///   @tparam DATA the data to set                                         
+   ///   @param value the value to use                                        
+   ///   @param index the index of the uniform of this kind                   
+   ///                used as ID only when setting a texture                  
    template<RefreshRate RATE, CT::Trait TRAIT, CT::Data DATA>
    void SetUniform(const DATA& value, Offset index = 0) {
       if constexpr (Same<DATA, VulkanTexture>) {
@@ -132,11 +130,11 @@ public:
    }
 
    /// Push the current samplers and dynamic uniforms, advancing indices      
-   ///   @tparam RATE - the rate to push                                      
-   ///   @tparam SUBSCRIBE - whether or not to subscribe for batched draw     
+   ///   @tparam RATE the rate to push                                        
+   ///   @tparam SUBSCRIBE whether or not to subscribe for batched draw       
    ///   @return the subscriber, if SUBSCRIBE is true and RATE is dynamic     
    template<RefreshRate RATE, bool SUBSCRIBE = true>
-   NOD() auto PushUniforms() {
+   auto PushUniforms() {
       if constexpr (RATE.IsStaticUniform()) {
          // Pushing static uniforms does nothing                        
          IF_SAFE(Logger::Warning(
@@ -179,7 +177,7 @@ public:
    ///   @param RATE - the rate to convert                                    
    ///   @return the relevant UBO index                                       
    template<RefreshRate RATE>
-   NOD() auto GetRelevantDynamicUBOIndexOfRate() const noexcept {
+   auto GetRelevantDynamicUBOIndexOfRate() const noexcept {
       constexpr auto r = RATE.GetDynamicUniformIndex();
       Offset rtoi = 0;
       for (Offset s = 0; s < r; ++s) {

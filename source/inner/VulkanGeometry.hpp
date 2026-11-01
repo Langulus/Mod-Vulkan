@@ -15,15 +15,14 @@
 ///                                                                           
 /// Can convert RAM content to VRAM vertex/index buffers, by copying the      
 /// contents to the GPU                                                       
-///                                                                           
 struct VulkanGeometry : Things::Graphics, ProducedFrom<VulkanRenderer> {
-   using CTTI_Abstract = No;
-   LANGULUS_BASES(Things::Graphics);
+   using CTTI_Abstract  = No;
+   using CTTI_Bases     = Things::Graphics;
 
 private:
    // Vertex info                                                       
    MeshView mView;
-   DMeta mTopology {};
+   DMeta mTopology;
 
    // The buffers                                                       
    std::vector<VulkanBuffer> mVBuffers;

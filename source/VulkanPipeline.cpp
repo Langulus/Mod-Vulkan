@@ -9,10 +9,10 @@
 
 
 /// Descriptor constructor                                                    
-///   @param producer - the pipeline producer                                 
-///   @param descriptor - the pipeline descriptor                             
+///   @param producer the pipeline producer                                   
+///   @param descriptor the pipeline descriptor                               
 VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, Describe descriptor)
-   : Downcastable   {this}
+   : Downcastable {this}
    , ProducedFrom {producer, descriptor} {
    VERBOSE_VULKAN("Initializing graphics pipeline from: ", descriptor);
    mSubscribers.New();
@@ -286,7 +286,7 @@ VulkanPipeline::~VulkanPipeline() {
 }
 
 /// Create a pipeline from a file                                             
-///   @param file - the file interface                                        
+///   @param file the file interface                                          
 Construct VulkanPipeline::FromFile(Things::File const& file) {
    try {
       // Check if file is a text file, and attempt using it             
@@ -299,7 +299,7 @@ Construct VulkanPipeline::FromFile(Things::File const& file) {
 
 /// Create a pipeline capable of rendering a mesh                             
 ///   @attention geometry will be generated, in order to access data types    
-///   @param mesh - the mesh content generator                                
+///   @param mesh the mesh content generator                                  
 Construct VulkanPipeline::FromMesh(Things::Mesh const& mesh) {
    // We use the geometry's properties to define a material             
    // generator, which we later use to initialize this pipeline         
@@ -362,7 +362,7 @@ Construct VulkanPipeline::FromMesh(Things::Mesh const& mesh) {
 
 /// Create a pipeline capable of rendering an image                           
 ///   @attention image will be generated, in order to access data types       
-///   @param image - the image content generator                              
+///   @param image the image content generator                                
 Construct VulkanPipeline::FromImage(Things::Image const& image) {
    // We use the image's properties to define a material                
    // generator, which we later use to initialize this pipeline         
@@ -382,7 +382,7 @@ Construct VulkanPipeline::FromImage(Things::Image const& image) {
 }
 
 /// Initialize the pipeline from any code                                     
-///   @param code - the shader code                                           
+///   @param code the shader code                                             
 Construct VulkanPipeline::FromCode(Text const& code) {
    // We use the code to define a material generator, which we later    
    // use to initialize this pipeline                                   
@@ -395,7 +395,7 @@ Construct VulkanPipeline::FromCode(Text const& code) {
 }
 
 /// Use material generator to generate all shader stages as GLSL              
-///   @param material - the content to use                                    
+///   @param material the content to use                                      
 void VulkanPipeline::GenerateShaders(Things::Material const& material) {
    const auto shaders = material.GetDataList<Tags::Shader>();
    LglsAssert(shaders, "No shaders provided in material");
@@ -410,11 +410,11 @@ void VulkanPipeline::GenerateShaders(Things::Material const& material) {
 }
 
 /// Create a UBO descriptor set                                               
-///   @param bindings - the bindings to combine in a single layout            
-///   @param layout - [out] the resulting layout                              
-///   @param set - [out] the resulting set                                    
+///   @param bindings the bindings to combine in a single layout              
+///   @param layout [out] the resulting layout                                
+///   @param set [out] the resulting set                                      
 void VulkanPipeline::CreateDescriptorLayoutAndSet(
-   const Bindings& bindings, UBOLayout* layout, VkDescriptorSet* set
+   Bindings const& bindings, UBOLayout* layout, VkDescriptorSet* set
 ) {
    const auto device = mProducer->mDevice;
 
@@ -679,7 +679,7 @@ void VulkanPipeline::UpdateUniformBuffers() const {
 }
 
 /// Draw all subscribers of a given level (used in batched rendering)         
-///   @param offset - the subscriber to start from                            
+///   @param offset the subscriber to start from                              
 ///   @return the number of rendered subscribers                              
 Count VulkanPipeline::RenderLevel(const Offset& offset) const {
    // Bind the pipeline                                                 
@@ -754,9 +754,9 @@ Count VulkanPipeline::RenderLevel(const Offset& offset) const {
 }
 
 /// Draw a single subscriber (used in hierarchical drawing)                   
-///   @param sub - the subscriber to render                                   
+///   @param sub the subscriber to render                                     
 ///   @attention sub should contain byte offsets for this pipeline's UBOs     
-void VulkanPipeline::RenderSubscriber(const PipeSubscriber& sub) const {
+void VulkanPipeline::RenderSubscriber(PipeSubscriber const& sub) const {
    // Bind the pipeline                                                 
    vkCmdBindPipeline(
       mProducer->GetRenderCB(), 

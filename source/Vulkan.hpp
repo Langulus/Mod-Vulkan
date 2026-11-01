@@ -14,11 +14,10 @@
 ///                                                                           
 /// Manages and produces renderers. By default, the module itself can convey  
 /// GPU computations, if your hardware has the required capabilities          
-///                                                                           
 struct Vulkan final : Things::GraphicsModule {
-   using CTTI_Abstract = No;
-   LANGULUS_BASES(Things::GraphicsModule);
-   LANGULUS_VERBS(Verbs::Create);
+   using CTTI_Abstract  = No;
+   using CTTI_Bases     = Things::GraphicsModule;
+   using CTTI_Ability   = Verbs::Create;
 
 protected:
    friend struct VulkanRenderer;
@@ -54,11 +53,11 @@ public:
    bool Update(Time);
    void Create(Verb&);
 
-   unsigned RateDevice(const VkPhysicalDevice&) const;
+   unsigned RateDevice(VkPhysicalDevice const&) const;
    VkPhysicalDevice PickAdapter() const;
 
    #if LANGULUS(DEBUG)
-      const TokenSet& GetValidationLayers() const noexcept;
-      void CheckValidationLayerSupport(const TokenSet&) const;
+      TokenSet const& GetValidationLayers() const noexcept;
+      void CheckValidationLayerSupport(TokenSet const&) const;
    #endif
 };

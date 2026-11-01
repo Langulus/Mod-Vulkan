@@ -407,7 +407,7 @@ VkPhysicalDevice VulkanRenderer::GetAdapter() const noexcept {
 
 /// Get the window interface                                                  
 ///   @return the window interface                                            
-const Things::Window* VulkanRenderer::GetWindow() const noexcept {
+Things::Window const* VulkanRenderer::GetWindow() const noexcept {
    return mWindow;
 }
 

@@ -6,15 +6,14 @@
 /// SPDX-License-Identifier: GPL-3.0-or-later                                 
 ///                                                                           
 #pragma once
-#include "Common.hpp"
+#include "Export.hpp"
 
 
 ///                                                                           
 ///   Light source unit                                                       
-///                                                                           
 struct VulkanLight : Things::Graphics, ProducedFrom<VulkanLayer> {
-   using CTTI_Abstract = No;
-   LANGULUS_BASES(Things::Graphics);
+   using CTTI_Abstract  = No;
+   using CTTI_Bases     = Things::Graphics;
 
    VulkanLight(VulkanLayer*, Describe);
 };

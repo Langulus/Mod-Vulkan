@@ -11,10 +11,10 @@
 
 
 /// Descriptor constructor                                                    
-///   @param producer - the camera producer                                   
-///   @param descriptor - the camera descriptor                               
+///   @param producer the camera producer                                     
+///   @param descriptor the camera descriptor                                 
 VulkanLayer::VulkanLayer(VulkanRenderer* producer, Describe descriptor)
-   : Downcastable   {this} 
+   : Downcastable {this} 
    , ProducedFrom {producer, descriptor} {
    VERBOSE_VULKAN("Initializing...");
    Couple(descriptor);
@@ -39,7 +39,7 @@ void VulkanLayer::Detach() {
 }
 
 /// Create/destroy renderables, cameras, lights                               
-///   @param verb - creation verb                                             
+///   @param verb creation verb                                               
 void VulkanLayer::Create(Verb& verb) {
    mCameras.Create(this, verb);
    mRenderables.Create(this, verb);
@@ -47,7 +47,7 @@ void VulkanLayer::Create(Verb& verb) {
 }
 
 /// Generate the draw list for the layer                                      
-///   @param pipelines - [out] a set of all used pipelines                    
+///   @param pipelines [out] a set of all used pipelines                      
 ///   @return true if anything renderable was generated                       
 bool VulkanLayer::Generate(PipelineSet& pipelines) {
    CompileCameras();
@@ -61,14 +61,15 @@ void VulkanLayer::CompileCameras() {
       camera.Compile();
 }
 
-/// Compile a single renderable instance, culling it if able                  
-/// This will create or reuse a pipeline, capable of rendering it             
-///   @param renderable - the renderable to compile                           
-///   @param instance - the instance to compile                               
-///   @param lod - the lod state to use                                       
+/// Compile a single renderable instance, culling it if able.                 
+/// This will create or reuse a pipeline, capable of rendering it.            
+///   @param renderable the renderable to compile                             
+///   @param instance the instance to compile                                 
+///   @param lod the lod state to use                                         
 ///   @return the pipeline if instance is relevant                            
 VulkanPipeline* VulkanLayer::CompileInstance(
-   const VulkanRenderable* renderable, const Things::Instance* instance, LOD& lod
+   VulkanRenderable const* renderable,
+   Things::Instance const* instance, LOD& lod
 ) {
    if (not instance) {
       // No instances, so culling based only on default level           
@@ -110,9 +111,9 @@ VulkanPipeline* VulkanLayer::CompileInstance(
 
 /// Compile an entity and all of its children entities                        
 /// Used only for hierarchical styled layers                                  
-///   @param thing - entity to compile                                        
-///   @param lod - the lod state to use                                       
-///   @param pipesPerCamera - [out] pipelines used by the hierarchy           
+///   @param thing entity to compile                                          
+///   @param lod the lod state to use                                         
+///   @param pipesPerCamera [out] pipelines used by the hierarchy             
 ///   @return 1 if something from the hierarchy was rendered                  
 Count VulkanLayer::CompileThing(Thing const* thing, LOD& lod, PipelineSet& pipesPerCamera) {
    // Iterate all renderables of the entity, which are part of this     
@@ -170,13 +171,13 @@ Count VulkanLayer::CompileThing(Thing const* thing, LOD& lod, PipelineSet& pipes
 }
 
 /// Compile a single level's instances hierarchical style                     
-///   @param view - the camera view matrix                                    
-///   @param projection - the camera projection matrix                        
-///   @param level - the level to compile                                     
-///   @param pipesPerCamera - [out] pipeline set for the current level only   
+///   @param view the camera view matrix                                      
+///   @param projection the camera projection matrix                          
+///   @param level the level to compile                                       
+///   @param pipesPerCamera [out] pipeline set for the current level only     
 ///   @return the number of compiled entities                                 
 Count VulkanLayer::CompileLevelHierarchical(
-   const Mat4& view, const Mat4& projection, 
+   Mat4 const& view, Mat4 const& projection, 
    Level level, PipelineSet& pipesPerCamera
 ) {
    // Construct view and frustum for culling                            
@@ -207,13 +208,13 @@ Count VulkanLayer::CompileLevelHierarchical(
 }
 
 /// Compile a single level's instances batched style                          
-///   @param view - the camera view matrix                                    
-///   @param projection - the camera projection matrix                        
-///   @param level - the level to compile                                     
-///   @param pipesPerCamera - [out] pipeline set for the current level only   
+///   @param view the camera view matrix                                      
+///   @param projection the camera projection matrix                          
+///   @param level the level to compile                                       
+///   @param pipesPerCamera [out] pipeline set for the current level only     
 ///   @return 1 if anything was rendered, zero otherwise                      
 Count VulkanLayer::CompileLevelBatched(
-   const Mat4& view, const Mat4& projection, 
+   Mat4 const& view, Mat4 const& projection, 
    Level level, PipelineSet& pipesPerCamera
 ) {
    // Construct view and frustum   for culling                          
@@ -350,8 +351,8 @@ Count VulkanLayer::CompileLevels() {
 }
 
 /// Render the layer to a specific command buffer and framebuffer             
-///   @param config - where to render to                                      
-void VulkanLayer::Render(const RenderConfig& config) const {
+///   @param config where to render to                                        
+void VulkanLayer::Render(RenderConfig const& config) const {
    if (mStyle & Style::Hierarchical)
       RenderHierarchical(config);
    else
@@ -361,8 +362,8 @@ void VulkanLayer::Render(const RenderConfig& config) const {
 /// Render the layer to a specific command buffer and framebuffer             
 /// This is used only for Batched style layers, and relies on previously      
 /// compiled set of pipelines                                                 
-///   @param config - where to render to                                      
-void VulkanLayer::RenderBatched(const RenderConfig& config) const {
+///   @param config where to render to                                        
+void VulkanLayer::RenderBatched(RenderConfig const& config) const {
    // Iterate all valid cameras                                         
    TMapUnsorted<const VulkanPipeline*, Count> done;
 
@@ -428,8 +429,8 @@ void VulkanLayer::RenderBatched(const RenderConfig& config) const {
 /// Render the layer to a specific command buffer and framebuffer             
 /// This is used only for Hierarchical style layers, and relies on locally    
 /// compiled subscribers, rendering them in their respective order            
-///   @param config - where to render to                                      
-void VulkanLayer::RenderHierarchical(const RenderConfig& config) const {
+///   @param config where to render to                                        
+void VulkanLayer::RenderHierarchical(RenderConfig const& config) const {
    Count subscribersDone = 0;
    auto subscriberCountPerLevel = &mSubscriberCountPerLevel[0];
 
@@ -510,6 +511,6 @@ VulkanLayer::Style VulkanLayer::GetStyle() const noexcept {
 
 /// Get the window of a layer                                                 
 ///   @return the window interface                                            
-const Things::Window* VulkanLayer::GetWindow() const noexcept {
+Things::Window const* VulkanLayer::GetWindow() const noexcept {
    return mProducer->GetWindow();
 }

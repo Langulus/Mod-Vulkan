@@ -6,19 +6,16 @@
 /// SPDX-License-Identifier: GPL-3.0-or-later                                 
 ///                                                                           
 #pragma once
-#include "Common.hpp"
+#include "Export.hpp"
 #include <Langulus/CppAPI/Physical.hpp>
 #include <Math/Range.hpp>
  
-using LevelRange = TRange<Level>;
-
 
 ///                                                                           
 ///   Camera unit                                                             
-///                                                                           
 struct VulkanCamera final : Things::Graphics, ProducedFrom<VulkanLayer> {
-   using CTTI_Abstract = No;
-   LANGULUS_BASES(Things::Graphics);
+   using CTTI_Abstract  = No;
+   using CTTI_Bases     = Things::Graphics;
 
 protected:
    friend struct VulkanLayer;
@@ -39,7 +36,7 @@ protected:
    // Eye separation. Stereo if more/less than zero                     
    Real mEyeSeparation {};
 
-   TMany<const Things::Instance*> mInstances;
+   TMany<Things::Instance const*> mInstances;
    Mat4 mProjectionInverted;
    VkViewport mVulkanViewport {0, 0, 640, 480, 0, 1};
    VkRect2D mVulkanScissor {{0, 0}, {640, 480}};
@@ -50,6 +47,6 @@ public:
 
    void Refresh();
    void Compile();
-   NOD() Mat4 GetViewTransform(LOD const&) const;
-   NOD() Mat4 GetViewTransform(Level const& = {}) const;
+   Mat4 GetViewTransform(LOD const&) const;
+   Mat4 GetViewTransform(Level const& = {}) const;
 };

@@ -36,9 +36,9 @@ LANGULUS_DEFINE_MODULE(
    }
 
    /// Check validation layer support                                         
-   ///   @param layers - the requested layers                                 
+   ///   @param layers the requested layers                                   
    ///   @return true if all required layers are supported                    
-   void Vulkan::CheckValidationLayerSupport(const TokenSet& layers) const {
+   void Vulkan::CheckValidationLayerSupport(TokenSet const& layers) const {
       // Get all validation layers supported                            
       uint32_t layerCount;
       vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
@@ -64,15 +64,15 @@ LANGULUS_DEFINE_MODULE(
 
    /// Get validation layers                                                  
    ///   @return a reference to the available validation layers               
-   const TokenSet& Vulkan::GetValidationLayers() const noexcept {
+   TokenSet const& Vulkan::GetValidationLayers() const noexcept {
       return mValidationLayers;
    }
 #endif
 
 
 /// Vulkan module construction                                                
-///   @param system - the system that owns the module instance                
-///   @param handle - the library handle                                      
+///   @param system the system that owns the module instance                  
+///   @param handle the library handle                                        
 Vulkan::Vulkan(Runtime* runtime, Describe)
    : Downcastable {this}
    , Module     {runtime} {
@@ -305,9 +305,9 @@ Vulkan::~Vulkan() {
 }
 
 /// Rate a graphical adapter                                                  
-///   @param device - the physical adapter to rate                            
+///   @param device the physical adapter to rate                              
 ///   @return the rating                                                      
-unsigned Vulkan::RateDevice(const VkPhysicalDevice& device) const {
+unsigned Vulkan::RateDevice(VkPhysicalDevice const& device) const {
    // Get device properties                                             
    VkPhysicalDeviceProperties deviceProperties;
    vkGetPhysicalDeviceProperties(device, &deviceProperties);
@@ -374,7 +374,7 @@ VkPhysicalDevice Vulkan::PickAdapter() const {
 }
 
 /// Module update routine                                                     
-///   @param dt - time from last update                                       
+///   @param dt time from last update                                         
 bool Vulkan::Update(Time) {
    for (auto& renderer : mRenderers)
       renderer.Draw();
@@ -382,7 +382,7 @@ bool Vulkan::Update(Time) {
 }
 
 /// Create/destroy renderers                                                  
-///   @param verb - the creation/destruction verb                             
+///   @param verb the creation/destruction verb                               
 void Vulkan::Create(Verb& verb) {
    mRenderers.Create(this, verb);
 }

@@ -13,10 +13,9 @@
 ///   VULKAN VRAM TEXTURE                                                     
 ///                                                                           
 /// Handles hardware pixel/voxel buffers                                      
-///                                                                           
 struct VulkanTexture : Things::Graphics, ProducedFrom<VulkanRenderer> {
-   using CTTI_Abstract = No;
-   LANGULUS_BASES(Things::Graphics);
+   using CTTI_Abstract  = No;
+   using CTTI_Bases     = Things::Graphics;
 
 private:
    // Original content texture view                                     

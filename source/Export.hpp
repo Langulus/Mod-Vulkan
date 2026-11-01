@@ -6,14 +6,18 @@
 /// SPDX-License-Identifier: GPL-3.0-or-later                                 
 ///                                                                           
 #pragma once
-#include <Langulus.hpp>
-#include <Math/Color.hpp>
-#include <Langulus/Material.hpp>
+#include <Langulus/CppAPI/Material.hpp>
 #include <Langulus/CppAPI/Graphics.hpp>
 #include <Langulus/CppAPI/Platform.hpp>
+#include <Langulus/Math/Color.hpp>
+#include <Langulus/Math/Level.hpp>
+#include <Langulus/Math/Vector.hpp>
+#include <Langulus/Math/Range.hpp>
 
 using namespace Langulus;
 using namespace Math;
+
+using LevelRange = TRange<TVector<Level, 1>>;
 
 struct Vulkan;
 struct VulkanMemory;
@@ -39,7 +43,6 @@ struct VulkanShader;
 
 ///                                                                           
 ///   Vulkan begins its existence here                                        
-///                                                                           
 #include <vulkan/vulkan_core.h>
 
 using Shader          = VkPipelineShaderStageCreateInfo;
@@ -59,7 +62,7 @@ using QueueFamilies   = TMany<uint32_t>;
 constexpr uint32_t VK_INDEFINITELY = ::std::numeric_limits<uint32_t>::max();
 
 /// These calls must be implemented for each OS individually                  
-bool CreateNativeVulkanSurfaceKHR(const VkInstance&, const Things::Window*, VkSurfaceKHR&);
+bool CreateNativeVulkanSurfaceKHR(const VkInstance&, Things::Window const*, VkSurfaceKHR&);
 
 NOD() auto GetRequiredExtensions() -> TokenSet;
 NOD() auto AsVkIndexType(DMeta) -> VkIndexType;

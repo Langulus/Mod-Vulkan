@@ -15,17 +15,16 @@
 /// Gives things the ability to be drawn to screen. The unit gathers relevant 
 /// graphical resources from the context, and generates a graphical pipeline  
 /// capable of visualizing them                                               
-///                                                                           
 struct VulkanRenderable final : Things::Renderable, ProducedFrom<VulkanLayer> {
-   using CTTI_Abstract = No;
-   using CTTI_Producer = VulkanLayer;
-   LANGULUS_BASES(Things::Renderable);
+   using CTTI_Abstract  = No;
+   using CTTI_Producer  = VulkanLayer;
+   using CTTI_Bases     = Things::Renderable;
 
 protected:
    friend struct VulkanLayer;
 
    // Precompiled instances and levels, updated on Refresh()            
-   TMany<const Things::Instance*> mInstances;
+   TMany<Things::Instance const*> mInstances;
    TRange<Level> mLevelRange;
    Ref<Things::Material> mMaterialContent;
    Ref<Things::Mesh> mGeometryContent;
@@ -43,10 +42,10 @@ public:
    VulkanRenderable(VulkanLayer*, Describe);
    ~VulkanRenderable();
 
-   NOD() VulkanRenderer* GetRenderer() const noexcept;
-   NOD() VulkanGeometry* GetGeometry(LOD const&) const;
-   NOD() VulkanTexture*  GetTexture(LOD const&) const;
-   NOD() VulkanPipeline* GetOrCreatePipeline(LOD const&, const VulkanLayer*) const;
+   auto GetRenderer() const noexcept -> VulkanRenderer*;
+   auto GetGeometry(LOD const&) const -> VulkanGeometry*;
+   auto GetTexture(LOD const&) const -> VulkanTexture*;
+   auto GetOrCreatePipeline(LOD const&, VulkanLayer const*) const -> VulkanPipeline*;
 
    void Refresh();
    void Detach();

@@ -13,10 +13,10 @@
 #include "inner/VulkanTexture.hpp"
 #include "inner/VulkanShader.hpp"
 #include "inner/VulkanSwapchain.hpp"
-#include <Flow/Verbs/Create.hpp>
-#include <Flow/Verbs/Interpret.hpp>
-#include <Math/Gradient.hpp>
-#include <Entity/Pin.hpp>
+#include <Langulus/Verbs/Create.hpp>
+#include <Langulus/Verbs/Interpret.hpp>
+#include <Langulus/Math/Gradient.hpp>
+#include <Langulus/Pin.hpp>
 
 
 ///                                                                           
@@ -24,12 +24,11 @@
 ///                                                                           
 /// Binds with a window and renders to it. Manages framebuffers, VRAM         
 /// contents, and layers                                                      
-///                                                                           
 struct VulkanRenderer : Things::Renderer, ProducedFrom<Vulkan> {
-   using CTTI_Abstract = No;
-   using CTTI_Producer = Vulkan;
-   LANGULUS_BASES(Things::Renderer);
-   LANGULUS_VERBS(Verbs::Create, Verbs::Interpret);
+   using CTTI_Abstract  = No;
+   using CTTI_Producer  = Vulkan;
+   using CTTI_Bases     = Things::Renderer;
+   using CTTI_Abilities = Types<Verbs::Create, Verbs::Interpret>;
 
 protected:
    friend struct UBO;
@@ -117,11 +116,11 @@ public:
 
    void Draw();
 
-   NOD() VkInstance GetVulkanInstance() const noexcept;
-   NOD() VkPhysicalDevice GetAdapter() const noexcept;
-   NOD() const Things::Window* GetWindow() const noexcept;
-   NOD() Offset GetOuterUBOAlignment() const noexcept;
-   NOD() VkCommandBuffer GetRenderCB() const noexcept;
-   NOD() const Scale2& GetResolution() const noexcept;
-   NOD() VkSurfaceKHR GetSurface() const noexcept;
+   VkInstance GetVulkanInstance() const noexcept;
+   VkPhysicalDevice GetAdapter() const noexcept;
+   Things::Window const* GetWindow() const noexcept;
+   Offset GetOuterUBOAlignment() const noexcept;
+   VkCommandBuffer GetRenderCB() const noexcept;
+   const Scale2& GetResolution() const noexcept;
+   VkSurfaceKHR GetSurface() const noexcept;
 };
