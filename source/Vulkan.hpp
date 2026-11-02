@@ -47,17 +47,17 @@ protected:
    #endif
 
 public:
-   Vulkan(Runtime*, Describe);
+   Vulkan(Runtime*, Neat const&);
    ~Vulkan();
 
    bool Update(Time);
    void Create(Verb&);
 
-   unsigned RateDevice(VkPhysicalDevice const&) const;
-   VkPhysicalDevice PickAdapter() const;
+   auto RateDevice(VkPhysicalDevice const&) const -> unsigned;
+   auto PickAdapter() const -> VkPhysicalDevice;
 
    #if LANGULUS(DEBUG)
-      TokenSet const& GetValidationLayers() const noexcept;
+      auto GetValidationLayers() const noexcept -> TokenSet const&;
       void CheckValidationLayerSupport(TokenSet const&) const;
    #endif
 };

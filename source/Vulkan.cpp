@@ -73,9 +73,9 @@ LANGULUS_DEFINE_MODULE(
 /// Vulkan module construction                                                
 ///   @param system the system that owns the module instance                  
 ///   @param handle the library handle                                        
-Vulkan::Vulkan(Runtime* runtime, Describe)
+Vulkan::Vulkan(Runtime* runtime, Neat const&)
    : Downcastable {this}
-   , Module     {runtime} {
+   , Module       {runtime} {
    VERBOSE_VULKAN("Initializing...");
    VkApplicationInfo appInfo {};
    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;

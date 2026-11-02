@@ -16,8 +16,8 @@
 ///   Pipeline subscriber                                                     
 struct PipeSubscriber {
    uint32_t offsets[RRate::DynamicUniformCount] {};
-   uint32_t samplerSet {};
-   uint32_t geometrySet {};
+   uint32_t samplerSet  = 0;
+   uint32_t geometrySet = 0;
 };
 
 
@@ -79,17 +79,17 @@ private:
    TMany<PipeSubscriber> mSubscribers;
    TMany<const VulkanGeometry*> mGeometries;
 
-   static Construct FromFile(Things::File const&);
-   static Construct FromMesh(Things::Mesh const&);
-   static Construct FromImage(Things::Image const&);
-   static Construct FromCode(Text const&);
+   static auto FromFile(Things::File const&) -> Recipe;
+   static auto FromMesh(Things::Mesh const&) -> Recipe;
+   static auto FromImage(Things::Image const&) -> Recipe;
+   static auto FromCode(Text const&) -> Recipe;
    void GenerateShaders(Things::Material const&);
 
 public:
-   VulkanPipeline(VulkanRenderer*, Describe);
+   VulkanPipeline(VulkanRenderer*, Neat const&);
    ~VulkanPipeline();
 
-   Count RenderLevel(const Offset&) const;
+   size_t RenderLevel(size_t) const;
    void RenderSubscriber(PipeSubscriber const&) const;
    void ResetUniforms();
 

@@ -9,10 +9,10 @@
 
 
 /// Descriptor constructor                                                    
-///   @param producer - the camera producer                                   
-///   @param descriptor - the camera descriptor                               
-VulkanCamera::VulkanCamera(VulkanLayer* producer, Describe descriptor)
-   : Downcastable   {this} 
+///   @param producer the camera producer                                     
+///   @param descriptor the camera descriptor                                 
+VulkanCamera::VulkanCamera(VulkanLayer* producer, Neat const& descriptor)
+   : Downcastable {this} 
    , ProducedFrom {producer, descriptor} {
    VERBOSE_VULKAN("Initializing...");
    Couple(descriptor);
@@ -51,7 +51,7 @@ void VulkanCamera::Compile() {
       //                  -Aspect*Y                                     
       //                                                                
       constexpr auto vulkanAdapter = Mat4::Scale(Vec3 {1, -1, -1});
-      mProjection = vulkanAdapter * A::Matrix::PerspectiveFOV(
+      mProjection = vulkanAdapter * Matrix::PerspectiveFOV(
          mFOV, mAspectRatio, mViewport.mMin[2], mViewport.mMax[2]
       );
    }
@@ -67,7 +67,7 @@ void VulkanCamera::Compile() {
       //     v                                                          
       //   +Aspect*Y                                                    
       //                                                                
-      mProjection = A::Matrix::Orthographic(
+      mProjection = Matrix::Orthographic(
          mViewport.mMax[0], mViewport.mMax[1], 
          mViewport.mMin[2], mViewport.mMax[2]
       );
@@ -93,7 +93,7 @@ void VulkanCamera::Refresh() {
 }
 
 /// Get view transformation for a given LOD state                             
-///   @param lod - the level-of-detail state                                  
+///   @param lod the level-of-detail state                                    
 ///   @return the view transformation for the camera                          
 Mat4 VulkanCamera::GetViewTransform(LOD const& lod) const {
    if (not mInstances)
@@ -103,7 +103,7 @@ Mat4 VulkanCamera::GetViewTransform(LOD const& lod) const {
 }
 
 /// Get view transformation for a given level                                 
-///   @param level - the level                                                
+///   @param level the level                                                  
 ///   @return the view transformation for the camera                          
 Mat4 VulkanCamera::GetViewTransform(Level const& level) const {
    if (not mInstances)

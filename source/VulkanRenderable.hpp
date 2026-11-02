@@ -39,7 +39,7 @@ protected:
    } mLOD[LOD::IndexCount];
 
 public:
-   VulkanRenderable(VulkanLayer*, Describe);
+   VulkanRenderable(VulkanLayer*, Neat const&);
    ~VulkanRenderable();
 
    auto GetRenderer() const noexcept -> VulkanRenderer*;

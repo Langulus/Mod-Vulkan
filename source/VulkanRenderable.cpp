@@ -12,7 +12,7 @@
 /// Descriptor constructor                                                    
 ///   @param producer the renderable producer                                 
 ///   @param descriptor the renderable descriptor                             
-VulkanRenderable::VulkanRenderable(VulkanLayer* producer, Describe descriptor)
+VulkanRenderable::VulkanRenderable(VulkanLayer* producer, Neat const& descriptor)
    : Downcastable {this} 
    , ProducedFrom {producer, descriptor} {
    VERBOSE_VULKAN("Initializing...");
@@ -55,7 +55,7 @@ VulkanGeometry* VulkanRenderable::GetGeometry(LOD const& lod) const {
    if (not mLOD[i].mGeometry and mGeometryContent) {
       // Cache geometry to VRAM                                         
       Verbs::Create creator {
-         Construct::From<VulkanGeometry>(mGeometryContent->GetLOD(lod))
+         Recipe::Of<VulkanGeometry>(mGeometryContent->GetLOD(lod))
       };
       mProducer->Create(creator);
       mLOD[i].mGeometry = creator->template As<VulkanGeometry*>();
@@ -73,7 +73,7 @@ VulkanTexture* VulkanRenderable::GetTexture(LOD const& lod) const {
    if (not mLOD[i].mTexture and mTextureContent) {
       // Cache texture to VRAM                                          
       Verbs::Create creator {
-         Construct::From<VulkanTexture>(mTextureContent->GetLOD(lod))
+         Recipe::Of<VulkanTexture>(mTextureContent->GetLOD(lod))
       };
       mProducer->Create(creator);
       mLOD[i].mTexture = creator->template As<VulkanTexture*>();
@@ -100,7 +100,7 @@ VulkanPipeline* VulkanRenderable::GetOrCreatePipeline(
 
    // Construct a pipeline                                              
    bool usingGlobalPipeline = false;
-   auto recipe = Construct::From<VulkanPipeline>();
+   auto recipe = Recipe::Of<VulkanPipeline>();
    if (mMaterialContent) {
       recipe << mMaterialContent;
       usingGlobalPipeline = true;
@@ -113,12 +113,12 @@ VulkanPipeline* VulkanRenderable::GetOrCreatePipeline(
    }
 
    // Add shaders if any such tag exists in unit environment          
-   auto shader = SeekTrait<Tags::Shader>();
+   auto shader = SeekTag<Tags::Shader>();
    if (shader)
       recipe << shader;
 
    // Add colorization if available                                     
-   auto color = SeekTrait<Tags::Color>();
+   auto color = SeekTag<Tags::Color>();
    if (color)
       recipe << color;
 

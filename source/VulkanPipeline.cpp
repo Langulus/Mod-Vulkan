@@ -11,7 +11,7 @@
 /// Descriptor constructor                                                    
 ///   @param producer the pipeline producer                                   
 ///   @param descriptor the pipeline descriptor                               
-VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, Describe descriptor)
+VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, Neat const& descriptor)
    : Downcastable {this}
    , ProducedFrom {producer, descriptor} {
    VERBOSE_VULKAN("Initializing graphics pipeline from: ", descriptor);
@@ -20,7 +20,7 @@ VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, Describe descriptor)
 
    bool predefinedMaterial = false;
    descriptor.ForEach(
-      [this](const VulkanLayer& layer) {
+      [this](VulkanLayer const& layer) {
          // Add layer preferences                                       
          if (layer.GetStyle() & VulkanLayer::Hierarchical)
             mDepth = false;
@@ -36,7 +36,7 @@ VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, Describe descriptor)
 
    if (not predefinedMaterial) {
       // We must generate the material ourselves                        
-      Construct material;
+      Recipe material;
       descriptor.ForEach(
          [&](Things::File const& file) {
             // Create from file                                         

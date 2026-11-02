@@ -24,14 +24,14 @@ private:
    // Shader stage description                                          
    mutable Shader mStageDescription {};
    // Shader stage description                                          
-   mutable bool mCompiled {};
+   mutable bool mCompiled = false;
    // Shader stage                                                      
    ShaderStage::Enum mStage {ShaderStage::Pixel};
    // Uniform/input bindings for each shader stage                      
    TMany<Trait> mInputs[RefreshRate::StagesCount];
 
 public:
-   VulkanShader(VulkanRenderer*, Describe);
+   VulkanShader(VulkanRenderer*, Neat const&);
    ~VulkanShader();
 
    RefreshRate GetRate() const noexcept;

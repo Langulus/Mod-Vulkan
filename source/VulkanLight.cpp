@@ -9,10 +9,10 @@
 
 
 /// Descriptor constructor                                                    
-///   @param producer - the light producer                                    
-///   @param descriptor - the light descriptor                                
-VulkanLight::VulkanLight(VulkanLayer* producer, Describe descriptor)
-   : Downcastable   {this}
+///   @param producer the light producer                                      
+///   @param descriptor the light descriptor                                  
+VulkanLight::VulkanLight(VulkanLayer* producer, Neat const& descriptor)
+   : Downcastable {this}
    , ProducedFrom {producer, descriptor} {
    VERBOSE_VULKAN("Initializing...");
    Couple(descriptor);

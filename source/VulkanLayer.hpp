@@ -117,7 +117,7 @@ protected:
    Style mStyle = Style::Default;
 
 public:
-   VulkanLayer(VulkanRenderer*, Describe);
+   VulkanLayer(VulkanRenderer*, Neat const&);
    ~VulkanLayer();
 
    void Create(Verb&);
@@ -125,17 +125,17 @@ public:
    void Render(RenderConfig const&) const;
    void Detach();
 
-   NOD() Style GetStyle() const noexcept;
-   NOD() Things::Window const* GetWindow() const noexcept;
+   auto GetStyle() const noexcept -> Style;
+   auto GetWindow() const noexcept -> Things::Window const*;
 
 private:
    void CompileCameras();
 
-   Count CompileLevelBatched(Mat4 const&, Mat4 const&, Level, PipelineSet&);
-   Count CompileLevelHierarchical(Mat4 const&, Mat4 const&, Level, PipelineSet&);
-   Count CompileThing(Thing const*, LOD&, PipelineSet&);
-   NOD() VulkanPipeline* CompileInstance(VulkanRenderable const*, Things::Instance const*, LOD&);
-   Count CompileLevels();
+   size_t CompileLevelBatched(Mat4 const&, Mat4 const&, Level, PipelineSet&);
+   size_t CompileLevelHierarchical(Mat4 const&, Mat4 const&, Level, PipelineSet&);
+   size_t CompileThing(Thing const*, LOD&, PipelineSet&);
+   auto   CompileInstance(VulkanRenderable const*, Things::Instance const*, LOD&) -> VulkanPipeline*;
+   size_t CompileLevels();
 
    void RenderBatched(RenderConfig const&) const;
    void RenderHierarchical(RenderConfig const&) const;

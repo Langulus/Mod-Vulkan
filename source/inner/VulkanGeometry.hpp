@@ -33,7 +33,7 @@ private:
    std::vector<VkDeviceSize> mIOffsets;
 
 public:
-   VulkanGeometry(VulkanRenderer*, Describe);
+   VulkanGeometry(VulkanRenderer*, Neat const&);
    ~VulkanGeometry();
 
    void Bind() const;

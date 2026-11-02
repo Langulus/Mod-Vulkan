@@ -17,9 +17,9 @@
 
 
 /// Descriptor constructor                                                    
-///   @param producer - the shader producer                                   
-///   @param descriptor - the shader descriptor                               
-VulkanShader::VulkanShader(VulkanRenderer* producer, Describe descriptor)
+///   @param producer the shader producer                                     
+///   @param descriptor the shader descriptor                                 
+VulkanShader::VulkanShader(VulkanRenderer* producer, Neat const& descriptor)
    : Downcastable {this} 
    , ProducedFrom {producer, descriptor} {
    // Configure the shader, but don't compile it yet                    
@@ -134,7 +134,7 @@ const Shader& VulkanShader::Compile() const {
 }
 
 /// Bind vertex input                                                         
-///   @param input - input type to bind                                       
+///   @param input type to bind                                               
 void VulkanShader::AddInput(const Trait& input) {
    // On non-vertex shaders - only populate the inputs without          
    // generating code                                                   

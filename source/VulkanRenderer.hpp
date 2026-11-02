@@ -105,7 +105,7 @@ protected:
    TFactoryUnique<VulkanTexture> mTextures;
 
 public:
-   VulkanRenderer(Vulkan*, Describe);
+   VulkanRenderer(Vulkan*, Neat const&);
    ~VulkanRenderer();
 
    void Detach();

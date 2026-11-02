@@ -17,7 +17,7 @@
 /// VRAM texture constructor                                                  
 ///   @param producer the texture producer                                    
 ///   @param descriptor the texture descriptor                                
-VulkanTexture::VulkanTexture(VulkanRenderer* producer, Describe descriptor)
+VulkanTexture::VulkanTexture(VulkanRenderer* producer, Neat const& descriptor)
    : Downcastable {this}
    , ProducedFrom {producer, descriptor} {
    descriptor.ForEachDeep([&](Things::Image const& content) {
