@@ -10,7 +10,7 @@
 
 
 ///                                                                           
-/// A single uniform - maps a tag to a position inside shader binary        
+/// A single uniform - maps a tag to a position inside shader binary          
 ///                                                                           
 struct Uniform {
    Offset mPosition;
@@ -54,10 +54,9 @@ using BufferUpdates = TMany<VkWriteDescriptorSet>;
 ///                                                                           
 ///   Wraps either VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER or                       
 /// VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC.                                
-/// Main difference is, the latter is for rates above RefreshRate::PerPass    
+/// Main difference is, the latter is for rates above RRate::PerPass          
 ///   These are used for layout(set = 0) and layout(set = 1), one DataUBO     
-/// for each bindings corresponding to each RefreshRate                       
-///                                                                           
+/// for each bindings corresponding to each RRate.                            
 template<bool DYNAMIC>
 struct DataUBO : public UBO {
    // Number of allocated mStride-sized blocks                          

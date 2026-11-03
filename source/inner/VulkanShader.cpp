@@ -45,7 +45,7 @@ VulkanShader::VulkanShader(VulkanRenderer* producer, Neat const& descriptor)
          const auto uniforms = material->template GetDataList<Tags::Trait>();
          if (uniforms and not *uniforms) {
             // Add relevant inputs                                      
-            const auto index = RefreshRate(RefreshRate::StagesBegin + mStage).GetInputIndex();
+            const auto index = RRate(RRate::StagesBegin + mStage).GetInputIndex();
             auto& inputs = uniforms->template As<TMany<Trait>>(index);
             for (auto& attribute : inputs)
                AddInput(attribute);
@@ -222,8 +222,8 @@ VkShaderStageFlagBits VulkanShader::GetStageFlagBit() const noexcept {
 
 /// Get the rate index of the shader stage                                    
 ///   @return the rate                                                        
-RefreshRate VulkanShader::GetRate() const noexcept {
-   return mStage + RefreshRate::StagesBegin;
+RRate VulkanShader::GetRate() const noexcept {
+   return mStage + RRate::StagesBegin;
 }
 
 /// Get a vertex input descriptor for vulkan use                              

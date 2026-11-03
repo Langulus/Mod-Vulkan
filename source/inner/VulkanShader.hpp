@@ -26,20 +26,20 @@ private:
    // Shader stage description                                          
    mutable bool mCompiled = false;
    // Shader stage                                                      
-   ShaderStage::Enum mStage {ShaderStage::Pixel};
+   ShaderStage::Enum mStage = ShaderStage::Pixel;
    // Uniform/input bindings for each shader stage                      
-   TMany<Trait> mInputs[RefreshRate::StagesCount];
+   TMany<Trait> mInputs[RRate::StagesCount];
 
 public:
    VulkanShader(VulkanRenderer*, Neat const&);
    ~VulkanShader();
 
-   RefreshRate GetRate() const noexcept;
-   VertexInput CreateVertexInputState() const noexcept;
+   auto GetRate() const noexcept -> RRate;
+   auto CreateVertexInputState() const noexcept -> VertexInput;
 
-   const Shader& Compile() const;
+   auto Compile() const -> const Shader&;
    void AddInput(const Trait&);
-   VkShaderStageFlagBits GetStageFlagBit() const noexcept;
-   ShaderStage::Enum GetStage() const noexcept;
-   Text const& GetCode() const noexcept;
+   auto GetStageFlagBit() const noexcept -> VkShaderStageFlagBits;
+   auto GetStage() const noexcept -> ShaderStage::Enum;
+   auto GetCode() const noexcept -> Text const&;
 };

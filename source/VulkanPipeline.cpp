@@ -493,8 +493,8 @@ void VulkanPipeline::CreateUniformBuffers() {
 
    // Create descriptor pools                                           
    static constinit VkDescriptorPoolSize poolSizes[] {
-      { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, RefreshRate::StaticUniformCount },
-      { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, RefreshRate::DynamicUniformCount },
+      { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,         RRate::StaticUniformCount  },
+      { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, RRate::DynamicUniformCount },
       { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 8 },
       { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 8 },
       { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 8 }
@@ -516,11 +516,11 @@ void VulkanPipeline::CreateUniformBuffers() {
    {
       // For each static uniform rate (set = 0)...                      
       Bindings bindings;
-      for (Count rate = 0; rate < RefreshRate::StaticUniformCount; ++rate) {
+      for (Count rate = 0; rate < RRate::StaticUniformCount; ++rate) {
          auto& ubo = mStaticUBO[rate];
 
          // Add relevant inputs                                         
-         const auto index = RefreshRate(RefreshRate::StaticUniformBegin + rate).GetInputIndex();
+         const auto index = RRate(RRate::StaticUniformBegin + rate).GetInputIndex();
          for (auto const& tag : mUniforms[index]) {
             if (tag.template IsTag<Tags::Image>())
                continue;
@@ -557,11 +557,11 @@ void VulkanPipeline::CreateUniformBuffers() {
    // Create the dynamic sets (0)                                       
    {
       Bindings bindings;
-      for (Offset rate = 0; rate < RefreshRate::DynamicUniformCount; ++rate) {
+      for (Offset rate = 0; rate < RRate::DynamicUniformCount; ++rate) {
          auto& ubo = mDynamicUBO[rate];
 
          // Add relevant inputs                                         
-         const auto index = RefreshRate(RefreshRate::DynamicUniformBegin + rate).GetInputIndex();
+         const auto index = RRate(RRate::DynamicUniformBegin + rate).GetInputIndex();
          for (auto const& tag : mUniforms[index]) {
             if (tag.template IsTag<Tags::Image>())
                continue;

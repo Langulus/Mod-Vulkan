@@ -57,8 +57,8 @@ private:
    Own<VkDescriptorSet> mDynamicUBOSet;
 
    // Uniform buffer objects for each RefreshRate                       
-   DataUBO<false> mStaticUBO[RefreshRate::StaticUniformCount];
-   DataUBO<true> mDynamicUBO[RefreshRate::DynamicUniformCount];
+   DataUBO<false> mStaticUBO[RRate::StaticUniformCount ];
+   DataUBO<true> mDynamicUBO[RRate::DynamicUniformCount];
    TMany<DataUBO<true>*> mRelevantDynamicDescriptors;
 
    // Sets and samplers for textures                                    
@@ -100,7 +100,7 @@ public:
    ///   @param value the value to use                                        
    ///   @param index the index of the uniform of this kind                   
    ///                used as ID only when setting a texture                  
-   template<RefreshRate RATE, CT::Trait TRAIT, CT::Data DATA>
+   template<RRate RATE, CT::Trait TRAIT, CT::Data DATA>
    void SetUniform(const DATA& value, Offset index = 0) {
       if constexpr (Same<DATA, VulkanTexture>) {
          static_assert(RATE == Rate::Renderable,
@@ -133,7 +133,7 @@ public:
    ///   @tparam RATE the rate to push                                        
    ///   @tparam SUBSCRIBE whether or not to subscribe for batched draw       
    ///   @return the subscriber, if SUBSCRIBE is true and RATE is dynamic     
-   template<RefreshRate RATE, bool SUBSCRIBE = true>
+   template<RRate RATE, bool SUBSCRIBE = true>
    auto PushUniforms() {
       if constexpr (RATE.IsStaticUniform()) {
          // Pushing static uniforms does nothing                        
@@ -176,7 +176,7 @@ public:
    /// Convert a rate to the corresponding UBO index                          
    ///   @param RATE - the rate to convert                                    
    ///   @return the relevant UBO index                                       
-   template<RefreshRate RATE>
+   template<RRate RATE>
    auto GetRelevantDynamicUBOIndexOfRate() const noexcept {
       constexpr auto r = RATE.GetDynamicUniformIndex();
       Offset rtoi = 0;
