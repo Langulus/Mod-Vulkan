@@ -40,7 +40,7 @@ inline bool IsVertexData(const Block<>& container, bool& indexData) {
 /// Descriptor constructor                                                    
 ///   @param producer the producer of the unit                                
 ///   @param descriptor the unit descriptor                                   
-VulkanGeometry::VulkanGeometry(VulkanRenderer* producer, Neat const& descriptor)
+VulkanGeometry::VulkanGeometry(VulkanRenderer const* producer, Neat const& descriptor)
    : Downcastable {this}
    , ProducedFrom {producer, descriptor} {
    // Scan the descriptor                                               
@@ -48,7 +48,7 @@ VulkanGeometry::VulkanGeometry(VulkanRenderer* producer, Neat const& descriptor)
    descriptor.ForEachDeep([&](Things::Mesh const& mesh) {
       VERBOSE_VKGEOMETRY(const auto startTime = SteadyClock::now());
 
-      // Create a buffer for each relevant data tag                   
+      // Create a buffer for each relevant data tag                     
       // Each data request will generate that data, if it hasn't yet    
       const auto indices = mesh.GetData<Tags::Index>();
       if (indices) {

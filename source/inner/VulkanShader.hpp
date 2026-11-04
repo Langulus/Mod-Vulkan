@@ -31,7 +31,7 @@ private:
    TMany<Trait> mInputs[RRate::StagesCount];
 
 public:
-   VulkanShader(VulkanRenderer*, Neat const&);
+   VulkanShader(VulkanRenderer const*, Neat const&);
    ~VulkanShader();
 
    auto GetRate() const noexcept -> RRate;

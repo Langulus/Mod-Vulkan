@@ -19,7 +19,7 @@
 /// Descriptor constructor                                                    
 ///   @param producer the shader producer                                     
 ///   @param descriptor the shader descriptor                                 
-VulkanShader::VulkanShader(VulkanRenderer* producer, Neat const& descriptor)
+VulkanShader::VulkanShader(VulkanRenderer const* producer, Neat const& descriptor)
    : Downcastable {this} 
    , ProducedFrom {producer, descriptor} {
    // Configure the shader, but don't compile it yet                    

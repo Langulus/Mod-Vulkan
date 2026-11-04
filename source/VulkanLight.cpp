@@ -11,7 +11,7 @@
 /// Descriptor constructor                                                    
 ///   @param producer the light producer                                      
 ///   @param descriptor the light descriptor                                  
-VulkanLight::VulkanLight(VulkanLayer* producer, Neat const& descriptor)
+VulkanLight::VulkanLight(VulkanLayer const* producer, Neat const& descriptor)
    : Downcastable {this}
    , ProducedFrom {producer, descriptor} {
    VERBOSE_VULKAN("Initializing...");

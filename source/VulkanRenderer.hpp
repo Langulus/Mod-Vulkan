@@ -105,7 +105,7 @@ protected:
    TFactoryUnique<VulkanTexture> mTextures;
 
 public:
-   VulkanRenderer(Vulkan*, Neat const&);
+   VulkanRenderer(Vulkan const*, Neat const&);
    ~VulkanRenderer();
 
    void Detach();
@@ -116,11 +116,11 @@ public:
 
    void Draw();
 
-   VkInstance GetVulkanInstance() const noexcept;
-   VkPhysicalDevice GetAdapter() const noexcept;
-   Things::Window const* GetWindow() const noexcept;
-   Offset GetOuterUBOAlignment() const noexcept;
-   VkCommandBuffer GetRenderCB() const noexcept;
-   const Scale2& GetResolution() const noexcept;
-   VkSurfaceKHR GetSurface() const noexcept;
+   auto GetVulkanInstance() const noexcept -> VkInstance;
+   auto GetAdapter() const noexcept -> VkPhysicalDevice;
+   auto GetWindow() const noexcept -> Things::Window const*;
+   auto GetOuterUBOAlignment() const noexcept -> size_t;
+   auto GetRenderCB() const noexcept -> VkCommandBuffer;
+   auto GetResolution() const noexcept -> Scale2 const&;
+   auto GetSurface() const noexcept -> VkSurfaceKHR;
 };

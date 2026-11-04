@@ -30,9 +30,9 @@ private:
    void Upload(Things::Image const&);
 
 public:
-   VulkanTexture(VulkanRenderer*, Neat const&);
+   VulkanTexture(VulkanRenderer const*, Neat const&);
    ~VulkanTexture();
 
-   NOD() VkImageView GetImageView() const noexcept;
-   NOD() VkSampler GetSampler() const noexcept;
+   auto GetImageView() const noexcept -> VkImageView;
+   auto GetSampler() const noexcept -> VkSampler;
 };

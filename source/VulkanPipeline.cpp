@@ -11,7 +11,7 @@
 /// Descriptor constructor                                                    
 ///   @param producer the pipeline producer                                   
 ///   @param descriptor the pipeline descriptor                               
-VulkanPipeline::VulkanPipeline(VulkanRenderer* producer, Neat const& descriptor)
+VulkanPipeline::VulkanPipeline(VulkanRenderer const* producer, Neat const& descriptor)
    : Downcastable {this}
    , ProducedFrom {producer, descriptor} {
    VERBOSE_VULKAN("Initializing graphics pipeline from: ", descriptor);

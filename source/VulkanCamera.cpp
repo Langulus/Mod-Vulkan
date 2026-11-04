@@ -11,7 +11,7 @@
 /// Descriptor constructor                                                    
 ///   @param producer the camera producer                                     
 ///   @param descriptor the camera descriptor                                 
-VulkanCamera::VulkanCamera(VulkanLayer* producer, Neat const& descriptor)
+VulkanCamera::VulkanCamera(VulkanLayer const* producer, Neat const& descriptor)
    : Downcastable {this} 
    , ProducedFrom {producer, descriptor} {
    VERBOSE_VULKAN("Initializing...");

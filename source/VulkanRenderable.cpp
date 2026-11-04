@@ -12,7 +12,7 @@
 /// Descriptor constructor                                                    
 ///   @param producer the renderable producer                                 
 ///   @param descriptor the renderable descriptor                             
-VulkanRenderable::VulkanRenderable(VulkanLayer* producer, Neat const& descriptor)
+VulkanRenderable::VulkanRenderable(VulkanLayer const* producer, Neat const& descriptor)
    : Downcastable {this} 
    , ProducedFrom {producer, descriptor} {
    VERBOSE_VULKAN("Initializing...");

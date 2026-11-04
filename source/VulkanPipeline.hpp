@@ -86,7 +86,7 @@ private:
    void GenerateShaders(Things::Material const&);
 
 public:
-   VulkanPipeline(VulkanRenderer*, Neat const&);
+   VulkanPipeline(VulkanRenderer const*, Neat const&);
    ~VulkanPipeline();
 
    size_t RenderLevel(size_t) const;

@@ -6,7 +6,7 @@
 /// SPDX-License-Identifier: GPL-3.0-or-later                                 
 ///                                                                           
 #pragma once
-#include "Common.hpp"
+#include "Export.hpp"
 
 
 ///                                                                           
@@ -39,7 +39,7 @@ protected:
    } mLOD[LOD::IndexCount];
 
 public:
-   VulkanRenderable(VulkanLayer*, Neat const&);
+   VulkanRenderable(VulkanLayer const*, Neat const&);
    ~VulkanRenderable();
 
    auto GetRenderer() const noexcept -> VulkanRenderer*;

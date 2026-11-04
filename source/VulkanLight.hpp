@@ -15,5 +15,5 @@ struct VulkanLight : Things::Graphics, ProducedFrom<VulkanLayer> {
    using CTTI_Abstract  = No;
    using CTTI_Bases     = Things::Graphics;
 
-   VulkanLight(VulkanLayer*, Neat const&);
+   VulkanLight(VulkanLayer const*, Neat const&);
 };

@@ -43,7 +43,7 @@ protected:
    Scale2u32 mResolution {640, 480};
 
 public:
-   VulkanCamera(VulkanLayer*, Neat const&);
+   VulkanCamera(VulkanLayer const*, Neat const&);
 
    void Refresh();
    void Compile();
