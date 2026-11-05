@@ -100,7 +100,7 @@ VulkanPipeline* VulkanRenderable::GetOrCreatePipeline(
 
    // Construct a pipeline                                              
    bool usingGlobalPipeline = false;
-   auto recipe = Recipe::Of<VulkanPipeline>();
+   auto recipe = Recipe::For<VulkanPipeline>();
    if (mMaterialContent) {
       recipe << mMaterialContent;
       usingGlobalPipeline = true;
