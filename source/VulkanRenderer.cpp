@@ -280,7 +280,7 @@ VulkanRenderer::~VulkanRenderer() {
 /// React to changes in environment                                           
 void VulkanRenderer::Refresh() {
    // Resize swapchain from the environment                             
-   const Scale2 previousResolution = *mResolution;
+   Scale2 const previousResolution = *mResolution;
    if (not SeekValue<Tags::Size>(mResolution))
       mResolution = mWindow->GetSize();
 
@@ -427,7 +427,7 @@ VkCommandBuffer VulkanRenderer::GetRenderCB() const noexcept {
 
 /// Get the current resolution                                                
 ///   @return the resolution                                                  
-const Scale2& VulkanRenderer::GetResolution() const noexcept {
+Scale2 const& VulkanRenderer::GetResolution() const noexcept {
    return *mResolution;
 }
 
