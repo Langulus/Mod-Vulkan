@@ -54,8 +54,8 @@ namespace Catch
          root.LoadMod("Vulkan");
          
          WHEN("A renderer is created via abstractions") {
-            auto window = root.CreateUnit<Things::Window>(Tags::Size(640, 480));
-            auto renderer = root.CreateUnit<Things::Renderer>();
+            auto window = root.CreatePart<Things::Window>(Tags::Size(640, 480));
+            auto renderer = root.CreatePart<Things::Renderer>();
             root.DumpHierarchy();
                
             REQUIRE(window);
@@ -106,8 +106,8 @@ SCENARIO("Drawing an empty window", "[renderer]") {
       root.LoadMod("Vulkan");
       root.LoadMod("AssetsImages");
 
-      root.CreateUnit<Things::Window>(Tags::Size(640, 480));
-      root.CreateUnit<Things::Renderer>();
+      root.CreatePart<Things::Window>(Tags::Size(640, 480));
+      root.CreatePart<Things::Renderer>();
 
       static Allocator::State memoryState2;
 
@@ -163,18 +163,18 @@ SCENARIO("Drawing solid polygons", "[renderer]") {
          "Physics"
       );
 
-      root.CreateUnit<Things::Window>(Tags::Size(640, 480));
-      root.CreateUnit<Things::Renderer>();
-      root.CreateUnit<Things::Layer>();
-      root.CreateUnit<Things::World>();
+      root.CreatePart<Things::Window>(Tags::Size(640, 480));
+      root.CreatePart<Things::Renderer>();
+      root.CreatePart<Things::Layer>();
+      root.CreatePart<Things::World>();
 
       auto rect = root.CreateChild(Tags::Size {100}, "Rectangles");
-      auto renderable = rect->CreateUnit<Things::Renderable>();
-      auto mesh = rect->CreateUnit<Things::Mesh>(Math::Box2 {});
-      auto topLeft  = rect->CreateUnit<Things::Instance>(Tags::Place(100, 100), Colors::Black);
-      auto topRight = rect->CreateUnit<Things::Instance>(Tags::Place(540, 100), Colors::Green);
-      auto botLeft  = rect->CreateUnit<Things::Instance>(Tags::Place(100, 380), Colors::Blue);
-      auto botRight = rect->CreateUnit<Things::Instance>(Tags::Place(540, 380), Colors::White);
+      auto renderable = rect->CreatePart<Things::Renderable>();
+      auto mesh = rect->CreatePart<Things::Mesh>(Math::Box2 {});
+      auto topLeft  = rect->CreatePart<Things::Instance>(Tags::Place(100, 100), Colors::Black);
+      auto topRight = rect->CreatePart<Things::Instance>(Tags::Place(540, 100), Colors::Green);
+      auto botLeft  = rect->CreatePart<Things::Instance>(Tags::Place(100, 380), Colors::Blue);
+      auto botRight = rect->CreatePart<Things::Instance>(Tags::Place(540, 380), Colors::White);
       root.DumpHierarchy();
 
       static Allocator::State memoryState2;
