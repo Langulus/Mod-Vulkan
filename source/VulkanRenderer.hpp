@@ -28,7 +28,7 @@ struct VulkanRenderer : Things::Renderer, ProducedFrom<Vulkan> {
    using CTTI_Abstract  = No;
    using CTTI_Producer  = Vulkan;
    using CTTI_Bases     = Things::Renderer;
-   using CTTI_Abilities = Types<Verbs::Create, Verbs::Interpret>;
+   using CTTI_Ability   = Types<Verbs::Create, Verbs::Interpret>;
 
 protected:
    friend struct UBO;
